@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <math.h>
+#include <fftw3.h>
 
 #define SWAP(a, b) temp = (a); (a) = (b); (b) = temp
 
@@ -20,7 +21,7 @@
 static const unsigned char BitReverseTable256[256] = {R6(0), R6(2), R6(1), R6(3)};
 
 unsigned char ReverseBitsLookupTable(unsigned char v) {
-    return BitReverseTable256[v];
+  return BitReverseTable256[v];
 }
 
 unsigned char reverse_bit(unsigned char b, int N) {
@@ -28,7 +29,7 @@ unsigned char reverse_bit(unsigned char b, int N) {
   // Reversal 8-bit
   unsigned char size = N;
   unsigned char b_rev = 0;
-  for(int position = size - 1; position > 0; position --) {
+  for (int position = size - 1; position > 0; position --) {
     b_rev += ((b&1) << position);
     b >>= 1;
   }
@@ -62,7 +63,7 @@ int main() {
   for (int i = 0; i < N; i+=2)
     x[i] = 1;
   for (int i = 0; i < N; i++)
-    printf("%f", x[i]);
+    printf("%f ", x[i]);
   printf("\n");
   
   // Reverse input
@@ -76,16 +77,58 @@ int main() {
   // Print reversed input x
   printf("\n");
   for (int i = 0; i < N; i++)
-    printf("%f", x[i]);
+    printf("%f ", x[i]);
   printf("\n");
   
   // Two-point DFT Butterfly
-  int M = N >> 1; // N >> 1 = N/2
+  /* int M = N >> 1; // N >> 1 = N/2
+  int m = M
   for (int j = 0; j < N; j+=2) {
     x_F[j] = x[j] + twiddle_R[0]*x[j+1];
     x_F[j+1] = x[j] - twiddle_R[0]*x[j+1];
   }
+  ///
+  int M = 2;
+  int m = M;
+  while (N > M) {
+    m << 1;
+    theta = 2*M_PI/M;
+    
+    for (m = 1; m < M; m += 2) {
+      
+    }
+  }
   
+  /*
+    // External loop
+  while (n > M) {
+      
+      // Initi
+    i_step = M << 1;
+    theta = 2*M_PI/M;
+    w_temp = sin(0.5*theta);
+    wpr = -2.0*w_temp*w_temp;
+    wpi = sin(theta);
+    wr = 1.0;
+    wi = 0.0;
+    
+    // Internal loops
+    for (m = 1; m < M; m += 2) {
+      for (i = m; i <= n; i += i_step) {
+        j = i + M;
+        tempr = wr*data[j-1] - wi*data[j];
+        tempi = wr*data[j] + wi*data[j-1];
+        data[j-1] = data[i-1] - tempr;
+        data[j] = data[i] - tempi;
+        data[i-1] += tempr;
+        data[i] += tempi;
+      }
+      wr = (w_temp = wr)*wpr - wi*wpi + wr;
+      wi = wi*wpr + wtemp*wpi + wi;
+    }
+    M = i_step;
+  }
+  //*/
   
   return(0);
 }

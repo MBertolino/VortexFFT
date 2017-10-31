@@ -5,10 +5,10 @@
 #define TWOPI 6.2831853071795864769
 
 int main() {
-  int N = 8; // Number of points
+  int N = 10; // Number of points
   
   // Cubic interpolation params
-  int P = 10; // Number of interpolation points
+  int P = 100; // Number of interpolation points
   
   double* p = (double*)malloc(P*sizeof(double));
   double* eta = (double*)malloc(P*sizeof(double));
@@ -66,9 +66,9 @@ int main() {
   for (int j = 0; j < N; j++) {
     
     // Cubic interpolation coefficients
-    mu = -1/3*d[j]*kappa[j] - 1/6*d[j]*kappa[j+1];
+    mu = -(double)1/3*d[j]*kappa[j] - (double)1/6*d[j]*kappa[j+1];
     beta = 0.5*d[j]*kappa[j];
-    gamma = 1/6*d[j]*(kappa[j+1] - kappa[j]);
+    gamma = (double)1/6*d[j]*(kappa[j+1] - kappa[j]);
     
     for (int i = 0; i < P; i++) {
       eta[i] = mu*p[i] + beta*p[i]*p[i] + gamma*p[i]*p[i]*p[i];
@@ -76,9 +76,6 @@ int main() {
       y[j*P + i] = y[j*P] + p[i]*t_y[j] + eta[i]*n_y[j];
     }
   }
-  
-  //for (int j = 0; j < N; j++)
-    //printf("x[%d] = %lf\n", j, t_x[j]);
   
   // Print to file
   char str[80] = "../circle.csv";
@@ -94,10 +91,9 @@ int main() {
   free(n_x);
   free(n_y);
   free(d);
-  free(kappa);
-  printf("test\n");
   free(p);
   free(eta);
+  free(kappa);
   
   free(x);
   free(y);

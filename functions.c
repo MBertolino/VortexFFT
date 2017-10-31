@@ -86,42 +86,43 @@ void interpolate(int N, int P, double* x, double* y) {
 double compute_derivative(double* x, double* y, double* p, double* mu, \
   double* beta, double* gamma, double* t_x, double* t_y, double* n_x, double* n_y, double alpha) {
   
-  double dxdt = 0;
-  double d_xi, d_ni, d_ti;
+  double derivative = 0;
+  double d_x, d_ni, d_ti;
   
   // Evolve the contour integrals
   for (int i = 0; i < N*P; i++) { // i < ???
     if ((x[j] == x[i]) && (y[j] == y[i])) {
-      dxdt += evaluate_integral(p, mu[i], beta[i], gamma[i], t_x[i], t_y[i], n_x[i], n_y[i], alpha);
+      derivative += evaluate_integral(p, mu[i], beta[i], gamma[i], t_x[i], t_y[i], n_x[i], n_y[i], alpha);
       
     } else if ((x[j] == x[i+1]) && (y[j] == y[i+1])) {
     
-      dxdt += evaluate_integral(1-p, mu[i] + 2*beta[i] + 3*gamma[i], -beta[i] \
+      derivative += evaluate_integral(1-p, mu[i] + 2*beta[i] + 3*gamma[i], -beta[i] \
                                 - 3*gamma[i], gamma[i], t_x[i], t_y[i], n_x[i], n_y[i], alpha);
     
     } else if (sqrt((x[j] - x[i])*(x[j] - x[i]) + (y[j] - y[i])*(y[j] - y[i])) > 0.5) {
     
-      d_xi = sqrt((x[j] - x[i])*(x[j] - x[i]) + (y[j] - y[i])*(y[j] - y[i]));
+      d_x = sqrt((x[j] - x[i])*(x[j] - x[i]) + (y[j] - y[i])*(y[j] - y[i]));
       d_ni = (x[j] - x[i])*t_y[j] - (y[j] - y[i])*t_x[j];
       d_ti = -(x[j] - x[i])*t_x[j] + (y[j] - y[i])*t_y[j];
       
-      dxdt += evaluate_integral_g(mu[i], d_xi, d_ni, d_ti, alpha);
+      derivative += evaluate_integral_g(mu[i], d_x, d_ni, d_ti, alpha);
     
     } else if (sqrt((x[j] - x[i])*(x[j] - x[i]) + (y[j] - y[i])*(y[j] - y[i])) < 0.01) {
-    
-      d_xi = sqrt((x[j] - x[i])*(x[j] - x[i]) + (y[j] - y[i])*(y[j] - y[i]));
+      
+      // Compute integral with RK5.
+      // derivative += evaluate_integral_RK();
+      
+      d_x = sqrt((x[j] - x[i])*(x[j] - x[i]) + (y[j] - y[i])*(y[j] - y[i]));
       d_ni = (x[j] - x[i])*t_y[j] - (y[j] - y[i])*t_x[j];
       d_ti = -(x[j] - x[i])*t_x[j] + (y[j] - y[i])*t_y[j];
       
-      dxdt += evaluate_integral_g(mu[i], d_xi, d_ni, d_ti, alpha);
+      derivative += evaluate_integral_g(mu[i], d_x, d_ni, d_ti, alpha);
     }
   }
   
-  dxdt *= theta/(double)TWOPI;
+  derivative *= theta/(double)TWOPI;
   
-  
-  
-  return dxdt;
+  return derivative;
 }
 
 double evaluate_integral(double p, double mu_i, double beta_i, double gamma_i, \
@@ -130,7 +131,7 @@ double evaluate_integral(double p, double mu_i, double beta_i, double gamma_i, \
   // Coefficients
   double* c = (double*)malloc(10*sizeof(double));
   
-  // Compute the first integral
+  // Compute the integrals
   double first = 0;
   double second = 0;
   double p_coef, psq_coef;
@@ -145,21 +146,37 @@ double evaluate_integral(double p, double mu_i, double beta_i, double gamma_i, \
     second += c[n]*(p_coef + psq_coef);
   }
   
-  first = first/(t_abs*alpha_mu);
-  second = second/(t_abs*alpha_mu);
+  first = first/(t_abs*alpha_mu); // Multiply by (t_i + mu*n_i)
+  second = second/(t_abs*alpha_mu); // Multiply by n_i
   
   free(c);
   
   return first + second;
 }
 
-double evaluate_integral_g(double mu_i, double d_xi, double d_ni, double d_ti, double alpha) {
+double evaluate_integral_g(double mu_i, double d_x, double d_ni, double d_ti, double alpha) {
   
   // Coefficients
   double* g = (double*)malloc(10*sizeof(double));
   
+  // COmpute the integrals
+  double first = 0;
+  double second = 0;
+  for (int n = 0; n < 11; n++) {
+    first += g[n];
+    second += ...;
+  }
+  
+  first = first/pow(d_x, alpha) // Multiply by (t_i + mu*n_i)
+  second = second/... // Multiply by n_i
+  
   
   free(g);
   
-  return integral;
+  return first + second;
 }
+
+//double evaluate_integral_RK() {
+//  
+//  return ;
+//}

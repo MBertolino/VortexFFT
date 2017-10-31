@@ -1,0 +1,1 @@
+void interpolate(int N, int P, double* x, double* y)

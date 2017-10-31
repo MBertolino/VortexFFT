@@ -6,39 +6,42 @@
 #define TWOPI 6.2831853071795864769
 
 int main() {
-  int N = 50; // Number of points
   
-  // Number of interpolation points
-  int P = 100;
+  // Number of points
+  int N = 50; // Points
+  int P = 100;  // Interpolation points
+  
+  // Interpolation between 2D Euler and Quasi-geostrophic
+  alpha = 0.5;
   
   // Coordinates
   double* x = (double*)malloc(P*N*sizeof(double));
   double* y = (double*)malloc(P*N*sizeof(double));
+  double* dxdt = (double*)malloc(P*N*sizeof(double));
+  double* dydt = (double*)malloc(P*N*sizeof(double));
+  double derivative;
   
-  /*
   // Step in time
   for (int t = 0; t < T; t++) {
+    
+    // Send in mu, beta, gamma, eta, t and n etc to interpolate
     
     // Interpolate
     interpolate(x, y, N, P);
     
-    // Evolve the contour integrals
-    for (int i = 0; i < N*P; i++) {
-      if ((x[j] == x[i]) && (y[j] == y[i])) {
-        evolve_integral(p, mu, beta, gamma);
-        
-      } else if ((x[j] == x[i+1]) && (y[j] == y[i+1])) {
-        evolve_integral(1-p, mu + 2*beta + 3*gamma, -beta -3*gamma, gamma);
-      
-      } else if (sqrt((x[j] - x[i])*(x[j] - x[i]) + (x[j] - x[i])*(x[j] - x[i])) > 100) {
-        evolve_integral_g();
-      
-      } else if (sqrt((x[j] - x[i])*(x[j] - x[i]) + (x[j] - x[i])*(x[j] - x[i])) < 0.01) {
-        evolve_integral_g
-      }
+    // Calculate derivatives
+    for (int j = 0; j < N*P; j++) {
+      // Now we multiply both integrals by (t_x[i] + mu[i]*n_x[i]) which is wrong!! See formula (28)
+      derivative = compute_derivative(x, y, p, mu, beta, gamma, t_x, t_y, n_x, n_y, alpha);
+      dxdt[j] = (t_x[i] + mu[i]*n_x[i])*derivative;
+      dydt[j] = (t_y[i] + mu[i]*n_y[i])*derivative;
     }
+    
+    // Time integrate with RK4
+    
+    // Redistribute the nodes
+    
   }
-  */
   
   /*
   // Print to file

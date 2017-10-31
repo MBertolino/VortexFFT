@@ -8,22 +8,20 @@ int main() {
   int N = 8; // Number of points
   
   // Cubic interpolation params
-  int P = 100; // Number of interpolation points
+  int P = 10; // Number of interpolation points
   
   double* p = (double*)malloc(P*sizeof(double));
-  double* eta = (double*)malloc((N-1)*sizeof(double));
+  double* eta = (double*)malloc(P*sizeof(double));
   for (int i = 0; i < P; i++)
     p[i] = (double)i/P;
   double* t_x = (double*)malloc(N*sizeof(double));
   double* t_y = (double*)malloc(N*sizeof(double));
   double* n_x = (double*)malloc(N*sizeof(double));
   double* n_y = (double*)malloc(N*sizeof(double));
-  double* mu = (double*)malloc(N*sizeof(double));
-  double* beta = (double*)malloc(N*sizeof(double));
-  double* gamma = (double*)malloc(N*sizeof(double));
   double* d = (double*)malloc(N*sizeof(double));
   double* kappa = (double*)malloc(N*sizeof(double));
   double kappa_den_x, kappa_den_y;
+  double mu, beta, gamma;
   
   // Coordinates
   double* x = (double*)malloc(P*N*sizeof(double));
@@ -31,8 +29,8 @@ int main() {
   
   // Generate circle (j*P to avoid the interpolated nodes)
   for (int j = 0; j < N; j++) {
-    x[j*P] = cos(TWOPI*j/N);
-    y[j*P] = sin(TWOPI*j/N);
+    x[j*P] = cos(TWOPI*j/(double)N);
+    y[j*P] = sin(TWOPI*j/(double)N);
   }
   
   // Calculate t an n
@@ -41,14 +39,14 @@ int main() {
     t_y[j] = y[(j+1)*P] - y[j*P];
     n_x[j] = -t_y[j];
     n_y[j] = t_x[j];
-    d[j] = sqrt((x[(j+1)*P] - x[j*P])*(x[(j+1)*P] - x[j*P]) + (y[(j+1)*P] - y[j*P])*(y[(j+1)*P] - y[j*P]));
-  }
+    d[j] = sqrt(t_x[j]*t_x[j] + t_y[j]*t_y[j]);
+  }  
   // Special case j = N-1
   t_x[N-1] = x[0] - x[(N-1)*P];
   t_y[N-1] = y[0] - y[(N-1)*P];
   n_x[N-1] = -t_y[N-1];
   n_y[N-1] = t_x[N-1];
-  d[N-1] = sqrt((x[0] - x[(N-1)*P])*(x[0] - x[(N-1)*P]) + (y[0] - y[(N-1)*P])*(y[0] - y[(N-1)*P]));
+  d[N-1] = sqrt(t_x[N-1]*t_x[N-1] + t_y[N-1]*t_y[N-1]);
   
   // kappa local curvature
   kappa_den_x = (d[N-1]*d[N-1]*t_x[0] + d[0]*d[0]*t_x[N-1]);
@@ -68,19 +66,19 @@ int main() {
   for (int j = 0; j < N; j++) {
     
     // Cubic interpolation coefficients
-    mu[j] = -1/3*d[j]*kappa[j] - 1/6*d[j]*kappa[j+1];
-    beta[j] = 0.5*d[j]*kappa[j];
-    gamma[j] = 1/6*d[j]*(kappa[j+1] - kappa[j]);
+    mu = -1/3*d[j]*kappa[j] - 1/6*d[j]*kappa[j+1];
+    beta = 0.5*d[j]*kappa[j];
+    gamma = 1/6*d[j]*(kappa[j+1] - kappa[j]);
     
     for (int i = 0; i < P; i++) {
-      eta[i] = mu[j]*p[i] + beta[j]*p[i]*p[i] + gamma[j]*p[i]*p[i]*p[i];
+      eta[i] = mu*p[i] + beta*p[i]*p[i] + gamma*p[i]*p[i]*p[i];
       x[j*P + i] = x[j*P] + p[i]*t_x[j] + eta[i]*n_x[j];
       y[j*P + i] = y[j*P] + p[i]*t_y[j] + eta[i]*n_y[j];
     }
   }
   
-  for (int j = 0; j < N*P; j++)
-    printf("x[%d] = %lf\n", j, x[j]);
+  //for (int j = 0; j < N; j++)
+    //printf("x[%d] = %lf\n", j, t_x[j]);
   
   // Print to file
   char str[80] = "../circle.csv";
@@ -95,11 +93,11 @@ int main() {
   free(t_y);
   free(n_x);
   free(n_y);
-  free(mu);
-  free(beta);
-  free(gamma);
   free(d);
   free(kappa);
+  printf("test\n");
+  free(p);
+  free(eta);
   
   free(x);
   free(y);

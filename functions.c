@@ -6,11 +6,6 @@
 #define TWOPI 6.2831853071795864769
 
 void interpolate(int N, int P, double* x, double* y) {
-  /*int N = 10; // Number of points
-  
-  // Cubic interpolation params
-  int P = 100; // Number of interpolation points
-  */
 	
   double* p = (double*)malloc(P*sizeof(double));
   double* eta = (double*)malloc(P*sizeof(double));
@@ -24,13 +19,6 @@ void interpolate(int N, int P, double* x, double* y) {
   double* kappa = (double*)malloc(N*sizeof(double));
   double kappa_den_x, kappa_den_y;
   double mu, beta, gamma;
-  
-  /*
-  // Coordinates
-  double* x = (double*)malloc(P*N*sizeof(double));
-  double* y = (double*)malloc(P*N*sizeof(double));
-  */
-  
   
   // Generate circle (j*P to avoid the interpolated nodes)
   for (int j = 0; j < N; j++) {
@@ -81,9 +69,7 @@ void interpolate(int N, int P, double* x, double* y) {
       y[j*P + i] = y[j*P] + p[i]*t_y[j] + eta[i]*n_y[j];
     }
   }
-  
-
-  
+    
   // Free memory
   free(t_x);
   free(t_y);
@@ -94,8 +80,5 @@ void interpolate(int N, int P, double* x, double* y) {
   free(eta);
   free(kappa);
   
-  /*
-  free(x);
-  free(y);
-  */
+  return;
 }

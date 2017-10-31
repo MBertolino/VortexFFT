@@ -4,7 +4,7 @@ CFLAGS = -Wall -Werror -O3 -march=native
 LDFLAGS = -lm 
 INCLUDES =
 RM = /bin/rm -f
-OBJS = 
+OBJS = functions.o
 PATCH = patch
 FFT = swap
 
@@ -19,6 +19,9 @@ $(PATCH): patch.o $(OBJS)
 
 $(FFT): swap.o $(OBJS)
 	$(LD) -o $(STATS) swap.o $(OBJS) $(LDFLAGS)
+
+functions.o: functions.c functions.h
+	$(CC) $(CFLAGS) $(INCLUDES) -c functions.c -std=c99
 
 patch.o: patch.c
 	$(CC) $(CFLAGS) $(INCLUDES) -c patch.c -std=c99

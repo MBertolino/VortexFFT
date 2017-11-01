@@ -6,55 +6,49 @@
 #define TWOPI 6.2831853071795864769
 #define SQRTTWO 1.4142135623730950588
 
-void interpolate(int N, int P, double** x) {
+void interpolate(double** x, int N, int P, int n_dim) {
 	
   double* p = (double*)malloc(P*sizeof(double));
   double* eta = (double*)malloc(P*sizeof(double));
   for (int i = 0; i < P; i++)
     p[i] = (double)i/P;
-  double** t = (double**)malloc(n_dim*sizeof(double*));
-  double** n = (double**)malloc(n_dim*sizeof(double*));
+  double** t = (double**)malloc(N*sizeof(double*)); // Should t and n be allocated in main and passed in?
+  double** n = (double**)malloc(N*sizeof(double*));
   for (int i = 0; i < N; i++) {
-    t[i] = (double*)malloc(N*sizeof(double));
-    n[i] = (double*)malloc(N*sizeof(double));
+    t[i] = (double*)malloc(n_dim*sizeof(double));
+    n[i] = (double*)malloc(n_dim*sizeof(double));
   }
   double* d = (double*)malloc(N*sizeof(double));
   double* kappa = (double*)malloc(N*sizeof(double));
   double kappa_den[2];
   double mu, beta, gamma;
   
-  // Generate circle (j*P to avoid the interpolated nodes)
-  for (int j = 0; j < N; j++) {
-    x[0][j*P] = cos(TWOPI*j/(double)N);
-    x[1][j*P] = sin(TWOPI*j/(double)N);
-  }
-  
   // Calculate t an n
   for (int j = 0; j < N-1; j++) {
-    t[0][j] = x[0][(j+1)*P] - x[0][j*P];
-    t[1][j] = x[1][(j+1)*P] - x[1][j*P];
-    n[0][j] = -t[1][j];
-    n[1][j] = t[0][j];
-    d[j] = sqrt(t[0][j]*t[0][j] + t[1][j]*t[1][j]);
+    t[j][0] = x[(j+1)*P][0] - x[j*P][0];
+    t[j][1] = x[(j+1)*P][1] - x[j*P][1];
+    n[j][0] = -t[j][1];
+    n[j][1] = t[j][0];
+    d[j] = sqrt(t[j][0]*t[j][0] + t[j][1]*t[j][1]);
   }  
   // Special case j = N-1
-  t[0][N-1] = x[0][0] - x[0][(N-1)*P];
-  t[1][N-1] = x[1][0] - x[1][(N-1)*P];
-  n[0][N-1] = -t[1][N-1];
-  n[1][N-1] = t[0][N-1];
-  d[N-1] = sqrt(t[0][N-1]*t[0][N-1] + t[1][N-1]*t[1][N-1]);
+  t[N-1][0] = x[0][0] - x[(N-1)*P][0];
+  t[N-1][1] = x[0][1] - x[(N-1)*P][1];
+  n[N-1][0] = -t[N-1][1];
+  n[N-1][1] = t[N-1][0];
+  d[N-1] = sqrt(t[N-1][0]*t[N-1][0] + t[N-1][1]*t[N-1][1]);
   
   // kappa local curvature
-  kappa_den[0] = d[N-1]*d[N-1]*t[0][0] + d[0]*d[0]*t[0][N-1];
-  kappa_den[1] = d[N-1]*d[N-1]*t[1][0] + d[0]*d[0]*t[1][N-1];
-  kappa[0] = 2*(t[0][N-1]*t[1][0] - t[1][N-1]*t[0][0])\
+  kappa_den[0] = d[N-1]*d[N-1]*t[0][0] + d[0]*d[0]*t[N-1][0];
+  kappa_den[1] = d[N-1]*d[N-1]*t[0][1] + d[0]*d[0]*t[N-1][1];
+  kappa[0] = 2*(t[N-1][0]*t[0][1] - t[N-1][1]*t[0][0])\
     /sqrt(kappa_den[0]*kappa_den[0] + kappa_den[1]*kappa_den[1]);
   
   for (int j = 1; j < N; j++) {
     // kappa local curvature
-    kappa_den[0] = (d[j-1]*d[j-1]*t[0][j] + d[j]*d[j]*t[0][j-1]);
-    kappa_den[1] = (d[j-1]*d[j-1]*t[1][j] + d[j]*d[j]*t[1][j-1]);
-    kappa[j] = 2*(t[0][j-1]*t[1][j] - t[1][j-1]*t[0][j])\
+    kappa_den[0] = (d[j-1]*d[j-1]*t[j][0] + d[j]*d[j]*t[j-1][0]);
+    kappa_den[1] = (d[j-1]*d[j-1]*t[j][1] + d[j]*d[j]*t[j-1][1]);
+    kappa[j] = 2*(t[j-1][0]*t[j][1] - t[j-1][1]*t[j][0])\
       /sqrt(kappa_den[0]*kappa_den[0] + kappa_den[1]*kappa_den[1]);
   }
   
@@ -68,13 +62,13 @@ void interpolate(int N, int P, double** x) {
     
     for (int i = 0; i < P; i++) {
       eta[i] = mu*p[i] + beta*p[i]*p[i] + gamma*p[i]*p[i]*p[i];
-      x[0][j*P + i] = x[0][j*P] + p[i]*t[0][j] + eta[i]*n[0][j];
-      x[1][j*P + i] = y[1][j*P] + p[i]*t[1][j] + eta[i]*n[1][j];
+      x[j*P + i][0] = x[j*P][0] + p[i]*t[j][0] + eta[i]*n[j][0];
+      x[j*P + i][1] = x[j*P][1] + p[i]*t[j][1] + eta[i]*n[j][1];
     }
   }
     
   // Free memory
-  for (int i = 0; i < n_dim; i++) {
+  for (int i = 0; i < N; i++) {
     free(t[i]);
     free(n[i]);
   }
@@ -88,32 +82,31 @@ void interpolate(int N, int P, double** x) {
   return;
 }
 
-double compute_derivative(double** x, double* p, double* mu, \
-  double* beta, double* gamma, double* t, double* n, int NP, double alpha) {
+double compute_derivative(double** x, double* mu, double* beta, double* gamma, double* t, double* n, int NP, double alpha) {
   
   double* derivative;
   double d_x, d_ni, d_ti;
   
   // Evolve the contour integrals
   for (int i = 0; i < N*P; i++) { // i < ???
-    if ((x[0][j] == x[0][i]) && (y[j] == y[i])) {
+    if ((x[j][0] == x[i][0]) && (x[j][1] == x[i][1])) {
       // Case 1: Use formula (29)
-      derivative += evaluate_integral(p, mu[i], beta[i], gamma[i], t[0][i], t[1][i], n[0][i], n[1][i], alpha);
+      derivative += evaluate_integral(mu[i], beta[i], gamma[i], t[i][0], t[i][1], n[i][0], n[i][1], alpha);
       
-    } else if ((x[0][j] == x[0][i+1]) && (x[1][j] == x[1][i+1])) {
+    } else if ((x[j][0] == x[i+1][0]) && (x[j][1] == x[i+1][1])) {
       // Case 2: Use formula (29) with shifted params
-      derivative += evaluate_integral(1-p, mu[i] + 2*beta[i] + 3*gamma[i], -beta[i] \
-                                - 3*gamma[i], gamma[i], t[0][i], t[1][i], n[0][i], n[1][i], alpha);
+      derivative += evaluate_integral(mu[i] + 2*beta[i] + 3*gamma[i], -beta[i] \
+                                - 3*gamma[i], gamma[i], t[i][0], t[i][1], n[i][0], n[i][1], alpha);
     
-    } else if (sqrt((x[0][j] - x[0][i])*(x[0][j] - x[0][i]) + (x[1][j] - x[1][i])*(x[1][j] - x[1][i])) > 0.5) {
+    } else if (sqrt((x[j][0] - x[i][0])*(x[j][0] - x[i][0]) + (x[j][1] - x[i][1])*(x[j][1] - x[i][1])) > 0.5) {
       // Case 3: Use formula (31)
-      d_x = sqrt((x[0][j] - x[0][i])*(x[0][j] - x[0][i]) + (x[1][j] - x[1][i])*(x[1][j] - x[1][i]));
-      d_ni = (x[0][j] - x[0][i])*t[1][j] - (x[1][j] - x[1][i])*t[0][j];
-      d_ti = -(x[0][j] - x[0][i])*t[0][j] + (x[1][j] - x[1][i])*t[1][j];
+      d_x = sqrt((x[j][0] - x[i][0])*(x[j][0] - x[i][0]) + (x[j][1] - x[i][1])*(x[j][1] - x[i][1]));
+      d_ni = (x[j][0] - x[i][0])*t[j][1] - (x[j][1] - x[i][1])*t[j][0];
+      d_ti = -(x[j][0] - x[i][0])*t[j][0] + (x[j][1] - x[i][1])*t[j][1];
       
       derivative += evaluate_integral_g(mu[i], d_x, d_ni, d_ti, alpha);
     
-    } else if (sqrt((x[0][j] - x[0][i])*(x[0][j] - x[0][i]) + (x[1][j] - x[1][i])*(x[1][j] - x[1][i])) < 0.01) {
+    } else if (sqrt((x[j][0] - x[i][0])*(x[j][0] - x[i][0]) + (x[j][1] - x[i][1])*(x[j][1] - x[i][1])) < 0.01) {
       // Case 4: Use Runge-Kutta 4-5
 
       derivative += evaluate_integral_RK(mu[i], d_x, d_ni, d_ti, alpha);
@@ -125,8 +118,7 @@ double compute_derivative(double** x, double* p, double* mu, \
   return derivative;
 }
 
-double evaluate_integral(double p, double mu_i, double beta_i, double gamma_i, \
-  double* t_i, double* n, double alpha) {
+double evaluate_integral(double mu_i, double beta_i, double gamma_i, double* t_i, double* n, double alpha) {
   
   // Coefficients
   double* c = (double*)malloc(10*sizeof(double));
@@ -189,8 +181,6 @@ double evaluate_integral_g(double mu_i, double d_x, double d_ni, double d_ti, do
   
   return eval;
 }
-
-<<<<<<< HEAD
 
 double evaluate_integral1_RK(double eps, double h, double int_IC, double t_xi, \ 
 									double t_yi, double n_xi, double n_yi, double eta_i) 

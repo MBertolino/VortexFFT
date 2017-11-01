@@ -176,7 +176,162 @@ double evaluate_integral_g(double mu_i, double d_x, double d_ni, double d_ti, do
   return first + second;
 }
 
-//double evaluate_integral_RK() {
-//  
-//  return ;
-//}
+
+double evaluate_integral1_RK(double eps, double h, double int_IC, double t_xi, \ 
+									double t_yi, double n_xi, double n_yi, double eta_i) 
+{
+	double p0 = 0;
+	double p_end = 1;
+	double p;
+	double w = int_IC, w1, w2, R, delta, w_temp, p_temp;
+	int i = 0;
+	
+	while (p < p_end) 
+	{
+		if ((p_end - p) < h)
+		{
+			h = p_end - p;
+		}
+		
+		k1 = h*integrand1(p, w, t_xi, t_yi, n_xi, n_yi, eta_i);     //Func should be integrand1-function
+		w_temp = w + 0.25*k1;
+		p_temp = p + 0.25*h;
+		
+		k2 = h*func(p_temp, w_temp, t_xi, t_yi, n_xi, n_yi, eta_i);
+		w_temp = w + 3.0*k1/32.0 + 9.0*k2/32.0;
+		p_temp = p + 3.0*h/8.0;
+		
+		k3 = h*func(p_temp, w_temp, t_xi, t_yi, n_xi, n_yi, eta_i);
+		w_temp = w + 1932.0*k1/2197.0 -7200.0*k2/2197.0 + 7296.0*k3/2197.0;
+		p_temp = p + 12.0*h/13.0;
+		
+		k4 = h*func(p_temp, w_temp, t_xi, t_yi, n_xi, n_yi, eta_i);
+		w_temp = w + 439.0*k1/216.0 - 8.0*k2 + 3680.0*k3/513.0 - 845.0*k4/4104.0;
+		t_temp = p + h;
+		
+		
+		k5 = h*func(p_temp, w_temp, t_xi, t_yi, n_xi, n_yi, eta_i);
+		w_temp = w - 8.0*k1/27.0 + 2.0*k2 - 3544.0*k3/2565.0 + 1859.0*k4/4104.0 - 11.0*k5/40.0;
+		p_temp = p + 0.5*h;
+		
+		k6 = h*func(p_temp, w_temp, t_xi, t_yi, n_xi, n_yi, eta_i);
+						
+		//RK4 approx
+		w1 = w + 25.0*k1/216.0 + 1408.0*k3/2565.0 + 2197.0*k4/4104.0 - 0.2*k5;
+		//RK5 approx
+		w2 = w + 16.0*k1/135.0 + 6656.0*k3/12825.0 + 28561.0*k4/56430.0 \
+				-9.0*k5/50.0 + 2.0*k6/55.0;
+		
+		//Compute error
+		R = sqrt(w2*w2 - w1*w1)/h;
+		
+		//Calculate update factor
+		delta = 0.84*pow((eps/R), 0.25);
+		
+		//Check if to progress to next step or recalculate current step with
+		// new step size. 		
+		if (R <= eps)
+		{
+			w = w1;
+			p = p + h;
+			h = delta*h;
+			i++;
+		}
+		else
+		{
+			h = delta*h;
+		}
+	}
+	
+	return w;
+}
+
+double integrand1(double p, double w, double t_xi, double t_yi, \
+						double n_xi, double n_yi, double eta_i)
+{
+	double func;
+	func = 1.0/sqrt((p*t_xi*t_xi + p*t_yi*t_yi) \ 
+						+ (eta_i*n_xi*n_xi + eta_i*n_yi*n_yi));
+						
+	return func;
+}
+
+double evaluate_integral2_RK(double eps, double h, double int_IC, double t_xi, \ 
+									double t_yi, double n_xi, double n_yi, double eta_i, \
+									double beta_i, double gamma_i) 
+{
+	double p0 = 0;
+	double p_end = 1;
+	double p;
+	double w = int_IC, w1, w2, R, delta, w_temp, p_temp;
+	int i = 0;
+	
+	while (p < p_end) 
+	{
+		if ((p_end - p) < h)
+		{
+			h = p_end - p;
+		}
+		
+		k1 = h*integrand2(p, w, t_xi, t_yi, n_xi, n_yi, eta_i, beta_i, gamma_i); 
+		w_temp = w + 0.25*k1;
+		p_temp = p + 0.25*h;
+		
+		k2 = h*func(p_temp, w_temp, t_xi, t_yi, n_xi, n_yi, eta_i, beta_i, gamma_i);
+		w_temp = w + 3.0*k1/32.0 + 9.0*k2/32.0;
+		p_temp = p + 3.0*h/8.0;
+		
+		k3 = h*func(p_temp, w_temp, t_xi, t_yi, n_xi, n_yi, eta_i, beta_i, gamma_i);
+		w_temp = w + 1932.0*k1/2197.0 -7200.0*k2/2197.0 + 7296.0*k3/2197.0;
+		p_temp = p + 12.0*h/13.0;
+		
+		k4 = h*func(p_temp, w_temp, t_xi, t_yi, n_xi, n_yi, eta_i, beta_i, gamma_i);
+		w_temp = w + 439.0*k1/216.0 - 8.0*k2 + 3680.0*k3/513.0 - 845.0*k4/4104.0;
+		t_temp = p + h;
+		
+		
+		k5 = h*func(p_temp, w_temp, t_xi, t_yi, n_xi, n_yi, eta_i, beta_i, gamma_i);
+		w_temp = w - 8.0*k1/27.0 + 2.0*k2 - 3544.0*k3/2565.0 + 1859.0*k4/4104.0 - 11.0*k5/40.0;
+		p_temp = p + 0.5*h;
+		
+		k6 = h*func(p_temp, w_temp, t_xi, t_yi, n_xi, n_yi, eta_i, beta_i, gamma_i);
+						
+		//RK4 approx
+		w1 = w + 25.0*k1/216.0 + 1408.0*k3/2565.0 + 2197.0*k4/4104.0 - 0.2*k5;
+		//RK5 approx
+		w2 = w + 16.0*k1/135.0 + 6656.0*k3/12825.0 + 28561.0*k4/56430.0 \
+				-9.0*k5/50.0 + 2.0*k6/55.0;
+		
+		//Compute error
+		R = sqrt(w2*w2 - w1*w1)/h;
+		
+		//Calculate update factor
+		delta = 0.84*pow((eps/R), 0.25);
+		
+		//Check if to progress to next step or recalculate current step with
+		// new step size. 		
+		if (R <= eps)
+		{
+			w = w1;
+			p = p + h;
+			h = delta*h;
+			i++;
+		}
+		else
+		{
+			h = delta*h;
+		}
+	}
+	
+	return w;
+}
+
+double integrand2(double p, double w, double t_xi, double t_yi, double n_xi, \
+						double n_yi, double eta_i, double beta_i, double gamma_i)
+{
+	double func;
+	func = (2.0*beta_i*p + 3.0*gamma_i*p*p)/sqrt((p*t_xi*t_xi + p*t_yi*t_yi) \ 
+														+ (eta_i*n_xi*n_xi + eta_i*n_yi*n_yi));
+	
+	return func;
+}

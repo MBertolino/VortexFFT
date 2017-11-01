@@ -6,6 +6,8 @@
 #define TWOPI 6.2831853071795864769
 
 int main() {
+ // Number of pointssssssssssssssssssssssssssss
+
   
   // Number of points
   int N = 50; // Points

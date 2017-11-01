@@ -41,7 +41,7 @@ int main() {
     // Time integrate with RK4
     
     // Redistribute the nodes
-    
+    // points_reloc();
   }
   
   /*

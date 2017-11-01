@@ -4,6 +4,7 @@
 #include <math.h>
 
 #define TWOPI 6.2831853071795864769
+#define SQRTTWO 1.4142135623730950588
 
 void interpolate(int N, int P, double** x) {
 	
@@ -150,8 +151,8 @@ double evaluate_integral(double p, double mu_i, double beta_i, double gamma_i, \
   second = second/(t_abs*alpha_mu);
   
   // Sum together
-  eval[0] = first*(t_i[0] + mu_i*n_i[0]);
-  eval[1] = second*(t_i[1] + mu_i*n_i[1]);
+  eval[0] = first*(t_i[0] + mu_i*n_i[0]) + second*n_i[0];
+  eval[1] = first*(t_i[1] + mu_i*n_i[1]) + second*n_i[1];
   
   free(c);
   
@@ -167,18 +168,22 @@ double evaluate_integral_g(double mu_i, double d_x, double d_ni, double d_ti, do
   double first = 0;
   double second = 0;
   double eval[2];
+  double p_coef, psq_coef;
 
   for (int n = 0; n < 11; n++) {
     first += g[n];
-    second += ...;
+    
+    p_coef = 2*beta_i/(double)(n - alpha + 2);
+    psq_coef = 3*gamma_i/(double)(n - alpha + 3);
+    second += g[n]*(p_coef + psq_coef);
   }
   
   first = first/pow(d_x, alpha);
   second = second/...;
   
   // Sum together
-  eval[0] = first*(t_i[0] + mu_i*n_i[0]);
-  eval[1] = second*(t_i[1] + mu_i*n_i[1]);
+  eval[0] = first*(t_i[0] + mu_i*n_i[0]) + second*n_i[0];
+  eval[1] = first*(t_i[1] + mu_i*n_i[1]) + second*n_i[1];
   
   free(g);
   
@@ -189,3 +194,29 @@ double evaluate_integral_g(double mu_i, double d_x, double d_ni, double d_ti, do
 //  
 //  return ;
 //}
+
+void points_reloc(double** x, double NP) {
+  
+  double epsilon = 10^-6;
+  double L = 3.0;
+  double a = 2.0/3.0;
+  double v = 0.05; // 0.01, 0.03, 0.05 (Smaller value => Larger densities of points on the curve)
+  
+  // Either calculate all d[j]'s here or use input
+  // Same goes with kappa and h
+  
+  double kappa_bar = 0.5*(kappa[j] + kappa[j+1]);
+  double kappai_breve = 0;
+  double kappa_breve_temp = 0;
+  for (int j = 0; j < NP; j++)
+    kappa_breve_temp += d[j]/(h[i][j]*h[i][j]);
+  for (int j = 0; j < NP; j++)
+    kappai_breve += d[j]*abs(kappa_bar[j])/(h[i][j]*h[i][j])/kappa_breve_temp;
+  double kappai_tilde = pow((kappai_breve*L), a)/(v*L) + SQRTTWO*kappai_breve;
+  double kappai_hat = 0.5*(kappai_tilde + kappaip_tilde);
+  
+  double density = kappai_hat*kappa_hat/(1 + epsilon*kappai_hat/SQRTTWO);
+  double sigmai = 
+  
+  return;
+}

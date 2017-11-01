@@ -350,11 +350,6 @@ double integrand2(double p, double w, double t_xi, double t_yi, double n_xi, \
 	
 	return func;
 }
-=======
-//double evaluate_integral_RK() {
-//  
-//  return ;
-//}
 
 void points_reloc(double** x, double NP) {
   
@@ -381,4 +376,3 @@ void points_reloc(double** x, double NP) {
   
   return;
 }
->>>>>>> fd5bb46268edf7aa9225e769ce3e1e14205e76ba

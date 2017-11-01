@@ -12,15 +12,18 @@ int main() {
   // Number of points
   int N = 50; // Points
   int P = 100;  // Interpolation points
+  int n_dim = 2;
   
   // Interpolation between 2D Euler and Quasi-geostrophic
   alpha = 0.5;
   
   // Coordinates
-  double* x = (double*)malloc(P*N*sizeof(double));
-  double* y = (double*)malloc(P*N*sizeof(double));
-  double* dxdt = (double*)malloc(P*N*sizeof(double));
-  double* dydt = (double*)malloc(P*N*sizeof(double));
+  double** x = (double**)malloc(n_dim*sizeof(double*));
+  double** dxdt = (double**)malloc(n_dim*sizeof(double*));
+  for (int i = 0; i < n_dim; i++) {
+    x[i] = (double*)malloc(P*N*sizeof(double));
+    dxdt[i] = (double*)malloc(P*N*sizeof(double));
+  }
   double derivative;
   
   // Step in time
@@ -29,20 +32,18 @@ int main() {
     // Send in mu, beta, gamma, eta, t and n etc to interpolate
     
     // Interpolate
-    interpolate(x, y, N, P);
+    interpolate(x, N, P);
     
     // Calculate derivatives
     for (int j = 0; j < N*P; j++) {
       // Now we multiply both integrals by (t_x[i] + mu[i]*n_x[i]) which is wrong!! See formula (28)
-      derivative = compute_derivative(x, y, p, mu, beta, gamma, t_x, t_y, n_x, n_y, alpha);
-      dxdt[j] = (t_x[i] + mu[i]*n_x[i])*derivative;
-      dydt[j] = (t_y[i] + mu[i]*n_y[i])*derivative;
+      derivative = compute_derivative(x, p, mu, beta, gamma, t, n, N*P, alpha);
     }
     
     // Time integrate with RK4
     
     // Redistribute the nodes
-    
+    // points_reloc();
   }
   
   /*

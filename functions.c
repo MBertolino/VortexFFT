@@ -5,54 +5,56 @@
 
 #define TWOPI 6.2831853071795864769
 
-void interpolate(int N, int P, double* x, double* y) {
+void interpolate(int N, int P, double** x) {
 	
   double* p = (double*)malloc(P*sizeof(double));
   double* eta = (double*)malloc(P*sizeof(double));
   for (int i = 0; i < P; i++)
     p[i] = (double)i/P;
-  double* t_x = (double*)malloc(N*sizeof(double));
-  double* t_y = (double*)malloc(N*sizeof(double));
-  double* n_x = (double*)malloc(N*sizeof(double));
-  double* n_y = (double*)malloc(N*sizeof(double));
+  double** t = (double**)malloc(n_dim*sizeof(double*));
+  double** n = (double**)malloc(n_dim*sizeof(double*));
+  for (int i = 0; i < N; i++) {
+    t[i] = (double*)malloc(N*sizeof(double));
+    n[i] = (double*)malloc(N*sizeof(double));
+  }
   double* d = (double*)malloc(N*sizeof(double));
   double* kappa = (double*)malloc(N*sizeof(double));
-  double kappa_den_x, kappa_den_y;
+  double kappa_den[2];
   double mu, beta, gamma;
   
   // Generate circle (j*P to avoid the interpolated nodes)
   for (int j = 0; j < N; j++) {
-    x[j*P] = cos(TWOPI*j/(double)N);
-    y[j*P] = sin(TWOPI*j/(double)N);
+    x[0][j*P] = cos(TWOPI*j/(double)N);
+    x[1][j*P] = sin(TWOPI*j/(double)N);
   }
   
   // Calculate t an n
   for (int j = 0; j < N-1; j++) {
-    t_x[j] = x[(j+1)*P] - x[j*P];
-    t_y[j] = y[(j+1)*P] - y[j*P];
-    n_x[j] = -t_y[j];
-    n_y[j] = t_x[j];
-    d[j] = sqrt(t_x[j]*t_x[j] + t_y[j]*t_y[j]);
+    t[0][j] = x[0][(j+1)*P] - x[0][j*P];
+    t[1][j] = x[1][(j+1)*P] - x[1][j*P];
+    n[0][j] = -t[1][j];
+    n[1][j] = t[0][j];
+    d[j] = sqrt(t[0][j]*t[0][j] + t[1][j]*t[1][j]);
   }  
   // Special case j = N-1
-  t_x[N-1] = x[0] - x[(N-1)*P];
-  t_y[N-1] = y[0] - y[(N-1)*P];
-  n_x[N-1] = -t_y[N-1];
-  n_y[N-1] = t_x[N-1];
-  d[N-1] = sqrt(t_x[N-1]*t_x[N-1] + t_y[N-1]*t_y[N-1]);
+  t[0][N-1] = x[0][0] - x[0][(N-1)*P];
+  t[1][N-1] = x[1][0] - x[1][(N-1)*P];
+  n[0][N-1] = -t[1][N-1];
+  n[1][N-1] = t[0][N-1];
+  d[N-1] = sqrt(t[0][N-1]*t[0][N-1] + t[1][N-1]*t[1][N-1]);
   
   // kappa local curvature
-  kappa_den_x = (d[N-1]*d[N-1]*t_x[0] + d[0]*d[0]*t_x[N-1]);
-  kappa_den_y = (d[N-1]*d[N-1]*t_y[0] + d[0]*d[0]*t_y[N-1]);
-  kappa[0] = 2*(t_x[N-1]*t_y[0] - t_y[N-1]*t_x[0])\
-    /sqrt(kappa_den_x*kappa_den_x + kappa_den_y*kappa_den_y);
+  kappa_den[0] = d[N-1]*d[N-1]*t[0][0] + d[0]*d[0]*t[0][N-1];
+  kappa_den[1] = d[N-1]*d[N-1]*t[1][0] + d[0]*d[0]*t[1][N-1];
+  kappa[0] = 2*(t[0][N-1]*t[1][0] - t[1][N-1]*t[0][0])\
+    /sqrt(kappa_den[0]*kappa_den[0] + kappa_den[1]*kappa_den[1]);
   
   for (int j = 1; j < N; j++) {
     // kappa local curvature
-    kappa_den_x = (d[j-1]*d[j-1]*t_x[j] + d[j]*d[j]*t_x[j-1]);
-    kappa_den_y = (d[j-1]*d[j-1]*t_y[j] + d[j]*d[j]*t_y[j-1]);
-    kappa[j] = 2*(t_x[j-1]*t_y[j] - t_y[j-1]*t_x[j])\
-      /sqrt(kappa_den_x*kappa_den_x + kappa_den_y*kappa_den_y);
+    kappa_den[0] = (d[j-1]*d[j-1]*t[0][j] + d[j]*d[j]*t[0][j-1]);
+    kappa_den[1] = (d[j-1]*d[j-1]*t[1][j] + d[j]*d[j]*t[1][j-1]);
+    kappa[j] = 2*(t[0][j-1]*t[1][j] - t[1][j-1]*t[0][j])\
+      /sqrt(kappa_den[0]*kappa_den[0] + kappa_den[1]*kappa_den[1]);
   }
   
   // Construct the cubic interpolation
@@ -65,16 +67,18 @@ void interpolate(int N, int P, double* x, double* y) {
     
     for (int i = 0; i < P; i++) {
       eta[i] = mu*p[i] + beta*p[i]*p[i] + gamma*p[i]*p[i]*p[i];
-      x[j*P + i] = x[j*P] + p[i]*t_x[j] + eta[i]*n_x[j];
-      y[j*P + i] = y[j*P] + p[i]*t_y[j] + eta[i]*n_y[j];
+      x[0][j*P + i] = x[0][j*P] + p[i]*t[0][j] + eta[i]*n[0][j];
+      x[1][j*P + i] = y[1][j*P] + p[i]*t[1][j] + eta[i]*n[1][j];
     }
   }
     
   // Free memory
-  free(t_x);
-  free(t_y);
-  free(n_x);
-  free(n_y);
+  for (int i = 0; i < n_dim; i++) {
+    free(t[i]);
+    free(n[i]);
+  }
+  free(t);
+  free(n);
   free(d);
   free(p);
   free(eta);
@@ -83,40 +87,35 @@ void interpolate(int N, int P, double* x, double* y) {
   return;
 }
 
-double compute_derivative(double* x, double* y, double* p, double* mu, \
-  double* beta, double* gamma, double* t_x, double* t_y, double* n_x, double* n_y, double alpha) {
+double compute_derivative(double** x, double* p, double* mu, \
+  double* beta, double* gamma, double* t, double* n, int NP, double alpha) {
   
-  double derivative = 0;
+  double* derivative;
   double d_x, d_ni, d_ti;
   
   // Evolve the contour integrals
   for (int i = 0; i < N*P; i++) { // i < ???
-    if ((x[j] == x[i]) && (y[j] == y[i])) {
-      derivative += evaluate_integral(p, mu[i], beta[i], gamma[i], t_x[i], t_y[i], n_x[i], n_y[i], alpha);
+    if ((x[0][j] == x[0][i]) && (y[j] == y[i])) {
+      // Case 1: Use formula (29)
+      derivative += evaluate_integral(p, mu[i], beta[i], gamma[i], t[0][i], t[1][i], n[0][i], n[1][i], alpha);
       
-    } else if ((x[j] == x[i+1]) && (y[j] == y[i+1])) {
-    
+    } else if ((x[0][j] == x[0][i+1]) && (x[1][j] == x[1][i+1])) {
+      // Case 2: Use formula (29) with shifted params
       derivative += evaluate_integral(1-p, mu[i] + 2*beta[i] + 3*gamma[i], -beta[i] \
-                                - 3*gamma[i], gamma[i], t_x[i], t_y[i], n_x[i], n_y[i], alpha);
+                                - 3*gamma[i], gamma[i], t[0][i], t[1][i], n[0][i], n[1][i], alpha);
     
-    } else if (sqrt((x[j] - x[i])*(x[j] - x[i]) + (y[j] - y[i])*(y[j] - y[i])) > 0.5) {
-    
-      d_x = sqrt((x[j] - x[i])*(x[j] - x[i]) + (y[j] - y[i])*(y[j] - y[i]));
-      d_ni = (x[j] - x[i])*t_y[j] - (y[j] - y[i])*t_x[j];
-      d_ti = -(x[j] - x[i])*t_x[j] + (y[j] - y[i])*t_y[j];
+    } else if (sqrt((x[0][j] - x[0][i])*(x[0][j] - x[0][i]) + (x[1][j] - x[1][i])*(x[1][j] - x[1][i])) > 0.5) {
+      // Case 3: Use formula (31)
+      d_x = sqrt((x[0][j] - x[0][i])*(x[0][j] - x[0][i]) + (x[1][j] - x[1][i])*(x[1][j] - x[1][i]));
+      d_ni = (x[0][j] - x[0][i])*t[1][j] - (x[1][j] - x[1][i])*t[0][j];
+      d_ti = -(x[0][j] - x[0][i])*t[0][j] + (x[1][j] - x[1][i])*t[1][j];
       
       derivative += evaluate_integral_g(mu[i], d_x, d_ni, d_ti, alpha);
     
-    } else if (sqrt((x[j] - x[i])*(x[j] - x[i]) + (y[j] - y[i])*(y[j] - y[i])) < 0.01) {
-      
-      // Compute integral with RK5.
-      // derivative += evaluate_integral_RK();
-      
-      d_x = sqrt((x[j] - x[i])*(x[j] - x[i]) + (y[j] - y[i])*(y[j] - y[i]));
-      d_ni = (x[j] - x[i])*t_y[j] - (y[j] - y[i])*t_x[j];
-      d_ti = -(x[j] - x[i])*t_x[j] + (y[j] - y[i])*t_y[j];
-      
-      derivative += evaluate_integral_g(mu[i], d_x, d_ni, d_ti, alpha);
+    } else if (sqrt((x[0][j] - x[0][i])*(x[0][j] - x[0][i]) + (x[1][j] - x[1][i])*(x[1][j] - x[1][i])) < 0.01) {
+      // Case 4: Use Runge-Kutta 4-5
+
+      derivative += evaluate_integral_RK(mu[i], d_x, d_ni, d_ti, alpha);
     }
   }
   
@@ -126,7 +125,7 @@ double compute_derivative(double* x, double* y, double* p, double* mu, \
 }
 
 double evaluate_integral(double p, double mu_i, double beta_i, double gamma_i, \
-  double t_xi, double t_yi, double* n_x, double* n_y, double alpha) {
+  double* t_i, double* n, double alpha) {
   
   // Coefficients
   double* c = (double*)malloc(10*sizeof(double));
@@ -134,8 +133,9 @@ double evaluate_integral(double p, double mu_i, double beta_i, double gamma_i, \
   // Compute the integrals
   double first = 0;
   double second = 0;
+  double eval[2];
   double p_coef, psq_coef;
-  double t_abs = pow(sqrt((t_xi*t_xi + t_yi*t_yi)), alpha);
+  double t_abs = pow(sqrt((t_i[0]*t_i[0] + t_i[1]*t_i[1])), alpha);
   double alpha_mu = pow((1 + mu_i*mu_i), 0.5*alpha);
   
   for (int n = 0; n < 11; n++) {
@@ -146,12 +146,16 @@ double evaluate_integral(double p, double mu_i, double beta_i, double gamma_i, \
     second += c[n]*(p_coef + psq_coef);
   }
   
-  first = first/(t_abs*alpha_mu); // Multiply by (t_i + mu*n_i)
-  second = second/(t_abs*alpha_mu); // Multiply by n_i
+  first = first/(t_abs*alpha_mu);
+  second = second/(t_abs*alpha_mu);
+  
+  // Sum together
+  eval[0] = first*(t_i[0] + mu_i*n_i[0]);
+  eval[1] = second*(t_i[1] + mu_i*n_i[1]);
   
   free(c);
   
-  return first + second;
+  return eval;
 }
 
 double evaluate_integral_g(double mu_i, double d_x, double d_ni, double d_ti, double alpha) {
@@ -162,18 +166,23 @@ double evaluate_integral_g(double mu_i, double d_x, double d_ni, double d_ti, do
   // COmpute the integrals
   double first = 0;
   double second = 0;
+  double eval[2];
+
   for (int n = 0; n < 11; n++) {
     first += g[n];
     second += ...;
   }
   
-  first = first/pow(d_x, alpha) // Multiply by (t_i + mu*n_i)
-  second = second/... // Multiply by n_i
+  first = first/pow(d_x, alpha);
+  second = second/...;
   
+  // Sum together
+  eval[0] = first*(t_i[0] + mu_i*n_i[0]);
+  eval[1] = second*(t_i[1] + mu_i*n_i[1]);
   
   free(g);
   
-  return first + second;
+  return eval;
 }
 
 //double evaluate_integral_RK() {

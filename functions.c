@@ -6,23 +6,15 @@
 #define TWOPI 6.2831853071795864769
 #define SQRTTWO 1.4142135623730950588
 
-void interpolate(double** x, int N, int P, int n_dim) {
+void interpolate(double** x, int N, int P, int n_dim, double** t, double** n, double* p,\
+                 double* eta, double* d, double* kappa, double* kappa_den, double* mu,\
+                 double* beta, double* gamma) {
 	
-  double* p = (double*)malloc(P*sizeof(double));
-  double* eta = (double*)malloc(P*sizeof(double));
+ 
+
   for (int i = 0; i < P; i++)
     p[i] = (double)i/P;
-  double** t = (double**)malloc(N*sizeof(double*)); // Should t and n be allocated in main and passed in?
-  double** n = (double**)malloc(N*sizeof(double*));
-  for (int i = 0; i < N; i++) {
-    t[i] = (double*)malloc(n_dim*sizeof(double));
-    n[i] = (double*)malloc(n_dim*sizeof(double));
-  }
-  double* d = (double*)malloc(N*sizeof(double));
-  double* kappa = (double*)malloc(N*sizeof(double));
-  double kappa_den[2];
-  double mu, beta, gamma;
-  
+
   // Calculate t an n
   for (int j = 0; j < N-1; j++) {
     t[j][0] = x[(j+1)*P][0] - x[j*P][0];
@@ -56,42 +48,30 @@ void interpolate(double** x, int N, int P, int n_dim) {
   for (int j = 0; j < N; j++) {
     
     // Cubic interpolation coefficients
-    mu = -(double)1/3*d[j]*kappa[j] - (double)1/6*d[j]*kappa[j+1];
-    beta = 0.5*d[j]*kappa[j];
-    gamma = (double)1/6*d[j]*(kappa[j+1] - kappa[j]);
+    mu[j] = -(double)1/3*d[j]*kappa[j] - (double)1/6*d[j]*kappa[j+1];
+    beta[j] = 0.5*d[j]*kappa[j];
+    gamma[j] = (double)1/6*d[j]*(kappa[j+1] - kappa[j]);
     
     for (int i = 0; i < P; i++) {
-      eta[i] = mu*p[i] + beta*p[i]*p[i] + gamma*p[i]*p[i]*p[i];
+      eta[i] = mu[j]*p[i] + beta[j]*p[i]*p[i] + gamma[j]*p[i]*p[i]*p[i];
       x[j*P + i][0] = x[j*P][0] + p[i]*t[j][0] + eta[i]*n[j][0];
       x[j*P + i][1] = x[j*P][1] + p[i]*t[j][1] + eta[i]*n[j][1];
     }
   }
-    
-  // Free memory
-  for (int i = 0; i < N; i++) {
-    free(t[i]);
-    free(n[i]);
-  }
-  free(t);
-  free(n);
-  free(d);
-  free(p);
-  free(eta);
-  free(kappa);
-  
+
   return;
 }
 
-double compute_derivative(double** x, double* mu, double* beta, double* gamma, double* t, double* n, int NP, double alpha) {
+double compute_derivative(double** x, double* mu, double* beta, double* gamma, double** t, double** n, int NP, double alpha, int j) {
   
   double* derivative;
   double d_x, d_ni, d_ti;
   
   // Evolve the contour integrals
-  for (int i = 0; i < N*P; i++) { // i < ???
+  for (int i = 0; i < NP; i++) { // i < ???
     if ((x[j][0] == x[i][0]) && (x[j][1] == x[i][1])) {
       // Case 1: Use formula (29)
-      derivative += evaluate_integral(mu[i], beta[i], gamma[i], t[i][0], t[i][1], n[i][0], n[i][1], alpha);
+      derivative += evaluate_integral(mu[i], beta[i], gamma[i], t[i][0], t[i][1], n[i][0], n[i][1], alpha); // Look at inputs in these functions
       
     } else if ((x[j][0] == x[i+1][0]) && (x[j][1] == x[i+1][1])) {
       // Case 2: Use formula (29) with shifted params
@@ -112,6 +92,9 @@ double compute_derivative(double** x, double* mu, double* beta, double* gamma, d
       derivative += evaluate_integral_RK(mu[i], d_x, d_ni, d_ti, alpha);
     }
   }
+  /*
+    What is theta?
+  */
   
   derivative *= theta/(double)TWOPI;
   
@@ -186,7 +169,7 @@ double evaluate_integral1_RK(double eps, double h, double int_IC, double t_xi, \
 									double t_yi, double n_xi, double n_yi, double eta_i) 
 {
 	double p0 = 0;
-	double p_end = 1;
+	double p_end = 1; // Declare all variables.
 	double p;
 	double w = int_IC, w1, w2, R, delta, w_temp, p_temp;
 	int i = 0;
@@ -251,18 +234,18 @@ double evaluate_integral1_RK(double eps, double h, double int_IC, double t_xi, \
 	return w;
 }
 
-double integrand1(double p, double w, double t_xi, double t_yi, \
+double integrand1(double p, double w, double t_xi, double t_yi,\
 						double n_xi, double n_yi, double eta_i)
 {
 	double func;
-	func = 1.0/sqrt((p*t_xi*t_xi + p*t_yi*t_yi) \ 
+	func = 1.0/sqrt((p*t_xi*t_xi + p*t_yi*t_yi)\ 
 						+ (eta_i*n_xi*n_xi + eta_i*n_yi*n_yi));
 						
 	return func;
 }
 
-double evaluate_integral2_RK(double eps, double h, double int_IC, double t_xi, \ 
-									double t_yi, double n_xi, double n_yi, double eta_i, \
+double evaluate_integral2_RK(double eps, double h, double int_IC, double t_xi,\ 
+									double t_yi, double n_xi, double n_yi, double eta_i,\
 									double beta_i, double gamma_i) 
 {
 	double p0 = 0;

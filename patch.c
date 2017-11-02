@@ -17,7 +17,7 @@ int main() {
   	
   /*
     2/11-17:
-    Now allocating memory for most functions in main because of reuse in several methods.
+    Now allocating memory for most variables in main because of reuse in several functions.
     Changed function head and calculations to correspond to this in interpolate and compute_derivative.
     To look at may be input into function headers of evaluate_integral and also, how to pass the "t-vector"
     among others.

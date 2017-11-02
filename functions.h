@@ -15,7 +15,7 @@ double evaluate_integral_g(double mu_i, double d_x, double d_ni, double d_ti, do
 double evaluate_integral_RK(double mu_i, double eps, double h, double int_IC, double* t_i,\
 									double* n_i, double eta_i);
 
-double evaluate_integral1_RK(double eps, double h, double int_IC, double* t_i, \ 
+double evaluate_integral1_RK(double eps, double h, double int_IC, double* t_i,\
 									double* n_i, double eta_i);
 
 double evaluate_integral2_RK(double eps, double h, double int_IC, double* t_i,\

@@ -90,7 +90,7 @@ double compute_derivative(double** x, double* mu, double* beta, double* gamma, d
     } else if (sqrt((x[j][0] - x[i][0])*(x[j][0] - x[i][0]) + (x[j][1] - x[i][1])*(x[j][1] - x[i][1])) < 0.01) {
       // Case 4: Use Runge-Kutta 4-5
 
-      derivative += evaluate_integral_RK(mu[i], eps, h, int_IC, t_i, n_i, eta_i);
+      derivative += evaluate_integral_RK(mu[i], eps, h, int_IC, t[i], n[i], eta[i]);
     }
   }
    

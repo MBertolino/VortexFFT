@@ -56,7 +56,7 @@ int main() {
     x[i] = (double*)malloc(n_dim*sizeof(double));
     dxdt[i] = (double*)malloc(n_dim*sizeof(double));
   }
-  double derivative;
+  double* derivative;
   
   // Generate circle. (j*P) to avoid the interpolated nodes)
   for (int j = 0; j < N; j++) {
@@ -74,10 +74,10 @@ int main() {
     
     // Calculate derivatives
     for (int j = 0; j < N*P; j++) {
-      derivative = compute_derivative(x, mu, beta, gamma, t, n, N*P, alpha, j);
+      derivative[j] = compute_derivative(x, mu, beta, gamma, t, n, N*P, alpha, j);
     }
     
-    printf("derivative = %lf\n", derivative);
+    printf("derivative = %lf\n", derivative[1]);
     // Time integrate with RK4
     
     // Redistribute the nodes

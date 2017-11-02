@@ -74,7 +74,6 @@ int main() {
     
     // Calculate derivatives
     for (int j = 0; j < N*P; j++) {
-      // Now we multiply both integrals by (t_x[i] + mu[i]*n_x[i]) which is wrong!! See formula (28)
       derivative = compute_derivative(x, mu, beta, gamma, t, n, N*P, alpha, j);
     }
     

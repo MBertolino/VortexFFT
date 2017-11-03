@@ -28,11 +28,11 @@ int main() {
   
   double* p = (double*)malloc(P*sizeof(double));
   double* eta = (double*)malloc(P*sizeof(double));
-  double** t = (double**)malloc(N*sizeof(double*)); 
-  double** n = (double**)malloc(N*sizeof(double*));
-  double* mu = (double*)malloc(N*sizeof(double*));
-  double* beta = (double*)malloc(N*sizeof(double*));
-  double* gamma = (double*)malloc(N*sizeof(double*));
+  double** t = (double**)malloc(N*P*sizeof(double*)); 
+  double** n = (double**)malloc(N*P*sizeof(double*));
+  double* mu = (double*)malloc(N*P*sizeof(double*));
+  double* beta = (double*)malloc(N*P*sizeof(double*));
+  double* gamma = (double*)malloc(N*P*sizeof(double*));
   for (int i = 0; i < N; i++) {
     t[i] = (double*)malloc(n_dim*sizeof(double));
     n[i] = (double*)malloc(n_dim*sizeof(double));

@@ -14,7 +14,9 @@ int main() {
   int P = 100;  // Interpolation points
   int n_dim = 2;
   int T = 100;
-  	
+  double eps, h;
+  eps = 0.1;
+  h = 0.1;
   /*
     2/11-17:
     Now allocating memory for most variables in main because of reuse in several functions.
@@ -75,7 +77,7 @@ int main() {
     
     // Calculate derivatives
     for (int j = 0; j < N*P; j++) {
-      compute_derivative(dxdt[j], x, mu, beta, gamma, t, n, N*P, alpha, j);
+      compute_derivative(dxdt[j], x, mu, beta, gamma, t, n, N*P, alpha, h, eps, j);
     }
     
     printf("dxdt = %lf\n", dxdt[1][0]);

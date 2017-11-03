@@ -232,7 +232,7 @@ void evaluate_integral_RK(double* dxdt, double mu_i, double beta_i, double gamma
   printf("integral RK\n");
 
   double first = evaluate_integral1_RK(eps, h, int_IC, t_i, n_i, mu_i, beta_i, gamma_i);
-  //double second = evaluate_integral1_RK(eps, h, int_IC, t_i, n_i, eta_i);
+  //double second = evaluate_integral2_RK(eps, h, int_IC, t_i, n_i, mu_i, beta_i, gamma_i);
   printf("integral RK after\n");
 
   
@@ -245,7 +245,7 @@ void evaluate_integral_RK(double* dxdt, double mu_i, double beta_i, double gamma
 double evaluate_integral1_RK(double eps, double h, double int_IC, double* t_i,\
 									double* n_i, double mu_i, double beta_i, double gamma_i)
 {
-	double p = 0;
+	double p = h;
 	double p_end = 1; // Declare all variables.
   double k1, k2, k3, k4, k5, k6;
 	double w = int_IC, w1, w2, R, delta, w_temp, p_temp;  
@@ -317,17 +317,19 @@ double evaluate_integral1_RK(double eps, double h, double int_IC, double* t_i,\
 double integrand1(double p, double w, double* t_i, double* n_i, double mu_i,\
                   double beta_i, double gamma_i)
 {
+	double eta_i = mu_i*p + beta_i*p*p + gamma_i*p*p*p;
+	double alpha = 0.5;
 	double func;
-	func = 1.0/sqrt((p*t_i[0]*t_i[0] + p*t_i[1]*t_i[1])\
-                  + (mu_i*p + beta_i*p*p + gamma_i*p*p*p)*(n_i[0]*n_i[0] +n_i[1]*n_i[1]));
+	func = 1.0/pow(sqrt(p*p*t_i[0]*t_i[0] + 2*p*t_i[0]*eta_i*n_i[0] + eta_i*eta_i*n_i[0]*n_i[0] \
+						+ p*p*t_i[1]*t_i[1] +2*p*t_i[1]*eta_i*n_i[1] + eta_i*eta_i*n_i[1]*n_i[1]), alpha);
 						
 	return func;
 }
 /*
 double evaluate_integral2_RK(double eps, double h, double int_IC,\
-            double* t_i, double* n_i, double eta_i, double beta_i, double gamma_i) 
+            double* t_i, double* n_i, double mu_i, double beta_i, double gamma_i) 
 {
-	double p = 0;
+	double p = h;
 	double p_end = 1;
 	//double p;
   double k1, k2, k3, k4, k5, k6;
@@ -395,11 +397,13 @@ double evaluate_integral2_RK(double eps, double h, double int_IC,\
 }
 
 double integrand2(double p, double w, double* t_i, double* n_i,\
-  double eta_i, double beta_i, double gamma_i)
+  double mu_i, double beta_i, double gamma_i)
 {
 	double func;
-	func = (2.0*beta_i*p + 3.0*gamma_i*p*p)/sqrt((p*t_i[0]*t_i[0] + p*t_i[1]*t_i[1])\
-                                               + (eta_i*n_i[0]*n_i[0] + eta_i*n_i[1]*n_i[1]));
+	double alpha = 0.5;
+	double eta_i = mu_i*p + beta_i*p*p + gamma_i*p*p*p;
+	func = (2.0*beta_i*p + 3.0*gamma_i*p*p)/pow(sqrt(p*p*t_i[0]*t_i[0] + 2*p*t_i[0]*eta_i*n_i[0] + eta_i*eta_i*n_i[0]*n_i[0] \
+						+ p*p*t_i[1]*t_i[1] +2*p*t_i[1]*eta_i*n_i[1] + eta_i*eta_i*n_i[1]*n_i[1]), alpha);
 	
 	return func;
 }*/

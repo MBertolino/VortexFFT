@@ -22,11 +22,11 @@ double evaluate_integral1_RK(double eps, double h, double int_IC, double* t_i,\
 									double* n_i, double mu_i, double beta_i, double gamma_i);
 
 double evaluate_integral2_RK(double eps, double h, double int_IC, double* t_i,\
-									double* n_i, double mu_i, double beta_i, double gamma_i);
+									double* n_i, double beta_i, double gamma_i);
 
 double integrand1(double p, double w, double* t_i, double* n_i, double mu_i,\
                   double beta_i, double gamma_i);
 
-double integrand2(double p, double w, double* t_i, double* n_i, double mu_i,\
-                  double beta_i, double gamma_i);
+double integrand2(double p, double w, double* t_i, double* n_i,\
+                  double eta_i, double beta_i, double gamma_i);
 

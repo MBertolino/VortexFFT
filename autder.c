@@ -6,7 +6,7 @@
     c_coeff is padded to length of order
   */
 
-void autder(double* f, double* c_coeff, int N_coeff, double alpha, int order)
+void autder(double* f, double* c_coeff, double alpha, int order)
 {
   // Allocate memory for temporary coefficients
   double* a_ = (double*)malloc(order*sizeof(double));

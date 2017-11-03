@@ -10,22 +10,16 @@ int main() {
 
   
   // Number of points
-  int N = 50; // Points
-  int P = 100;  // Interpolation points
+  int N = 20; // Points
+  int P = 10;  // Interpolation points
   int n_dim = 2;
   int T = 100;
-  double eps, h;
-  eps = 0.1;
-  h = 0.1;
+  double eps = 0.1;
+  double h = 0.1;
+  double alpha = 0.5; // Interpolation between 2D Euler and Quasi-geostrophic
   /*
-    2/11-17:
-    Now allocating memory for most variables in main because of reuse in several functions.
-    Changed function head and calculations to correspond to this in interpolate and compute_derivative.
-    To look at may be input into function headers of evaluate_integral and also, how to pass the "t-vector"
-    among others.
     
     More to look at is declaring variables in the RK-schemes.
-    Also to update functions.h to correspond to current functions and inputs.
     
     Next: general clean up of the code, adding some more comments explaining and clearifying steps.
     Evolve the system and check correctness of solutions.
@@ -47,8 +41,6 @@ int main() {
   double* kappa = (double*)malloc(N*sizeof(double));
   double kappa_den[2];
 
-  // Interpolation between 2D Euler and Quasi-geostrophic
-  double alpha = 0.5;
   
   // Allocate coordinates
   double** x = (double**)malloc(N*P*sizeof(double*));
@@ -58,8 +50,6 @@ int main() {
     x[i] = (double*)malloc(n_dim*sizeof(double));
     dxdt[i] = (double*)malloc(n_dim*sizeof(double));
   }
-  
-  
 
   // Generate circle. (j*P) to avoid the interpolated nodes)
   for (int j = 0; j < N; j++) {
@@ -69,16 +59,13 @@ int main() {
   
   // Step in time
   for (int dt = 0; dt < T; dt++) {
-    
-    // Send in mu, beta, gamma, eta, t and n etc to interpolate
-    
     // Interpolate
     interpolate(x, N, P, n_dim, t, n, p, eta, d, kappa, kappa_den, mu, beta, gamma);
-    
+    printf("dt = %d\n", dt);
+     
     // Calculate derivatives
-    for (int j = 0; j < N*P; j++) {
+    for (int j = 0; j < N*P; j++)
       compute_derivative(dxdt[j], x, mu, beta, gamma, t, n, N*P, alpha, h, eps, j);
-    }
     
     printf("dxdt = %lf\n", dxdt[1][0]);
     // Time integrate with RK4

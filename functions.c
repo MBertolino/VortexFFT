@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <unistd.h>
 
 #define TWOPI 6.2831853071795864769
 #define SQRTTWO 1.4142135623730950588
@@ -10,8 +11,6 @@ void interpolate(double** x, int N, int P, int n_dim, double** t, double** n, do
                  double* eta, double* d, double* kappa, double* kappa_den, double* mu,\
                  double* beta, double* gamma) {
 	
- 
-
   for (int i = 0; i < P; i++)
     p[i] = (double)i/P;
 
@@ -62,34 +61,109 @@ void interpolate(double** x, int N, int P, int n_dim, double** t, double** n, do
   return;
 }
 
+void autder(double* f, double* c_coeff, double alpha, int order)
+{
+  // Allocate memory for temporary coefficients
+  double* a_ = (double*)malloc(order*sizeof(double));
+  
+  a_[0] = 1/c_coeff[0];
+  
+  // calculate temporary coefficients
+  for (int n = 1; n <= order; n++)
+  {
+    for (int j = 1; j <= n; j++)
+    {
+      
+      a_[n] -= c_coeff[j]*a_[n-j];
+    }
+    a_[n] /= c_coeff[0];
+  }
+  
+  f[0] = 1;
+  
+  // calculate tayler coefficients of order, "order" :D
+  for (int n = 1; n <= order; n++)
+  {
+    for (int j = 0; j < n; j++)
+    {
+      f[n] += (n*alpha - j*(alpha + 1))*a_[n-j]*f[j];
+    }
+    f[n] /= (n*a_[0]);
+  }
+  
+  free(a_);
+  
+  return;
+}
+
 void compute_derivative(double* dxdt, double** x, double* mu, double* beta, double* gamma, double** t, double** n, int NP, double alpha, double h, double eps, int j)
 {
   
   double d_x, d_ni, d_ti;
-  int int_IC = 0;
+  int int_IC = 0;      
+  int order = 11;
+
+  // Generate coefficients
+  double c[11];
+  double g[11];
+  double poly_coeff_c[11];
+  double poly_coeff_g[11];
+  for (int i = 0; i < order; i++) {
+    c[i] = 0;
+    g[i] = 0;
+  }
+  for (int i = 5; i < order; i++) {
+    poly_coeff_c[i] = 0;
+    poly_coeff_g[i] = 0;
+  }
+  poly_coeff_c[0] = 1;
+  poly_coeff_g[0] = 1;
+  
   // Evolve the contour integrals
   for (int i = 0; i < NP; i++) { // i < ???
-    if ((x[j][0] == x[i][0]) && (x[j][1] == x[i][1])) {
-      // Case 1: Use formula (29)
-      evaluate_integral(dxdt ,mu[i], beta[i], gamma[i], t[i], n[i], alpha); // Look at inputs in these functions
+
+    d_x = sqrt((x[j][0] - x[i][0])*(x[j][0] - x[i][0]) + (x[j][1] - x[i][1])*(x[j][1] - x[i][1]));
+    d_ni = (x[j][0] - x[i][0])*t[j][1] - (x[j][1] - x[i][1])*t[j][0];
+    d_ti = -(x[j][0] - x[i][0])*t[j][0] + (x[j][1] - x[i][1])*t[j][1];
+    
+      // Generate Taylor coefficients
+    poly_coeff_c[1] = 2*mu[j]*beta[j]/(1 + mu[j]*mu[j]);
+    poly_coeff_c[2] = (beta[j]*beta[j] + 2*mu[j]*gamma[j])/(1 + mu[j]*mu[j]);
+    poly_coeff_c[3] = 2*beta[j]*gamma[j]/(1 + mu[j]*mu[j]);
+    poly_coeff_c[4] = gamma[j]*gamma[j]/(1 + mu[j]*mu[j]);
       
-    } else if ((x[j][0] == x[i+1][0]) && (x[j][1] == x[i+1][1])) {
+    poly_coeff_g[1] = (d_ti + d_ni*mu[j])/(d_x*d_x);
+    poly_coeff_g[2] = ((t[j][0]*t[j][0] + t[j][1]*t[j][1]) + mu[j]*mu[j]*(n[j][0]*n[j][0] + n[j][1]*n[j][1]) + d_x*beta[j])/(d_x*d_x);
+    poly_coeff_g[3] = (2*mu[j]*beta[j]*(n[j][0]*n[j][0] + n[j][1]*n[j][1]) + d_ni*gamma[j])/(d_x*d_x);
+    poly_coeff_g[4] = ((beta[j] + 2*mu[j]*gamma[j])*(n[j][0]*n[j][0] + n[j][1]*n[j][1]))/(d_x*d_x);
+    poly_coeff_g[5] = 2*beta[j]*gamma[j]*(n[j][0]*n[j][0] + n[j][1]*n[j][1])/(d_x*d_x);
+    poly_coeff_g[6] = gamma[j]*gamma[j]/6/(d_x*d_x);
+      
+    autder(c, poly_coeff_c, order, alpha);
+    autder(g, poly_coeff_g, order, 0.5*alpha);
+    
+    printf("i = %d\n", i);
+    // Evaluate integrals
+    if ((x[j][0] == x[i][0]) && (x[j][1] == x[i][1])) {
+      printf("Case 1\n");
+      // Case 1: Use formula (29)
+      evaluate_integral(dxdt, mu[i], beta[i], gamma[i], t[i], n[i], c, alpha); // Look at inputs in these functions
+      
+    } else if ((x[j][0] == x[i-1][0]) && (x[j][1] == x[i-1][1])) {
+      printf("Case 2\n");
       // Case 2: Use formula (29) with shifted params
       evaluate_integral(dxdt, mu[i] + 2*beta[i] + 3*gamma[i], -beta[i] \
-                                - 3*gamma[i], gamma[i], t[i], n[i], alpha);
+                                - 3*gamma[i], gamma[i], t[i], n[i], c, alpha);
     
     } else if (sqrt((x[j][0] - x[i][0])*(x[j][0] - x[i][0]) + (x[j][1] - x[i][1])*(x[j][1] - x[i][1])) > 0.5) {
-      // Case 3: Use formula (31)
-      d_x = sqrt((x[j][0] - x[i][0])*(x[j][0] - x[i][0]) + (x[j][1] - x[i][1])*(x[j][1] - x[i][1]));
-      d_ni = (x[j][0] - x[i][0])*t[j][1] - (x[j][1] - x[i][1])*t[j][0];
-      d_ti = -(x[j][0] - x[i][0])*t[j][0] + (x[j][1] - x[i][1])*t[j][1];
-      
-      evaluate_integral_g(dxdt, mu[i], beta[i], gamma[i], d_x, d_ni, d_ti, t[i], n[i], alpha);
+      printf("Case 3\n");
+      // Case 3: Use formula (31)      
+      evaluate_integral_g(dxdt, mu[i], beta[i], gamma[i], d_x, d_ni, d_ti, t[i], n[i], g, alpha);
 
-    } else if (sqrt((x[j][0] - x[i][0])*(x[j][0] - x[i][0]) + (x[j][1] - x[i][1])*(x[j][1] - x[i][1])) < 0.01) {
+    //} else if (sqrt((x[j][0] - x[i][0])*(x[j][0] - x[i][0]) + (x[j][1] - x[i][1])*(x[j][1] - x[i][1])) < 0.01) {
+    } else {
+      printf("Case 4\n");
       // Case 4: Use Runge-Kutta 4-5
-      
-
       evaluate_integral_RK(dxdt, mu[i], beta[i], gamma[i], eps, h, int_IC, t[i], n[i]);
     }
   }
@@ -100,10 +174,7 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
   return;
 }
 
-void evaluate_integral(double* dxdt, double mu_i, double beta_i, double gamma_i, double* t_i, double* n_i, double alpha) {
-  
-  // Coefficients
-  double* c = (double*)malloc(10*sizeof(double));
+void evaluate_integral(double* dxdt, double mu_i, double beta_i, double gamma_i, double* t_i, double* n_i, double* c, double alpha) {
   
   // Compute the integrals
   double first = 0;
@@ -126,16 +197,11 @@ void evaluate_integral(double* dxdt, double mu_i, double beta_i, double gamma_i,
   // Sum together
   dxdt[0] += first*(t_i[0] + mu_i*n_i[0]) + second*n_i[0];
   dxdt[1] += first*(t_i[1] + mu_i*n_i[1]) + second*n_i[1];
-  
-  free(c);
-  
+    
   return;
 }
 
-void evaluate_integral_g(double* dxdt, double mu_i, double beta_i, double gamma_i, double d_x, double d_ni, double d_ti, double* t_i, double* n_i, double alpha) {
-  
-  // Coefficients
-  double* g = (double*)malloc(10*sizeof(double));
+void evaluate_integral_g(double* dxdt, double mu_i, double beta_i, double gamma_i, double d_x, double d_ni, double d_ti, double* t_i, double* n_i, double* g, double alpha) {
   
   // COmpute the integrals
   double first = 0;
@@ -157,17 +223,18 @@ void evaluate_integral_g(double* dxdt, double mu_i, double beta_i, double gamma_
   dxdt[0] += first*(t_i[0] + mu_i*n_i[0]) + second*n_i[0];
   dxdt[1] += first*(t_i[1] + mu_i*n_i[1]) + second*n_i[1];
   
-  free(g);
-  
   return;
 }
 
 void evaluate_integral_RK(double* dxdt, double mu_i, double beta_i, double gamma_i,\
                           double eps, double h, double int_IC, double* t_i, double* n_i)
 {
+  printf("integral RK\n");
 
   double first = evaluate_integral1_RK(eps, h, int_IC, t_i, n_i, mu_i, beta_i, gamma_i);
   //double second = evaluate_integral1_RK(eps, h, int_IC, t_i, n_i, eta_i);
+  printf("integral RK after\n");
+
   
   dxdt[0] += first*(t_i[0] + mu_i*n_i[0]);// + second*n_i[0];
   dxdt[1] += first*(t_i[1] + mu_i*n_i[1]);// + second*n_i[1];
@@ -180,7 +247,6 @@ double evaluate_integral1_RK(double eps, double h, double int_IC, double* t_i,\
 {
 	double p = 0;
 	double p_end = 1; // Declare all variables.
-	// double p;
   double k1, k2, k3, k4, k5, k6;
 	double w = int_IC, w1, w2, R, delta, w_temp, p_temp;  
 	int i = 0;
@@ -196,6 +262,8 @@ double evaluate_integral1_RK(double eps, double h, double int_IC, double* t_i,\
 		k1 = h*integrand1(p, w, t_i, n_i, mu_i, beta_i, gamma_i);     //Func should be integrand1-function
 		w_temp = w + 0.25*k1;
 		p_temp = p + 0.25*h;
+    printf("h = %lf\n", h);
+    sleep(1);
 		
 		k2 = h*integrand1(p_temp, w_temp, t_i, n_i, mu_i, beta_i, gamma_i);
 		w_temp = w + 3.0*k1/32.0 + 9.0*k2/32.0;

@@ -1,15 +1,18 @@
 void interpolate(double** x, int N, int P, int n_dim, double** t, double** n, double* p,\
                  double* eta, double* d, double* kappa, double* kappa_den, double* mu,\
                  double* beta, double* gamma); 
+
+void autder(double* f, double* c_coeff, double alpha, int order);
+
 // Return the derivative of x
 void compute_derivative(double* dxdt, double** x, double* mu, double* beta, double* gamma, double** t, double** n, int NP, double alpha, double h, double eps, int j);
 
 // Evaluate integral in case 1 and 2
 void evaluate_integral(double* dxdt, double mu_i, double beta_i, double gamma_i,\
-  double* t_i, double* n_i, double alpha);
+  double* t_i, double* n_i, double* c, double alpha);
 
 // Evaluate integral in case 3
-void evaluate_integral_g(double* dxdt, double mu_i, double beta_i, double gamma_i, double d_x, double d_ni, double d_ti, double* t_i, double* n_i, double alpha);
+void evaluate_integral_g(double* dxdt, double mu_i, double beta_i, double gamma_i, double d_x, double d_ni, double d_ti, double* t_i, double* n_i, double* g, double alpha);
 
 // Evaluate integral in case 4
 void evaluate_integral_RK(double* dxdt, double mu_i, double beta_i, double gamma_i,\

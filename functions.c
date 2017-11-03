@@ -262,7 +262,6 @@ double evaluate_integral1_RK(double eps, double h, double int_IC, double* t_i,\
 		k1 = h*integrand1(p, w, t_i, n_i, mu_i, beta_i, gamma_i);     //Func should be integrand1-function
 		w_temp = w + 0.25*k1;
 		p_temp = p + 0.25*h;
-    printf("h = %lf\n", h);
     sleep(1);
 		
 		k2 = h*integrand1(p_temp, w_temp, t_i, n_i, mu_i, beta_i, gamma_i);
@@ -296,6 +295,7 @@ double evaluate_integral1_RK(double eps, double h, double int_IC, double* t_i,\
 		//Calculate update factor
 		delta = 0.84*pow((eps/R), 0.25);
 		
+    printf("h = %lf\n", h);
 		//Check if to progress to next step or recalculate current step with
 		// new step size. 		
 		if (R <= eps)

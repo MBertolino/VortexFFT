@@ -2,10 +2,12 @@ void interpolate(double** x, int N, int P, int n_dim, double** t, double** n, do
                  double* eta, double* d, double* kappa, double* kappa_den, double* mu,\
                  double* beta, double* gamma); 
 
+void local_coeffs(int NP, double** x, double** t_loc, double** n_loc, double* mu_loc, double* beta_loc, double* gamma_loc);
+
 void autder(double* f, double* c_coeff, double alpha, int order);
 
 // Return the derivative of x
-void compute_derivative(double* dxdt, double** x, double* mu, double* beta, double* gamma, double** t, double** n, int NP, double alpha, double h, double eps, int j);
+void compute_derivative(double* dxdt, double** x, double* mu, double* beta, double* gamma, double** t, double** n, int P, double alpha, double h, double eps, int j);
 
 // Evaluate integral in case 1 and 2
 void evaluate_integral(double* dxdt, double mu_i, double beta_i, double gamma_i,\

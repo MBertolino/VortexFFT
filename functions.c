@@ -138,7 +138,7 @@ void autder(double* f, double* c_coeff, double alpha, int order)
   return;
 }
 
-void compute_derivative(double* dxdt, double** x, double* mu, double* beta, double* gamma, double** t, double** n, int P, double alpha, double h, double eps, int j)
+void compute_derivative(double* dxdt, double** x, double* mu, double* beta, double* gamma, double** t, double** n, int N, int P, double alpha, double h, double eps, int j)
 {
   
   double d_x, d_ni, d_ti, d_xi;
@@ -164,54 +164,79 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
   
   // Evolve the contour integrals
   for (int i = 0; i < P; i++) { // i < ???
-    printf("i = %d\n", i);
-    ij = i+j;
+    ij = i+j*P;
+    //printf("ij = %d\n", ij);
+    
     d_x = sqrt((x[j][0] - x[ij][0])*(x[j][0] - x[ij][0]) + (x[j][1] - x[ij][1])*(x[j][1] - x[ij][1]));
     d_ti = -((x[j][0] - x[ij][0])*t[j][0] + (x[j][1] - x[ij][1])*t[j][1]);
     d_ni = -((x[j][0] - x[ij][0])*n[j][0] + (x[j][1] - x[ij][1])*n[j][1]);
-    
     // Distance between x_i and x_{i+1}
-    d_xi = sqrt((x[ij+1][0] - x[ij][0])*(x[ij+1][0] - x[ij][0]) + (x[ij+1][1] - x[ij][1])*(x[ij+1][1] - x[ij][1]));
-    
-    // Generate Taylor coefficients
-    poly_coeff_c[1] = 2*mu[ij]*beta[ij]/(1 + mu[ij]*mu[ij]);
-    poly_coeff_c[2] = (beta[ij]*beta[ij] + 2*mu[ij]*gamma[ij])/(1 + mu[ij]*mu[ij]);
-    poly_coeff_c[3] = 2*beta[ij]*gamma[ij]/(1 + mu[ij]*mu[ij]);
-    poly_coeff_c[4] = gamma[ij]*gamma[ij]/(1 + mu[ij]*mu[ij]);
-      
-    poly_coeff_g[1] = (d_ti + d_ni*mu[j+i])/(d_x*d_x);
-    poly_coeff_g[2] = ((t[ij][0]*t[ij][0] + t[ij][1]*t[ij][1]) + mu[ij]*mu[ij]*(n[ij][0]*n[ij][0] + n[ij][1]*n[ij][1]) + d_x*beta[ij])/(d_x*d_x);
-    poly_coeff_g[3] = (2*mu[ij]*beta[ij]*(n[ij][0]*n[ij][0] + n[ij][1]*n[ij][1]) + d_ni*gamma[ij])/(d_x*d_x);
-    poly_coeff_g[4] = ((beta[ij] + 2*mu[ij]*gamma[ij])*(n[ij][0]*n[ij][0] + n[ij][1]*n[ij][1]))/(d_x*d_x);
-    poly_coeff_g[5] = 2*beta[ij]*gamma[ij]*(n[ij][0]*n[ij][0] + n[ij][1]*n[j][1])/(d_x*d_x);
-    poly_coeff_g[6] = gamma[ij]*gamma[ij]/6/(d_x*d_x);
-    
-    autder(c, poly_coeff_c, alpha, order); // Should these be divided by two maybe?
-    autder(g, poly_coeff_g, 0.5*alpha, order);
-    
+    if (ij + 1 == N*P) {
+      d_xi = sqrt((x[0][0] - x[ij][0])*(x[0][0] - x[ij][0]) + (x[0][1] - x[ij][1])*(x[0][1] - x[ij][1]));
+    } else {
+      d_xi = sqrt((x[ij+1][0] - x[ij][0])*(x[ij+1][0] - x[ij][0]) + (x[ij+1][1] - x[ij][1])*(x[ij+1][1] - x[ij][1]));
+    }
+
+
     // Evaluate integrals
     if ((x[j][0] == x[ij][0]) && (x[j][1] == x[ij][1])) {
-      printf("Case 1\n");
+      //printf("Case 1\n");
       // Case 1: Use formula (29)
+      
+      // Generate Taylor coefficients
+      poly_coeff_c[1] = 2*mu[ij]*beta[ij]/(1 + mu[ij]*mu[ij]);
+      poly_coeff_c[2] = (beta[ij]*beta[ij] + 2*mu[ij]*gamma[ij])/(1 + mu[ij]*mu[ij]);
+      poly_coeff_c[3] = 2*beta[ij]*gamma[ij]/(1 + mu[ij]*mu[ij]);
+      poly_coeff_c[4] = gamma[ij]*gamma[ij]/(1 + mu[ij]*mu[ij]);
+      
+      autder(c, poly_coeff_c, alpha, order); // Should these be divided by two maybe?
+  
       evaluate_integral(dxdt, mu[ij], beta[ij], gamma[ij], t[ij], n[ij], c, alpha); // Look at inputs in these functions
       
     } else if ((x[j][0] == x[ij-1][0]) && (x[j][1] == x[ij-1][1])) {
-      printf("Case 2\n");
+      //printf("Case 2\n");
       // Case 2: Use formula (29) with shifted params
+      mu[ij] = mu[ij] + 2*beta[ij] + 3*gamma[ij];
+      beta[ij] = -beta[ij] - 3*gamma[ij];
+      
+      // Generate Taylor coefficients
+      poly_coeff_c[1] = 2*mu[ij]*beta[ij]/(1 + mu[ij]*mu[ij]);
+      poly_coeff_c[2] = (beta[ij]*beta[ij] + 2*mu[ij]*gamma[ij])/(1 + mu[ij]*mu[ij]);
+      poly_coeff_c[3] = 2*beta[ij]*gamma[ij]/(1 + mu[ij]*mu[ij]);
+      poly_coeff_c[4] = gamma[ij]*gamma[ij]/(1 + mu[ij]*mu[ij]);
+      
+      autder(c, poly_coeff_c, alpha, order); // Should these be divided by two maybe?
+  
+      evaluate_integral(dxdt, mu[ij], beta[ij], gamma[ij], t[ij], n[ij], c, alpha); // Look at inputs in these functions
+      
+      /*
       evaluate_integral(dxdt, mu[ij] + 2*beta[ij] + 3*gamma[ij], - beta[ij] \
                                 - 3*gamma[ij], gamma[ij], t[ij], n[ij], c, alpha);
+      */
     
     } else if (sqrt((x[j][0] - x[ij][0])*(x[j][0] - x[ij][0]) + (x[j][1] - x[ij][1])*(x[j][1] - x[ij][1])) > f*d_xi) {
-      printf("Case 3\n");
-      // Case 3: Use formula (31)      
+      //printf("Case 3\n");
+      // Case 3: Use formula (31)
+
+      // Generate Taylor coefficients
+      poly_coeff_g[1] = (d_ti + d_ni*mu[j+i])/(d_x*d_x);
+      poly_coeff_g[2] = ((t[ij][0]*t[ij][0] + t[ij][1]*t[ij][1]) + mu[ij]*mu[ij]*(n[ij][0]*n[ij][0] + n[ij][1]*n[ij][1]) + d_x*beta[ij])/(d_x*d_x);
+      poly_coeff_g[3] = (2*mu[ij]*beta[ij]*(n[ij][0]*n[ij][0] + n[ij][1]*n[ij][1]) + d_ni*gamma[ij])/(d_x*d_x);
+      poly_coeff_g[4] = ((beta[ij] + 2*mu[ij]*gamma[ij])*(n[ij][0]*n[ij][0] + n[ij][1]*n[ij][1]))/(d_x*d_x);
+      poly_coeff_g[5] = 2*beta[ij]*gamma[ij]*(n[ij][0]*n[ij][0] + n[ij][1]*n[j][1])/(d_x*d_x);
+      poly_coeff_g[6] = gamma[ij]*gamma[ij]/6/(d_x*d_x);
+    
+      autder(g, poly_coeff_g, 0.5*alpha, order);
+      
       evaluate_integral_g(dxdt, mu[ij], beta[ij], gamma[ij], d_x, d_ni, d_ti, t[ij], n[ij], g, alpha);
 
-    //} else if (sqrt((x[j][0] - x[i][0])*(x[j][0] - x[i][0]) + (x[j][1] - x[i][1])*(x[j][1] - x[i][1])) < 0.01) {
+      //} else if (sqrt((x[j][0] - x[i][0])*(x[j][0] - x[i][0]) + (x[j][1] - x[i][1])*(x[j][1] - x[i][1])) < 0.01) {
     } else {
-      printf("Case 4\n");
+      //printf("Case 4\n");
       // Case 4: Use Runge-Kutta 4-5
-      evaluate_integral_RK(dxdt, mu[ij], beta[ij], gamma[ij], eps, h, int_IC, t[ij], n[ij]);
+      evaluate_integral_RK(dxdt, x[ij], x[j], mu[ij], beta[ij], gamma[ij], eps, h, int_IC, t[ij], n[ij]);
     }
+    //printf("dxdt[%d] = %lf\n", j, dxdt[j]);
   }
    
   // What is theta?
@@ -274,14 +299,12 @@ void evaluate_integral_g(double* dxdt, double mu_i, double beta_i, double gamma_
   return;
 }
 
-void evaluate_integral_RK(double* dxdt, double mu_i, double beta_i, double gamma_i,\
+void evaluate_integral_RK(double* dxdt, double* x_i, double* x_j, double mu_i, double beta_i, double gamma_i,\
                           double eps, double h, double int_IC, double* t_i, double* n_i)
 {
 
-  printf("integral RK\n");
-  double first = evaluate_integral1_RK(eps, h, int_IC, t_i, n_i, mu_i, beta_i, gamma_i);
-  double second = evaluate_integral2_RK(eps, h, int_IC, t_i, n_i, mu_i, beta_i, gamma_i);
-  printf("integral RK after\n");
+  double first = evaluate_integral1_RK(x_i, x_j, eps, h, int_IC, t_i, n_i, mu_i, beta_i, gamma_i);
+  double second = evaluate_integral2_RK(x_i, x_j, eps, h, int_IC, t_i, n_i, mu_i, beta_i, gamma_i);
   
   dxdt[0] += first*(t_i[0] + mu_i*n_i[0]) + second*n_i[0];
   dxdt[1] += first*(t_i[1] + mu_i*n_i[1]) + second*n_i[1];
@@ -289,7 +312,7 @@ void evaluate_integral_RK(double* dxdt, double mu_i, double beta_i, double gamma
   return;
 }
 
-double evaluate_integral1_RK(double eps, double h, double int_IC, double* t_i,\
+double evaluate_integral1_RK(double* x_i, double* x_j, double eps, double h, double int_IC, double* t_i,\
 									double* n_i, double mu_i, double beta_i, double gamma_i)
 {
 	double p = h;
@@ -306,27 +329,27 @@ double evaluate_integral1_RK(double eps, double h, double int_IC, double* t_i,\
 			h = p_end - p;
 		}
 		
-		k1 = h*integrand1(p, w, t_i, n_i, mu_i, beta_i, gamma_i);     //Func should be integrand1-function
+		k1 = h*integrand1(x_i, x_j, p, w, t_i, n_i, mu_i, beta_i, gamma_i);     //Func should be integrand1-function
 		w_temp = w + 0.25*k1;
 		p_temp = p + 0.25*h;
 		
-		k2 = h*integrand1(p_temp, w_temp, t_i, n_i, mu_i, beta_i, gamma_i);
+		k2 = h*integrand1(x_i, x_j, p_temp, w_temp, t_i, n_i, mu_i, beta_i, gamma_i);
 		w_temp = w + 3.0*k1/32.0 + 9.0*k2/32.0;
 		p_temp = p + 3.0*h/8.0;
 		
-		k3 = h*integrand1(p_temp, w_temp, t_i, n_i, mu_i, beta_i, gamma_i);
+		k3 = h*integrand1(x_i, x_j, p_temp, w_temp, t_i, n_i, mu_i, beta_i, gamma_i);
 		w_temp = w + 1932.0*k1/2197.0 -7200.0*k2/2197.0 + 7296.0*k3/2197.0;
 		p_temp = p + 12.0*h/13.0;
 		
-		k4 = h*integrand1(p_temp, w_temp, t_i, n_i, mu_i, beta_i, gamma_i);
+		k4 = h*integrand1(x_i, x_j, p_temp, w_temp, t_i, n_i, mu_i, beta_i, gamma_i);
 		w_temp = w + 439.0*k1/216.0 - 8.0*k2 + 3680.0*k3/513.0 - 845.0*k4/4104.0;
 		p_temp = p + h;
 		
-		k5 = h*integrand1(p_temp, w_temp, t_i, n_i, mu_i, beta_i, gamma_i);
+		k5 = h*integrand1(x_i, x_j, p_temp, w_temp, t_i, n_i, mu_i, beta_i, gamma_i);
 		w_temp = w - 8.0*k1/27.0 + 2.0*k2 - 3544.0*k3/2565.0 + 1859.0*k4/4104.0 - 11.0*k5/40.0;
 		p_temp = p + 0.5*h;
 		
-		k6 = h*integrand1(p_temp, w_temp, t_i, n_i, mu_i, beta_i, gamma_i);
+		k6 = h*integrand1(x_i, x_j, p_temp, w_temp, t_i, n_i, mu_i, beta_i, gamma_i);
 						
 		//RK4 approx
 		w1 = w + 25.0*k1/216.0 + 1408.0*k3/2565.0 + 2197.0*k4/4104.0 - 0.2*k5;
@@ -335,7 +358,8 @@ double evaluate_integral1_RK(double eps, double h, double int_IC, double* t_i,\
 				-9.0*k5/50.0 + 2.0*k6/55.0;
 		
 		//Compute error
-		R = sqrt(w2*w2 - w1*w1)/h;
+		//R = sqrt(w2*w2 - w1*w1)/h;
+    R = sqrt((w2 - w1)*(w2 - w1))/h;
 		
 		//Calculate update factor
 		delta = 0.84*pow((eps/R), 0.25);
@@ -358,23 +382,29 @@ double evaluate_integral1_RK(double eps, double h, double int_IC, double* t_i,\
 	return w;
 }
 
-double integrand1(double p, double w, double* t_i, double* n_i, double mu_i,\
+double integrand1(double* x_i, double* x_j, double p, double w, double* t_i, double* n_i, double mu_i,\
                   double beta_i, double gamma_i)
 {
-	double eta_i = mu_i*p + beta_i*p*p + gamma_i*p*p*p;
+	//double eta_i = mu_i*p + beta_i*p*p + gamma_i*p*p*p;
 	double alpha = 0.5;
 	double func;
-	func = 1.0/pow(sqrt(p*p*t_i[0]*t_i[0] + 2*p*t_i[0]*eta_i*n_i[0] + eta_i*eta_i*n_i[0]*n_i[0] \
+	/*
+  func = 1.0/pow(sqrt(p*p*t_i[0]*t_i[0] + 2*p*t_i[0]*eta_i*n_i[0] + eta_i*eta_i*n_i[0]*n_i[0] \
 						+ p*p*t_i[1]*t_i[1] +2*p*t_i[1]*eta_i*n_i[1] + eta_i*eta_i*n_i[1]*n_i[1]), alpha);
-						
+  */
+  double x_part = (x_j[0] + x_i[0] - ((t_i[0] + mu_i) + (beta_i + gamma_i*p)*p)*p*n_i[0]);
+  double y_part = (x_j[1] + x_i[1] - ((t_i[1] + mu_i) + (beta_i + gamma_i*p)*p)*p*n_i[1]);
+  
+  func = 1/pow(x_part*x_part + y_part*y_part, 0.5*alpha);
+  
 	return func;
 }
 
-double evaluate_integral2_RK(double eps, double h, double int_IC,\
+double evaluate_integral2_RK(double* x_i, double* x_j, double eps, double h, double int_IC,\
             double* t_i, double* n_i, double mu_i, double beta_i, double gamma_i) 
 {
   
-	double p = 0.1;
+	double p = 0;
 	double p_end = 1;
   double k1, k2, k3, k4, k5, k6;
 	double w = int_IC, w1, w2, R, delta, w_temp, p_temp;
@@ -386,47 +416,50 @@ double evaluate_integral2_RK(double eps, double h, double int_IC,\
 		{
 			h = p_end - p;
 		}
-		k1 = h*integrand2(p, w, t_i, n_i, mu_i, beta_i, gamma_i); 
+		k1 = h*integrand2(x_i, x_j, p, w, t_i, n_i, mu_i, beta_i, gamma_i); 
 		w_temp = w + 0.25*k1;
 		p_temp = p + 0.25*h;
 		
-		k2 = h*integrand2(p_temp, w_temp, t_i, n_i, mu_i, beta_i, gamma_i);
+		k2 = h*integrand2(x_i, x_j, p_temp, w_temp, t_i, n_i, mu_i, beta_i, gamma_i);
 		w_temp = w + 3.0*k1/32.0 + 9.0*k2/32.0;
 		p_temp = p + 3.0*h/8.0;
 		
-		k3 = h*integrand2(p_temp, w_temp, t_i, n_i, mu_i, beta_i, gamma_i);
+		k3 = h*integrand2(x_i, x_j, p_temp, w_temp, t_i, n_i, mu_i, beta_i, gamma_i);
 		w_temp = w + 1932.0*k1/2197.0 -7200.0*k2/2197.0 + 7296.0*k3/2197.0;
 		p_temp = p + 12.0*h/13.0;
 		
-		k4 = h*integrand2(p_temp, w_temp, t_i, n_i, mu_i, beta_i, gamma_i);
+		k4 = h*integrand2(x_i, x_j, p_temp, w_temp, t_i, n_i, mu_i, beta_i, gamma_i);
 		w_temp = w + 439.0*k1/216.0 - 8.0*k2 + 3680.0*k3/513.0 - 845.0*k4/4104.0;
 		p_temp = p + h;
 		
-		k5 = h*integrand2(p_temp, w_temp, t_i, n_i, mu_i, beta_i, gamma_i);
+		k5 = h*integrand2(x_i, x_j, p_temp, w_temp, t_i, n_i, mu_i, beta_i, gamma_i);
 		w_temp = w - 8.0*k1/27.0 + 2.0*k2 - 3544.0*k3/2565.0 + 1859.0*k4/4104.0 - 11.0*k5/40.0;
 		p_temp = p + 0.5*h;
 		
-		k6 = h*integrand2(p_temp, w_temp, t_i, n_i, mu_i, beta_i, gamma_i);
+		k6 = h*integrand2(x_i, x_j, p_temp, w_temp, t_i, n_i, mu_i, beta_i, gamma_i);
     
 		//RK4 approx
 		w1 = w + 25.0*k1/216.0 + 1408.0*k3/2565.0 + 2197.0*k4/4104.0 - 0.2*k5;
 		//RK5 approx
 		w2 = w + 16.0*k1/135.0 + 6656.0*k3/12825.0 + 28561.0*k4/56430.0\
 				-9.0*k5/50.0 + 2.0*k6/55.0;
-    printf("k1 = %lf\n", k1);
+    /*printf("k1 = %lf\n", k1);
     printf("k3 = %lf\n", k3);
     printf("k4 = %lf\n", k4);
     printf("k5 = %lf\n", k5);
     printf("k6 = %lf\n", k6);
     printf("w1 = %lf\n", w1);
     printf("w2 = %lf\n", w2);
-		
+		*/
+    
 		//Compute error
-		R = sqrt(w2*w2 - w1*w1)/h;
-    printf("w2*w2 - w1*w1 = %lf\n", w2*w2 - w1*w1);
-    printf("h = %lf\n", h);
-    printf("R = %lf\n", R);
-		
+    //R = sqrt(w2*w2 - w1*w1)/h;
+    //printf("w2*w2 - w1*w1 = %lf\n", w2*w2 - w1*w1);
+    //printf("h = %lf\n", h);
+    //printf("R = %lf\n", R);
+		R = sqrt((w2 - w1)*(w2 - w1))/h;
+    //printf("R = %lf\n", R);
+    
 		//Calculate update factor
 		delta = 0.84*pow((eps/R), 0.25);
 		
@@ -448,7 +481,7 @@ double evaluate_integral2_RK(double eps, double h, double int_IC,\
 	return w;
 }
 
-double integrand2(double p, double w, double* t_i, double* n_i,\
+double integrand2(double* x_i, double* x_j, double p, double w, double* t_i, double* n_i,\
                   double mu_i, double beta_i, double gamma_i)
 {
 	double func;
@@ -457,7 +490,7 @@ double integrand2(double p, double w, double* t_i, double* n_i,\
   //double eta_i = (mu_i + (beta_i + gamma_i*p)*p)*p;
   
   // Tried using Horner's Scheme for better accuracy
-  double a2[2], a3[2], a4[2], a5[2], a6[2];
+  /*double a2[2], a3[2], a4[2], a5[2], a6[2];
   a2[0] = t_i[0]*t_i[0] + 2*t_i[0]*mu_i*n_i[0] + mu_i*mu_i*n_i[0]*n_i[0];
   a2[1] = t_i[1]*t_i[1] + 2*t_i[1]*mu_i*n_i[1] + mu_i*mu_i*n_i[1]*n_i[1];
   a3[0] = 2*t_i[0]*beta_i*n_i[0] + 2*mu_i*beta_i*n_i[0]*n_i[0];
@@ -472,12 +505,17 @@ double integrand2(double p, double w, double* t_i, double* n_i,\
   double y_sq = a2[1] + (a3[1] + (a4[1] + (a5[1] + a6[1]*p)*p)*p)*p;
   
   func = p*(2.0*beta_i + 3.0*gamma_i*p)/pow(p*sqrt(x_sq + y_sq), alpha);
-  /*
+  
   func2 = p*(2.0*beta_i + 3.0*gamma_i*p)/pow(sqrt(p*p*t_i[0]*t_i[0] + 2*p*t_i[0]*eta_i*n_i[0] + eta_i*eta_i*n_i[0]*n_i[0] \
 						+ p*p*t_i[1]*t_i[1] +2*p*t_i[1]*eta_i*n_i[1] + eta_i*eta_i*n_i[1]*n_i[1]), alpha);
   */
-  sleep(1);
-  printf("func = %lf\n", func);
+  double x_part = (x_j[0] + x_i[0] - ((t_i[0] + mu_i) + (beta_i + gamma_i*p)*p)*p*n_i[0]);
+  double y_part = (x_j[1] + x_i[1] - ((t_i[1] + mu_i) + (beta_i + gamma_i*p)*p)*p*n_i[1]);
+  
+  func = p*(2.0*beta_i + 3.0*gamma_i*p)/pow(x_part*x_part + y_part*y_part, 0.5*alpha);
+  
+  //sleep(1);
+  //printf("func = %lf\n", func);
   
 	return func;
 }

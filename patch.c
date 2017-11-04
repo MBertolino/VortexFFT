@@ -15,6 +15,7 @@ int main() {
   double eps = 0.1;
   double h = 0.1;
   double alpha = 0.5; // Interpolation between 2D Euler and Quasi-geostrophic
+  double theta = -1.0;
   /*
     
     Next: general clean up of the code, adding some more comments explaining and clearifying steps.
@@ -74,17 +75,21 @@ int main() {
     // Calculate derivatives
     for (int j = 0; j < N; j++)
     {
-      compute_derivative(dxdt[j], x, mu_loc, beta_loc, gamma_loc, t_loc, n_loc, P, alpha, h, eps, j);
+      compute_derivative(dxdt[j], x, mu_loc, beta_loc, gamma_loc, t_loc, n_loc, N, P, alpha, h, eps, j);
+      dxdt[j][0] = dxdt[j][0]*theta/(TWOPI);
+      dxdt[j][1] = dxdt[j][1]*theta/(TWOPI);
+      printf("dxdt[%d][%d] = %lf\n", j, 0, dxdt[j][0]);
     }
-     
-    printf("dxdt = %lf\n", dxdt[1][0]);
+    printf("\n");
+     for (int j = 0; j < N; j++)
+      printf("dxdt[%d][%d] = %lf\n", j, 1, dxdt[j][1]);
     // Time integrate with RK4
     
     // Redistribute the nodes
     // points_reloc();
   }
   
-  
+  /*
   // Print to file
   char str[80] = "../circle.csv";
   FILE* f = fopen(str, "wb");
@@ -92,7 +97,7 @@ int main() {
     fprintf(f, "%lf,%lf\n", x[i][0], x[i][1]);
   }
   fclose(f);
-  
+  */
   
   // Free memory
   for (int i = 0; i < N*P; i++)

@@ -64,8 +64,10 @@ void interpolate(double** x, int N, int P, int n_dim, double** t, double** n, do
 
 void local_coeffs(int NP, double** x, double** t_loc, double** n_loc, double* mu_loc, double* beta_loc, double* gamma_loc)
 {
-  double d_loc[NP], kappa_loc[NP], kappa_den[2];
-  
+  double* d_loc = (double*)malloc(NP*sizeof(double));
+  double* kappa_loc = (double*)malloc(NP*sizeof(double));
+  double kappa_den[2];
+
   // Calculate t an n
   for (int i = 0; i < NP-1; i++) {
     t_loc[i][0] = x[(i+1)][0] - x[i][0];
@@ -102,6 +104,9 @@ void local_coeffs(int NP, double** x, double** t_loc, double** n_loc, double* mu
     gamma_loc[i] = (double)1/6*d_loc[i]*(kappa_loc[i+1] - kappa_loc[i]);
   }
   
+  free(d_loc);
+  free(kappa_loc);
+  
   return;
 }
 
@@ -109,28 +114,29 @@ void autder(double* f, double* c_coeff, double alpha, int order)
 {
   // Allocate memory for temporary coefficients
   double* a_ = (double*)malloc(order*sizeof(double));
-  a_[0] = 1/c_coeff[0];
-  
-  // calculate temporary coefficients
-  for (int n = 1; n <= order; n++)
+  for (int n = 1; n < order; n++)
+    a_[n] = 0;
+  a_[0] = 1;
+
+  // Calculate temporary coefficients
+  for (int n = 1; n < order; n++)
   {
     for (int j = 1; j <= n; j++)
     {
       a_[n] -= c_coeff[j]*a_[n-j];
     }
-    a_[n] /= c_coeff[0];
   }
   
   f[0] = 1;
   
   // Calculate Taylor coefficients of order, "order" :D
-  for (int n = 1; n <= order; n++)
+  for (int n = 1; n < order; n++)
   {
     for (int j = 0; j < n; j++)
     {
       f[n] += (n*alpha - j*(alpha + 1))*a_[n-j]*f[j];
     }
-    f[n] /= (n*a_[0]);
+    f[n] /= (n+1); // What exactly should it be here?
   }
   
   free(a_);
@@ -145,22 +151,14 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
   int int_IC = 0;      
   int order = 11;
   int ij; // Index i + j
-  double Q = 0.025;
+  double Q = 0.01;
   double f = 1/sqrt(Q);
 
   // Generate coefficients
-  double c[11];
-  double g[11];
-  double poly_coeff_c[11];
-  double poly_coeff_g[11];
-  for (int i = 0; i < order; i++) {
-    c[i] = 0;
-    g[i] = 0;
-    poly_coeff_c[i] = 0;
-    poly_coeff_g[i] = 0;
-  }
-  poly_coeff_c[0] = 1;
-  poly_coeff_g[0] = 1;
+  double c[order];
+  double g[order];
+  double poly_coeff_c[order];
+  double poly_coeff_g[order];
   
   // Evolve the contour integrals
   for (int i = 0; i < P; i++) { // i < ???
@@ -176,26 +174,36 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
     } else {
       d_xi = sqrt((x[ij+1][0] - x[ij][0])*(x[ij+1][0] - x[ij][0]) + (x[ij+1][1] - x[ij][1])*(x[ij+1][1] - x[ij][1]));
     }
-
-
+    
+    // Initialize Taylor coefficients
+    for (int n = 0; n < order; n++) {
+      c[n] = 0;
+      g[n] = 0;
+      poly_coeff_c[n] = 0;
+      poly_coeff_g[n] = 0;
+    }
+    poly_coeff_c[0] = 1;
+    poly_coeff_g[0] = 1;
+    
+    
     // Evaluate integrals
     if ((x[j][0] == x[ij][0]) && (x[j][1] == x[ij][1])) {
-      //printf("Case 1\n");
       // Case 1: Use formula (29)
+      //printf("Case 1\n");
       
       // Generate Taylor coefficients
       poly_coeff_c[1] = 2*mu[ij]*beta[ij]/(1 + mu[ij]*mu[ij]);
       poly_coeff_c[2] = (beta[ij]*beta[ij] + 2*mu[ij]*gamma[ij])/(1 + mu[ij]*mu[ij]);
       poly_coeff_c[3] = 2*beta[ij]*gamma[ij]/(1 + mu[ij]*mu[ij]);
       poly_coeff_c[4] = gamma[ij]*gamma[ij]/(1 + mu[ij]*mu[ij]);
-      
+
       autder(c, poly_coeff_c, alpha, order); // Should these be divided by two maybe?
-  
+      
       evaluate_integral(dxdt, mu[ij], beta[ij], gamma[ij], t[ij], n[ij], c, alpha); // Look at inputs in these functions
       
     } else if ((x[j][0] == x[ij-1][0]) && (x[j][1] == x[ij-1][1])) {
-      //printf("Case 2\n");
       // Case 2: Use formula (29) with shifted params
+      //printf("Case 2\n");
       mu[ij] = mu[ij] + 2*beta[ij] + 3*gamma[ij];
       beta[ij] = -beta[ij] - 3*gamma[ij];
       
@@ -206,14 +214,9 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
       poly_coeff_c[4] = gamma[ij]*gamma[ij]/(1 + mu[ij]*mu[ij]);
       
       autder(c, poly_coeff_c, alpha, order); // Should these be divided by two maybe?
-  
+      
       evaluate_integral(dxdt, mu[ij], beta[ij], gamma[ij], t[ij], n[ij], c, alpha); // Look at inputs in these functions
       
-      /*
-      evaluate_integral(dxdt, mu[ij] + 2*beta[ij] + 3*gamma[ij], - beta[ij] \
-                                - 3*gamma[ij], gamma[ij], t[ij], n[ij], c, alpha);
-      */
-    
     } else if (sqrt((x[j][0] - x[ij][0])*(x[j][0] - x[ij][0]) + (x[j][1] - x[ij][1])*(x[j][1] - x[ij][1])) > f*d_xi) {
       //printf("Case 3\n");
       // Case 3: Use formula (31)
@@ -230,7 +233,6 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
       
       evaluate_integral_g(dxdt, mu[ij], beta[ij], gamma[ij], d_x, d_ni, d_ti, t[ij], n[ij], g, alpha);
 
-      //} else if (sqrt((x[j][0] - x[i][0])*(x[j][0] - x[i][0]) + (x[j][1] - x[i][1])*(x[j][1] - x[i][1])) < 0.01) {
     } else {
       //printf("Case 4\n");
       // Case 4: Use Runge-Kutta 4-5
@@ -519,6 +521,23 @@ double integrand2(double* x_i, double* x_j, double p, double w, double* t_i, dou
   
 	return func;
 }
+/*
+void runge_kutta_2D(double** dxdt, double** x)
+{
+  
+  double k1, k2, k3, k4, k5, k6;
+  double l1, l2, l3, l4, l5, l6;
+	double w = int_IC, w1, w2, R, delta, w_temp, p_temp;
+	int i = 0;
+  
+  k1 = dxdt[j][0];
+  l1 = dxdt[j][1];
+  
+  		
+  
+  return;
+}
+*/
 
 /* To be implemented later
 void points_reloc(double** x, double NP) {

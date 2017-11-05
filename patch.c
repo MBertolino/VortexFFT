@@ -8,20 +8,14 @@
 int main() {
   
   // Number of points
-  int N = 10; // Points
-  int P = 10;  // Interpolation points
+  int N = 4500*2; // Points
+  int P = 2;  // Interpolation points
   int n_dim = 2;
   int T = 100;
   double eps = 0.1;
   double h = 0.1;
   double alpha = 0.5; // Interpolation between 2D Euler and Quasi-geostrophic
   double theta = -1.0;
-  /*
-    
-    Next: general clean up of the code, adding some more comments explaining and clearifying steps.
-    Evolve the system and check correctness of solutions.
-    
-  */
 
   // Allocate coordinates
   double** x = (double**)malloc(N*P*sizeof(double*));
@@ -78,12 +72,15 @@ int main() {
       compute_derivative(dxdt[j], x, mu_loc, beta_loc, gamma_loc, t_loc, n_loc, N, P, alpha, h, eps, j);
       dxdt[j][0] = dxdt[j][0]*theta/(TWOPI);
       dxdt[j][1] = dxdt[j][1]*theta/(TWOPI);
-      printf("dxdt[%d][%d] = %lf\n", j, 0, dxdt[j][0]);
+      //printf("dxdt[%d][%d] = %lf\n", j, 0, dxdt[j][0]);
     }
     printf("\n");
-     for (int j = 0; j < N; j++)
-      printf("dxdt[%d][%d] = %lf\n", j, 1, dxdt[j][1]);
+     //for (int j = 0; j < N; j++)
+      //printf("dxdt[%d][%d] = %lf\n", j, 1, dxdt[j][1]);
+    printf("dxdt[0][0] = %lf\n", dxdt[0][0]);
+    printf("dxdt[0][1] = %lf\n", dxdt[0][1]);
     // Time integrate with RK4
+    
     
     // Redistribute the nodes
     // points_reloc();

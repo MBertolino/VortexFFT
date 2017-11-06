@@ -8,13 +8,13 @@
 int main() {
   
   // Number of points
-  int N = 4500*2; // Points
-  int P = 2;  // Interpolation points
+  int N = 45; // Points
+  int P = 10;  // Interpolation points
   int n_dim = 2;
   int T = 100;
-  double eps = 0.1;
+  double eps = 0.0000001;
   double h = 0.1;
-  double alpha = 0.5; // Interpolation between 2D Euler and Quasi-geostrophic
+  double alpha = 0; // Interpolation between 2D Euler and Quasi-geostrophic
   double theta = -1.0;
 
   // Allocate coordinates
@@ -56,20 +56,19 @@ int main() {
     x[j*P][0] = cos(TWOPI*j/(double)N);
     x[j*P][1] = sin(TWOPI*j/(double)N);
   }
-  
-    
+ 
   // Step in time
   T = 1;
   for (int dt = 0; dt < T; dt++) {
     // Interpolate
     interpolate(x, N, P, n_dim, t, n, p, eta, d, kappa, kappa_den, mu, beta, gamma);
-    printf("dt = %d\n", dt);
+    // printf("dt = %d\n", dt);
     local_coeffs(N*P, x, t_loc, n_loc, mu_loc, beta_loc, gamma_loc);
     
     // Calculate derivatives
     for (int j = 0; j < N; j++)
     {
-      compute_derivative(dxdt[j], x, mu_loc, beta_loc, gamma_loc, t_loc, n_loc, N, P, alpha, h, eps, j);
+      compute_derivative(dxdt[j], x, mu, beta, gamma, t, n, N, P, alpha, h, eps, j);
       dxdt[j][0] = dxdt[j][0]*theta/(TWOPI);
       dxdt[j][1] = dxdt[j][1]*theta/(TWOPI);
       //printf("dxdt[%d][%d] = %lf\n", j, 0, dxdt[j][0]);
@@ -86,7 +85,7 @@ int main() {
     // points_reloc();
   }
   
-  /*
+  
   // Print to file
   char str[80] = "../circle.csv";
   FILE* f = fopen(str, "wb");
@@ -94,7 +93,7 @@ int main() {
     fprintf(f, "%lf,%lf\n", x[i][0], x[i][1]);
   }
   fclose(f);
-  */
+  
   
   // Free memory
   for (int i = 0; i < N*P; i++)

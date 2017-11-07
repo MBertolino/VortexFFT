@@ -6,7 +6,7 @@
 
 #define TWOPI 6.2831853071795864769
 #define SQRTTWO 1.4142135623730950588
-#define PRINT 0
+#define PRINT 1
 
 
 void interpolate(double** x, int N, int P, int n_dim, double** t, double** n, double* p,\
@@ -363,13 +363,82 @@ void evaluate_integral_RK(double* dxdt, double* x_i, double* x_j, double mu_i, d
 double evaluate_integral1_RK(double* x_i, double* x_j, double eps, double h, double int_IC, double* t_i,\
 									double* n_i, double mu_i, double beta_i, double gamma_i, double alpha)
 {
-	double p = h;
-	double p_end = 1; // Declare all variables.
+	double p = 0;
+	double p_end = sqrt((x_i[0] - x_j[0])*(x_i[1] - x_j[1])); // Declare all variables.
   double k1, k2, k3, k4, k5, k6;
-	double w = int_IC, w1, w2, R, delta, w_temp, p_temp;  
-	int i = 0;
+	double w = int_IC, w1, w2, delta, w_temp, p_temp;  
+	long double R;
+  int i = 0;
   
-	
+  /*
+  while (p < p_end)
+  {
+    k1 = h*integrand1(x_i, x_j, w, p, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
+    k2 = h*integrand1(x_i, x_j, w, (p+k1*h), t_i, n_i, mu_i, beta_i, gamma_i, alpha);
+    w += (0.5*k1 + 0.5*k2)*h;
+    p += h;
+  }*/
+  
+
+  do {
+    /*
+    	if ((p_end - p) < h)
+		  {
+		  	h = p_end - p;
+		  }*/
+    
+    k1 = h*integrand1(x_i, x_j, p, w, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
+    p_temp = p + 0.25*h;
+    
+    k2 = h*integrand1(x_i, x_j, p_temp, w, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
+    p_temp = p + 3.0*h/8.0;
+    
+    k3 = h*integrand1(x_i, x_j, p_temp, w, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
+    p_temp = 12.0*h/13.0;
+    
+    k4 = h*integrand1(x_i, x_j, p_temp, w, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
+    p_temp = p + h;
+    
+    k5 = h*integrand1(x_i, x_j, p_temp, w, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
+    p_temp = p + 0.5*h;
+    
+    k6 = h*integrand1(x_i, x_j, p_temp, w, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
+		
+    
+    //RK4 approx
+		w1 = w + 25.0*k1/216.0 + 1408.0*k3/2565.0 + 2197.0*k4/4104.0 - 0.2*k5; 
+    
+    //RK5 approx
+		w2 = w + 16.0*k1/135.0 + 6656.0*k3/12825.0 + 28561.0*k4/56430.0\
+				-9.0*k5/50.0 + 2.0*k6/55.0;
+    
+  
+    
+    
+    R = sqrt((w2 - w1)*(w2 - w1))/h;
+    
+    //Calculate update factor
+		delta = 0.84*pow((eps/R), 0.25);
+    if (R < eps)
+		{
+			w = w1;
+			p = p + h;
+			h *= delta;
+			i++;
+      printf("p = %lf,  h = %lf\n\n ", p, h);
+		}
+		else
+		{
+			h = delta*h;
+		}  
+    
+    
+    
+    printf("R = %1.30Lf, delta = %lf \n", R, delta);
+   // p+=h;
+  }  while (p < p_end);
+  printf("exiting RK4,  i = %d\n", i);
+	/*
 	while (p < p_end) 
 	{
 		if ((p_end - p) < h)
@@ -377,7 +446,7 @@ double evaluate_integral1_RK(double* x_i, double* x_j, double eps, double h, dou
 			h = p_end - p;
 		}
 		
-		k1 = h*integrand1(x_i, x_j, p, w, t_i, n_i, mu_i, beta_i, gamma_i, alpha);     //Func should be integrand1-function
+		k1 = h*integrand1(x_i, x_j, w, p, t_i, n_i, mu_i, beta_i, gamma_i, alpha);     //Func should be integrand1-function
 		w_temp = w + 0.25*k1;
 		p_temp = p + 0.25*h;
 		
@@ -412,7 +481,7 @@ double evaluate_integral1_RK(double* x_i, double* x_j, double eps, double h, dou
 		//Calculate update factor
 		delta = 0.84*pow((eps/R), 0.25);
 		
-    printf("R = %lf,  p = %lf,  h = %lf\n ", R, p, h);
+    printf("delta = %lf,  R = %lf,  p = %lf,  h = %lf,  w = %lf\n ", delta, R, p, h, w);
 
 		//Check if to progress to next step or recalculate current step with
 		// new step size. 		
@@ -420,7 +489,7 @@ double evaluate_integral1_RK(double* x_i, double* x_j, double eps, double h, dou
 		{
 			w = w1;
 			p = p + h;
-			h = delta*h;
+			h *= delta;
 			i++;
       printf("p = %lf,  h = %lf\n\n ", p, h);
 		}
@@ -428,7 +497,7 @@ double evaluate_integral1_RK(double* x_i, double* x_j, double eps, double h, dou
 		{
 			h = delta*h;
 		}
-	}
+	}*/
 	return w;
 }
 
@@ -453,7 +522,7 @@ double evaluate_integral2_RK(double* x_i, double* x_j, double eps, double h, dou
 {
   //	printf("Entering evaluate integral2  RK\n");
 	double p = 0;
-	double p_end = 1;
+	double p_end = sqrt((x_i[0] - x_j[0])*(x_i[1] - x_j[1]));
   double k1, k2, k3, k4, k5, k6;
 	double w = int_IC, w1, w2, R, delta, w_temp, p_temp;
 	int i = 0;

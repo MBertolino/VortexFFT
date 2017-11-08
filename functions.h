@@ -2,8 +2,6 @@ void interpolate(double** x, int N, int P, int n_dim, double** t, double** n, do
                  double* eta, double* d, double* kappa, double* kappa_den, double* mu,\
                  double* beta, double* gamma); 
 
-void local_coeffs(int NP, double** x, double** t_loc, double** n_loc, double* mu_loc, double* beta_loc, double* gamma_loc);
-
 void autder(double* f, double* c_coeff, double alpha, int order);
 
 // Return the derivative of x

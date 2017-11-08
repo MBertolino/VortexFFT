@@ -9,12 +9,12 @@
 int main() {
   
   // Number of points
-  int N = 4; // Points
-  int P = 2;// Interpolation points
+  int N = 10; // Points
+  int P = 5;// Interpolation points
   int n_dim = 2;
   int T = 2;
-  long double eps = 0.000001;
-  long double h = 0.00001;
+  long double eps = 0.001;
+  long double h = 0.001;
   double alpha = 0.5; // Interpolation between 2D Euler and Quasi-geostrophic
   double theta = -1.0;
   double dt = 0.1;
@@ -42,17 +42,10 @@ int main() {
     t[i] = (double*)malloc(n_dim*sizeof(double));
     n[i] = (double*)malloc(n_dim*sizeof(double));
   }
-  double* mu_loc = (double*)malloc(N*P*sizeof(double));
-  double* beta_loc = (double*)malloc(N*P*sizeof(double));
-  double* gamma_loc = (double*)malloc(N*P*sizeof(double));
-  double** t_loc = (double**)malloc(N*P*sizeof(double*));
-  double** n_loc = (double**)malloc(N*P*sizeof(double*));
   for (int i = 0; i < N*P; i++)
   {
     x[i] = (double*)malloc(n_dim*sizeof(double));
     x_temp[i] = (double*)malloc(n_dim*sizeof(double));
-    t_loc[i] = (double*)malloc(n_dim*sizeof(double));
-    n_loc[i] = (double*)malloc(n_dim*sizeof(double));
   }
   
   for (int j = 0; j < N; j++)
@@ -71,6 +64,18 @@ int main() {
   // Interpolate
   interpolate(x, N, P, n_dim, t, n, p, eta, d, kappa, kappa_den, mu, beta, gamma);
   
+  // Print to file  
+  char str[80] = "../circle_";
+  char str2[80] = "";
+  sprintf(str2, "%d", 1);
+  strcat(str, str2);
+  strcat(str, ".csv");
+  FILE* f = fopen(str, "wb");
+  for (int i = 0; i < N*P; i++) {
+    fprintf(f, "%lf,%lf\n", x[i][0], x[i][1]);
+  }
+  fclose(f);
+  
   // Step in time
   T = 1;
   for (int k = 0; k < T; k++) {
@@ -78,10 +83,14 @@ int main() {
     
     for (int j = 0; j < N; j++)
     {
+      //printf("j = %d\n", j);
       compute_derivative(dxdt_k1[j], x, mu, beta, gamma, t, n, N, P, alpha, h, eps, j);
       dxdt_k1[j][0] = dxdt_k1[j][0]*theta/(TWOPI);
       dxdt_k1[j][1] = dxdt_k1[j][1]*theta/(TWOPI);
+      printf("\n");
     }
+    printf("dxdt[0][0] = %lf\n", dxdt_k1[0][0]);
+    printf("dxdt[0][1] = %lf\n", dxdt_k1[0][1]);
     
     /*
     // Runge-Kutta
@@ -177,18 +186,22 @@ int main() {
   for (int i = 0; i < N*P; i++)
   { 
     free(x[i]);
-    free(t_loc[i]);
-    free(n_loc[i]);
+    free(x_temp[i]);
   }
   free(x);
-  free(t_loc);
-  free(n_loc);
+  free(x_temp);
   for (int i = 0; i < N; i++) {
     free(dxdt_k1[i]);
+    free(dxdt_k2[i]);
+    free(dxdt_k3[i]);
+    free(dxdt_k4[i]);
     free(t[i]);
     free(n[i]);
   }
   free(dxdt_k1);
+  free(dxdt_k2);
+  free(dxdt_k3);
+  free(dxdt_k4);
   free(t);
   free(n);
   free(d);
@@ -198,11 +211,6 @@ int main() {
   free(mu);
   free(beta);
   free(gamma);
-  
-  free(mu_loc);
-  free(beta_loc);
-  free(gamma_loc);
-
   
   return 0;
 }

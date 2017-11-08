@@ -152,7 +152,7 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
   //printf("Entering compute derivative\n");
   double d_x, d_ni, d_ti, d_xi;
   int order = 11;
-  int ij, jp; // Index i + j
+  int ip, jp; // Index i + j
   double Q = 0.01;
   double f = 1/sqrt(Q);
   jp = j*P;
@@ -161,30 +161,31 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
   double g[order];
   double poly_coeff_c[order];
   double poly_coeff_g[order];
+  double mu_2, beta_2;
   
   // Evolve the contour integrals
-  for (int i = 0; i < P; i++) { // i < ???
-    ij = i+jp;
+  for (int i = 0; i < N; i++) { // i < ???
+    ip = i*P;
     #if PRINT    
       //printf("ij = %d\n", ij);
       //printf("jp = %d\n", jp);
     #endif    
-    if (jp+P == N*P)
-    {
-      d_x = sqrt((x[0][0] - x[jp][0])*(x[0][0] - x[jp][0]) + (x[0][1] - x[jp][1])*(x[0][1] - x[jp][1]));
-      d_ti = -((x[jp][0] - x[0][0])*t[j][0] + (x[jp][1] - x[0][1])*t[j][1]);
-      d_ni = -((x[jp][0] - x[0][0])*n[j][0] + (x[jp][1] - x[0][1])*n[j][1]);
-    } else {
-      d_x = sqrt((x[ij][0] - x[jp][0])*(x[ij][0] - x[jp][0]) + (x[ij][1] - x[jp][1])*(x[ij][1] - x[jp][1]));
-      d_ti = -((x[jp][0] - x[ij][0])*t[j][0] + (x[jp][1] - x[ij][1])*t[j][1]);
-      d_ni = -((x[jp][0] - x[ij][0])*n[j][0] + (x[jp][1] - x[ij][1])*n[j][1]);
-    } 
     
+	  d_x = sqrt((x[ip][0] - x[jp][0])*(x[ip][0] - x[jp][0])\
+				  + (x[ip][1] - x[jp][1])*(x[ip][1] - x[jp][1]));
+
+    d_ti = -((x[jp][0] - x[ip][0])*t[j][0] + (x[jp][1] - x[ip][1])*t[j][1]);
+    d_ni = -((x[jp][0] - x[ip][0])*n[j][0] + (x[jp][1] - x[ip][1])*n[j][1]);
+   
+    printf("asdf\n");
     // Distance between x_i and x_{i+1}
-    if (ij+1 == N*P) {
-      d_xi = sqrt((x[0][0] - x[ij][0])*(x[0][0] - x[ij][0]) + (x[0][1] - x[ij][1])*(x[0][1] - x[ij][1]));
+    if (ip+P == N*P) {
+      d_xi = sqrt((x[0][0] - x[ip][0])*(x[0][0] - x[ip][0])\
+            + (x[0][1] - x[ip][1])*(x[0][1] - x[ip][1]));
     } else {
-      d_xi = sqrt((x[ij+1][0] - x[ij][0])*(x[ij+1][0] - x[ij][0]) + (x[ij+1][1] - x[ij][1])*(x[ij+1][1] - x[ij][1]));
+        d_xi = sqrt((x[ip+P][0] - x[ip][0])*(x[ip+P][0] - x[ip][0])\
+              + (x[ip+P][1] - x[ip][1])*(x[ip+P][1] - x[ip][1])); 
+
     }
     
     // Initialize Taylor coefficients
@@ -199,8 +200,8 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
     
     printf("Enter integrals\n");
     // Evaluate integrals
-    if (ij+1 != N*P) {
-      if (jp == ij) {
+    if (ip+1 != N*P) {
+      if (ip == jp) {
         //Case 1: Use formula (29)
         #if PRINT
           printf("Case 1\n");
@@ -216,26 +217,27 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
       
         evaluate_integral(dxdt, mu[j], beta[j], gamma[j], t[j], n[j], c, alpha); // Look at inputs in these functions
       
-      } else if (jp+P == ij) {
+      } else if (ip == jp + P) {
         // Case 2: Use formula (29) with shifted params
         #if PRINT
           printf("Case 2\n");      
         #endif
         
-        mu[j] = mu[j] + 2*beta[j] + 3*gamma[j];
-        beta[j] = -beta[j] - 3*gamma[j];
+		// Update parameters
+        mu_2 = mu[j] + 2*beta[j] + 3*gamma[j];
+        beta_2 = -beta[j] - 3*gamma[j];
       
         // Generate Taylor coefficients
-        poly_coeff_c[1] = 2*mu[j]*beta[j]/(1 + mu[j]*mu[j]);
-        poly_coeff_c[2] = (beta[j]*beta[j] + 2*mu[j]*gamma[j])/(1 + mu[j]*mu[j]);
-        poly_coeff_c[3] = 2*beta[j]*gamma[j]/(1 + mu[j]*mu[j]);
-        poly_coeff_c[4] = gamma[j]*gamma[j]/(1 + mu[j]*mu[j]);
+        poly_coeff_c[1] = 2*mu_2*beta_2/(1 + mu_2*mu_2);
+        poly_coeff_c[2] = (beta_2*beta_2 + 2*mu_2*gamma[j])/(1 + mu_2*mu_2);
+        poly_coeff_c[3] = 2*beta_2*gamma[j]/(1 + mu_2*mu_2);
+        poly_coeff_c[4] = gamma[j]*gamma[j]/(1 + mu_2*mu_2);
       
         autder(c, poly_coeff_c, alpha, order); // Should these be divided by two maybe?
         
-        evaluate_integral(dxdt, mu[j], beta[j], gamma[j], t[j], n[j], c, alpha); // Look at inputs in these functions
+        evaluate_integral(dxdt, mu_2, beta_2, gamma[j], t[j], n[j], c, alpha); // Look at inputs in these functions
         //printf("dxdt[%d] = %lf\n", j, dxdt[0]);
-      } else if (sqrt((x[jp][0] - x[ij][0])*(x[jp][0] - x[ij][0]) + (x[jp][1] - x[ij][1])*(x[jp][1] - x[ij][1])) > f*d_xi) {
+      } else if (d_x > f*d_xi) {
         #if PRINT   
           printf("Case 3\n");
         #endif
@@ -258,23 +260,25 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
           printf("Case 4\n");
         #endif
         // Case 4: Use Runge-Kutta 4-5
-        evaluate_integral_RK(dxdt, x[ij], x[jp], mu[j], beta[j], gamma[j], eps, h, t[j], n[j], alpha);
+        evaluate_integral_RK(dxdt, x[ip], x[jp], mu[j], beta[j], gamma[j], eps, h, t[j], n[j], alpha);
       }
     } else {
-      // Edge case
-      // Case 2: Use formula (29) with shifted params
+        // Edge case
+        // Case 2: Use formula (29) with shifted params
         #if PRINT
           printf("Edge Case 2\n"); 
           printf("jp = %d \n", jp);     
         #endif
-        mu[j] = mu[j] + 2*beta[j] + 3*gamma[j];
-        beta[j] = -beta[j] - 3*gamma[j];
+		    // Update parameters
+        mu_2 = mu[j] + 2*beta[j] + 3*gamma[j];
+        beta_2 = -beta[j] - 3*gamma[j];
       
         // Generate Taylor coefficients
-        poly_coeff_c[1] = 2*mu[j]*beta[j]/(1 + mu[j]*mu[j]);
-        poly_coeff_c[2] = (beta[j]*beta[j] + 2*mu[j]*gamma[j])/(1 + mu[j]*mu[j]);
-        poly_coeff_c[3] = 2*beta[j]*gamma[j]/(1 + mu[j]*mu[j]);
-        poly_coeff_c[4] = gamma[j]*gamma[j]/(1 + mu[j]*mu[j]);
+        poly_coeff_c[1] = 2*mu_2*beta_2/(1 + mu_2*mu_2);
+        poly_coeff_c[2] = (beta_2*beta_2 + 2*mu_2*gamma[j])/(1 + mu_2*mu_2);
+        poly_coeff_c[3] = 2*beta_2*gamma[j]/(1 + mu_2*mu_2);
+        poly_coeff_c[4] = gamma[j]*gamma[j]/(1 + mu_2*mu_2);
+      
       
         autder(c, poly_coeff_c, alpha, order); // Should these be divided by two maybe?
       
@@ -282,7 +286,7 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
     }
     printf("Exit integrals\n");
   }
-  //printf("Exit compute_derivative\n");
+  printf("Exit compute_derivative\n");
   
   return;
 }

@@ -6,7 +6,7 @@
 
 #define TWOPI 6.2831853071795864769
 #define SQRTTWO 1.4142135623730950588
-#define PRINT 0
+#define PRINT 1
 
 
 void interpolate(double** x, int N, int P, int n_dim, double** t, double** n, double* p,\
@@ -149,7 +149,7 @@ void autder(double* f, double* c_coeff, double alpha, int order)
 
 void compute_derivative(double* dxdt, double** x, double* mu, double* beta, double* gamma, double** t, double** n, int N, int P, double alpha, double h, double eps, int j)
 {
-  //	printf("Entering compute derivative\n");
+  //printf("Entering compute derivative\n");
   double d_x, d_ni, d_ti, d_xi;
   int order = 11;
   int ij, jp; // Index i + j
@@ -166,8 +166,8 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
   for (int i = 0; i < P; i++) { // i < ???
     ij = i+jp;
     #if PRINT    
-      printf("ij = %d\n", ij);
-      printf("jp = %d\n", jp);
+      //printf("ij = %d\n", ij);
+      //printf("jp = %d\n", jp);
     #endif    
     if (jp+P == N*P)
     {
@@ -197,6 +197,7 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
     poly_coeff_c[0] = 1;
     poly_coeff_g[0] = 1;
     
+    printf("Enter integrals\n");
     // Evaluate integrals
     if (ij+1 != N*P) {
       if (jp == ij) {
@@ -279,8 +280,10 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
       
         evaluate_integral(dxdt, mu[j], beta[j], gamma[j], t[j], n[j], c, alpha); // Look at inputs in these functions
     }
+    printf("Exit integrals\n");
   }
-
+  //printf("Exit compute_derivative\n");
+  
   return;
 }
 
@@ -382,7 +385,7 @@ double evaluate_integral1_RK(double* x_i, double* x_j, double eps, double h, dou
 		}
     
 		k1 = h*integrand1(x_i, x_j, p, t_i, n_i, mu_i, beta_i, gamma_i, alpha); 
-		p_temp = p + 0.25*h;
+    p_temp = p + 0.25*h;
 		
 		k2 = h*integrand1(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
 		p_temp = p + 3.0*h/8.0;
@@ -407,7 +410,7 @@ double evaluate_integral1_RK(double* x_i, double* x_j, double eps, double h, dou
       
 		// Compute error
 		R = sqrt((Y2 - Y1)*(Y2 - Y1))/h;
-    
+    printf("R = %lf\n", R);
 		//Calculate update factor
 		delta = 0.84*pow((eps/R), 0.25);
 		

@@ -8,13 +8,13 @@
 int main() {
   
   // Number of points
-  int N = 450000; // Points
-  int P = 100;// Interpolation points
+  int N = 450; // Points
+  int P = 3;// Interpolation points
   int n_dim = 2;
   int T = 100;
   long double eps = 0.000001;
   long double h = 0.00001;
-  double alpha = 1; // Interpolation between 2D Euler and Quasi-geostrophic
+  double alpha = 0.5; // Interpolation between 2D Euler and Quasi-geostrophic
   double theta = -1.0;
 
   // Allocate coordinates

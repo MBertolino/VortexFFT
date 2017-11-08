@@ -29,6 +29,6 @@ double evaluate_integral2_RK(double* x_i, double* x_j, double eps, double h, dou
 double integrand1(double* x_i, double* x_j, double p, double w, double* t_i, double* n_i, double mu_i,\
                   double beta_i, double gamma_i, double alpha);
 
-double integrand2(double* x_i, double* x_j, double p, double w, double* t_i, double* n_i,\
+double integrand2(double* x_i, double* x_j, double p, double* t_i, double* n_i,\
                   double mu_i, double beta_i, double gamma_i, double alpha);
 

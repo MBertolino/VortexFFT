@@ -13,7 +13,7 @@ void interpolate(double** x, int N, int P, int n_dim, double** t, double** n, do
                  double* eta, double* d, double* kappa, double* kappa_den, double* mu,\
                  double* beta, double* gamma)
 {
-	//printf("Entering interpolate\n");
+
   for (int i = 0; i < P; i++)
     p[i] = (double)i/P;
 
@@ -60,7 +60,7 @@ void interpolate(double** x, int N, int P, int n_dim, double** t, double** n, do
       x[j*P + i][1] = x[j*P][1] + p[i]*t[j][1] + eta[i]*n[j][1];
     }
   }
-  	//printf("Exiting interpolate\n");
+
   return;
 }
 
@@ -151,7 +151,6 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
 {
   //	printf("Entering compute derivative\n");
   double d_x, d_ni, d_ti, d_xi;
-  int int_IC = 0;      
   int order = 11;
   int ij, jp; // Index i + j
   double Q = 0.01;
@@ -166,8 +165,6 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
   // Evolve the contour integrals
   for (int i = 0; i < P; i++) { // i < ???
     ij = i+jp;
-    //  printf("before j + 1 = %d\n", j+1);
-    //  printf("N = %d\n", N);
     #if PRINT    
       printf("ij = %d\n", ij);
       printf("jp = %d\n", jp);
@@ -199,7 +196,6 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
     }
     poly_coeff_c[0] = 1;
     poly_coeff_g[0] = 1;
-
     
     // Evaluate integrals
     if (ij+1 != N*P) {
@@ -208,6 +204,7 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
         #if PRINT
           printf("Case 1\n");
         #endif
+        
         // Generate Taylor coefficients
         poly_coeff_c[1] = 2*mu[j]*beta[j]/(1 + mu[j]*mu[j]);
         poly_coeff_c[2] = (beta[j]*beta[j] + 2*mu[j]*gamma[j])/(1 + mu[j]*mu[j]);
@@ -221,11 +218,11 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
       } else if (jp+P == ij) {
         // Case 2: Use formula (29) with shifted params
         #if PRINT
-          printf("jp = %d \n", jp);
           printf("Case 2\n");      
         #endif
-        //mu[j] = mu[j] + 2*beta[j] + 3*gamma[j];
-        //beta[j] = -beta[j] - 3*gamma[j];
+        
+        mu[j] = mu[j] + 2*beta[j] + 3*gamma[j];
+        beta[j] = -beta[j] - 3*gamma[j];
       
         // Generate Taylor coefficients
         poly_coeff_c[1] = 2*mu[j]*beta[j]/(1 + mu[j]*mu[j]);
@@ -236,7 +233,7 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
         autder(c, poly_coeff_c, alpha, order); // Should these be divided by two maybe?
         
         evaluate_integral(dxdt, mu[j], beta[j], gamma[j], t[j], n[j], c, alpha); // Look at inputs in these functions
-        printf("dxdt[%d] = %lf\n", j, dxdt[0]);
+        //printf("dxdt[%d] = %lf\n", j, dxdt[0]);
       } else if (sqrt((x[jp][0] - x[ij][0])*(x[jp][0] - x[ij][0]) + (x[jp][1] - x[ij][1])*(x[jp][1] - x[ij][1])) > f*d_xi) {
         #if PRINT   
           printf("Case 3\n");
@@ -260,7 +257,7 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
           printf("Case 4\n");
         #endif
         // Case 4: Use Runge-Kutta 4-5
-        evaluate_integral_RK(dxdt, x[ij], x[jp], mu[j], beta[j], gamma[j], eps, h, int_IC, t[j], n[j], alpha);
+        evaluate_integral_RK(dxdt, x[ij], x[jp], mu[j], beta[j], gamma[j], eps, h, t[j], n[j], alpha);
       }
     } else {
       // Edge case
@@ -281,19 +278,14 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
         autder(c, poly_coeff_c, alpha, order); // Should these be divided by two maybe?
       
         evaluate_integral(dxdt, mu[j], beta[j], gamma[j], t[j], n[j], c, alpha); // Look at inputs in these functions
-    //printf("dxdt[%d] = %lf\n", j, dxdt[j]);
     }
   }
-   
-  // What is theta?
-  //derivative *= theta/(double)TWOPI;
-  //	printf("Exiting compute derivative\n");
+
   return;
 }
 
 void evaluate_integral(double* dxdt, double mu_i, double beta_i, double gamma_i, double* t_i, double* n_i, double* c, double alpha) {
   
-  //	printf("Entering evaluate integral\n");
   // Compute the integrals
   double first = 0;
   double second = 0;
@@ -316,7 +308,7 @@ void evaluate_integral(double* dxdt, double mu_i, double beta_i, double gamma_i,
   // Sum together
   dxdt[0] += first*(t_i[0] + mu_i*n_i[0]) + second*n_i[0];
   dxdt[1] += first*(t_i[1] + mu_i*n_i[1]) + second*n_i[1];
-   // 	printf("Exiting evaluate integral\n");
+
   return;
 }
 
@@ -341,15 +333,15 @@ void evaluate_integral_g(double* dxdt, double mu_i, double beta_i, double gamma_
   // Sum together
   dxdt[0] += first*(t_i[0] + mu_i*n_i[0]) + second*n_i[0];
   dxdt[1] += first*(t_i[1] + mu_i*n_i[1]) + second*n_i[1];
+  
   return;
 }
 
 void evaluate_integral_RK(double* dxdt, double* x_i, double* x_j, double mu_i, double beta_i, double gamma_i,\
-                          double eps, double h, double int_IC, double* t_i, double* n_i, double alpha)
+                          double eps, double h, double* t_i, double* n_i, double alpha)
 {
-  //double first = evaluate_integral1_RK(x_i, x_j, eps, h, int_IC, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
-  double second = evaluate_integral2_RK(x_i, x_j, eps, h, int_IC, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
-  double first = 0;
+  double first = evaluate_integral1_RK(x_i, x_j, eps, h, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
+  double second = evaluate_integral2_RK(x_i, x_j, eps, h, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
   
   dxdt[0] += first*(t_i[0] + mu_i*n_i[0]) + second*n_i[0];
   dxdt[1] += first*(t_i[1] + mu_i*n_i[1]) + second*n_i[1];
@@ -357,188 +349,110 @@ void evaluate_integral_RK(double* dxdt, double* x_i, double* x_j, double mu_i, d
   return;
 }
 
-double evaluate_integral1_RK(double* x_i, double* x_j, double eps, double h, double int_IC, double* t_i,\
+double evaluate_integral1_RK(double* x_i, double* x_j, double eps, double h, double* t_i,\
 									double* n_i, double mu_i, double beta_i, double gamma_i, double alpha)
 {
+  
 	double p = 0;
-	double p_end = sqrt((x_i[0] - x_j[0])*(x_i[1] - x_j[1])); // Declare all variables.
+	double p_end = 1; 
   double k1, k2, k3, k4, k5, k6;
-	double w = int_IC, w1, w2, delta, w_temp, p_temp;  
-	long double R;
-  int i = 0;
+	double Y = 0, Y1, Y2, R, delta, p_temp;
   
   /*
-  while (p < p_end)
-  {
-    k1 = h*integrand1(x_i, x_j, w, p, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
-    k2 = h*integrand1(x_i, x_j, w, (p+k1*h), t_i, n_i, mu_i, beta_i, gamma_i, alpha);
-    w += (0.5*k1 + 0.5*k2)*h;
-    p += h;
-  }*/
+  // Print to file
+  char str[80] = "../w_spike.csv";
+  FILE* f = fopen(str, "wb");
+    
+  while (p < 1) {
+	  printf("p = %lf\n", p);
+    w = integrand1(x_i, x_j, p, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
+    fprintf(f, "%lf,%lf\n", p, Y);
+	  printf("w = %lf\n\n", Y);
+    p = p + 0.001;
+  }
+  fclose(f);
+  sleep(5);
+  */
   
-
-  do {
-    /*
-    	if ((p_end - p) < h)
-		  {
-		  	h = p_end - p;
-		  }*/
-    
-    k1 = h*integrand1(x_i, x_j, p, w, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
-    p_temp = p + 0.25*h;
-    
-    k2 = h*integrand1(x_i, x_j, p_temp, w, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
-    p_temp = p + 3.0*h/8.0;
-    
-    k3 = h*integrand1(x_i, x_j, p_temp, w, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
-    p_temp = 12.0*h/13.0;
-    
-    k4 = h*integrand1(x_i, x_j, p_temp, w, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
-    p_temp = p + h;
-    
-    k5 = h*integrand1(x_i, x_j, p_temp, w, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
-    p_temp = p + 0.5*h;
-    
-    k6 = h*integrand1(x_i, x_j, p_temp, w, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
-		
-    
-    //RK4 approx
-		w1 = w + 25.0*k1/216.0 + 1408.0*k3/2565.0 + 2197.0*k4/4104.0 - 0.2*k5; 
-    
-    //RK5 approx
-		w2 = w + 16.0*k1/135.0 + 6656.0*k3/12825.0 + 28561.0*k4/56430.0\
-				-9.0*k5/50.0 + 2.0*k6/55.0;
-    
-  
-    
-    
-    R = sqrt((w2 - w1)*(w2 - w1))/h;
-    
-    //Calculate update factor
-		delta = 0.84*pow((eps/R), 0.25);
-    if (R < eps)
-		{
-			w = w1;
-			p = p + h;
-			h *= delta;
-			i++;
-      printf("p = %lf,  h = %lf\n\n ", p, h);
-		}
-		else
-		{
-			h = delta*h;
-		}  
-    
-    
-    
-    printf("R = %1.30Lf, delta = %lf \n", R, delta);
-   // p+=h;
-  }  while (p < p_end);
-  printf("exiting RK4,  i = %d\n", i);
-	/*
 	while (p < p_end) 
 	{
 		if ((p_end - p) < h)
 		{
 			h = p_end - p;
 		}
-		
-		k1 = h*integrand1(x_i, x_j, w, p, t_i, n_i, mu_i, beta_i, gamma_i, alpha);     //Func should be integrand1-function
-		w_temp = w + 0.25*k1;
+    
+		k1 = h*integrand1(x_i, x_j, p, t_i, n_i, mu_i, beta_i, gamma_i, alpha); 
 		p_temp = p + 0.25*h;
 		
-		k2 = h*integrand1(x_i, x_j, p_temp, w_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
-		w_temp = w + 3.0*k1/32.0 + 9.0*k2/32.0;
+		k2 = h*integrand1(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
 		p_temp = p + 3.0*h/8.0;
 		
-		k3 = h*integrand1(x_i, x_j, p_temp, w_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
-		w_temp = w + 1932.0*k1/2197.0 -7200.0*k2/2197.0 + 7296.0*k3/2197.0;
+		k3 = h*integrand1(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
 		p_temp = p + 12.0*h/13.0;
 		
-		k4 = h*integrand1(x_i, x_j, p_temp, w_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
-		w_temp = w + 439.0*k1/216.0 - 8.0*k2 + 3680.0*k3/513.0 - 845.0*k4/4104.0;
+		k4 = h*integrand1(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
 		p_temp = p + h;
 		
-		k5 = h*integrand1(x_i, x_j, p_temp, w_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
-		w_temp = w - 8.0*k1/27.0 + 2.0*k2 - 3544.0*k3/2565.0 + 1859.0*k4/4104.0 - 11.0*k5/40.0;
+		k5 = h*integrand1(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
 		p_temp = p + 0.5*h;
 		
-		k6 = h*integrand1(x_i, x_j, p_temp, w_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
-						
+		k6 = h*integrand1(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
+    
 		//RK4 approx
-		w1 = w + 25.0*k1/216.0 + 1408.0*k3/2565.0 + 2197.0*k4/4104.0 - 0.2*k5;
+		Y1 = Y + 25.0*k1/216.0 + 1408.0*k3/2565.0 + 2197.0*k4/4104.0 - 0.2*k5;
+    
 		//RK5 approx
-		w2 = w + 16.0*k1/135.0 + 6656.0*k3/12825.0 + 28561.0*k4/56430.0\
+		Y2 = Y + 16.0*k1/135.0 + 6656.0*k3/12825.0 + 28561.0*k4/56430.0\
 				-9.0*k5/50.0 + 2.0*k6/55.0;
-        
-		//Compute error
-		//R = sqrt(w2*w2 - w1*w1)/h;
-    R = sqrt((w2 - w1)*(w2 - w1))/h;
-		
+      
+		// Compute error
+		R = sqrt((Y2 - Y1)*(Y2 - Y1))/h;
+    
 		//Calculate update factor
 		delta = 0.84*pow((eps/R), 0.25);
 		
-    printf("delta = %lf,  R = %lf,  p = %lf,  h = %lf,  w = %lf\n ", delta, R, p, h, w);
-
-		//Check if to progress to next step or recalculate current step with
+		// Check if to progress to next step or recalculate current step with
 		// new step size. 		
 		if (R <= eps)
 		{
-			w = w1;
+      // Update
+			Y = Y1;
 			p = p + h;
-			h *= delta;
-			i++;
-      printf("p = %lf,  h = %lf\n\n ", p, h);
+			h = delta*h;
 		}
 		else
 		{
+      // Make step smaller
 			h = delta*h;
 		}
-	}*/
-	return w;
+	}
+
+  return Y;
 }
 
-double integrand1(double* x_i, double* x_j, double p, double w, double* t_i, double* n_i, double mu_i,\
+double integrand1(double* x_i, double* x_j, double p, double* t_i, double* n_i, double mu_i,\
                   double beta_i, double gamma_i, double alpha)
 {
-	double func;
-  	
-	/*
-  func = 1.0/pow(sqrt(p*p*t_i[0]*t_i[0] + 2*p*t_i[0]*eta_i*n_i[0] + eta_i*eta_i*n_i[0]*n_i[0] \
-						+ p*p*t_i[1]*t_i[1] +2*p*t_i[1]*eta_i*n_i[1] + eta_i*eta_i*n_i[1]*n_i[1]), alpha);
-  */
-  double x_part = (x_j[0] - x_i[0] - ((t_i[0] + mu_i) + (beta_i + gamma_i*p)*p)*p*n_i[0]);
-  double y_part = (x_j[1] - x_i[1] - ((t_i[1] + mu_i) + (beta_i + gamma_i*p)*p)*p*n_i[1]);
-  func = 1/pow(x_part*x_part + y_part*y_part, 0.5*alpha);
+  double eta_i = (mu_i + (beta_i + gamma_i*p)*p)*p;
+  
+  // Integrand
+  double x_part = (x_j[0] - x_i[0] - t_i[0]*p - eta_i*n_i[0]);
+  double y_part = (x_j[1] - x_i[1] - t_i[1]*p - eta_i*n_i[1]);
+  double w = 1.0/pow(x_part*x_part + y_part*y_part, 0.5*alpha);
 
-  return func;
+  return w;
 }
 
-double evaluate_integral2_RK(double* x_i, double* x_j, double eps, double h, double int_IC,\
+double evaluate_integral2_RK(double* x_i, double* x_j, double eps, double h,\
             double* t_i, double* n_i, double mu_i, double beta_i, double gamma_i, double alpha) 
 {
   
-  // Print to file
-  char str[80] = "../w_spike.csv";
-  FILE* f = fopen(str, "wb");
-  
 	double p = 0;
-	double p_end = 1; //sqrt((x_i[0] - x_j[0])*(x_i[1] - x_j[1]));
+	double p_end = 1; 
   double k1, k2, k3, k4, k5, k6;
-	double w = int_IC, w1, w2, R, delta, w_temp, p_temp;
-	int i = 0;
-	printf("evaluate_integral2_RK\n");
-  while (p < 1) {
-	  printf("p = %lf\n", p);
-    w = integrand2(x_i, x_j, p, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
-    fprintf(f, "%lf,%lf\n", p, w);
-	  printf("w = %lf\n\n", w);
-    p = p + 0.001;
-  }
-  fclose(f);
-  sleep(5);
+	double Y = 0, Y1, Y2, R, delta, p_temp;
   
-	while (p > p_end) 
+	while (p < p_end) 
 	{
 		if ((p_end - p) < h)
 		{
@@ -546,83 +460,69 @@ double evaluate_integral2_RK(double* x_i, double* x_j, double eps, double h, dou
 		}
     
 		k1 = h*integrand2(x_i, x_j, p, t_i, n_i, mu_i, beta_i, gamma_i, alpha); 
-		//w_temp = w + 0.25*k1;
 		p_temp = p + 0.25*h;
 		
 		k2 = h*integrand2(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
-		//w_temp = w + 3.0*k1/32.0 + 9.0*k2/32.0;
 		p_temp = p + 3.0*h/8.0;
 		
 		k3 = h*integrand2(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
-		//w_temp = w + 1932.0*k1/2197.0 -7200.0*k2/2197.0 + 7296.0*k3/2197.0;
 		p_temp = p + 12.0*h/13.0;
 		
 		k4 = h*integrand2(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
-		//w_temp = w + 439.0*k1/216.0 - 8.0*k2 + 3680.0*k3/513.0 - 845.0*k4/4104.0;
 		p_temp = p + h;
 		
 		k5 = h*integrand2(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
-		//w_temp = w - 8.0*k1/27.0 + 2.0*k2 - 3544.0*k3/2565.0 + 1859.0*k4/4104.0 - 11.0*k5/40.0;
 		p_temp = p + 0.5*h;
 		
 		k6 = h*integrand2(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
     
 		//RK4 approx
-		w1 = w + 25.0*k1/216.0 + 1408.0*k3/2565.0 + 2197.0*k4/4104.0 - 0.2*k5;
-		//RK5 approx
-		w2 = w + 16.0*k1/135.0 + 6656.0*k3/12825.0 + 28561.0*k4/56430.0\
+		Y1 = Y + 25.0*k1/216.0 + 1408.0*k3/2565.0 + 2197.0*k4/4104.0 - 0.2*k5;
+
+    //RK5 approx
+		Y2 = Y + 16.0*k1/135.0 + 6656.0*k3/12825.0 + 28561.0*k4/56430.0\
 				-9.0*k5/50.0 + 2.0*k6/55.0;
     
-    printf("h = %lf\n", h);
-    
-		//Compute error
-		R = sqrt((w2 - w1)*(w2 - w1))/h;
+		// Compute error
+		R = sqrt((Y2 - Y1)*(Y2 - Y1))/h;
     
 		//Calculate update factor
 		delta = 0.84*pow((eps/R), 0.25);
 		
-		//Check if to progress to next step or recalculate current step with
+		// Check if to progress to next step or recalculate current step with
 		// new step size. 		
 		if (R <= eps)
 		{
-			w = w1;
+      // Update
+			Y = Y1;
 			p = p + h;
 			h = delta*h;
-			i++;
 		}
 		else
 		{
+      // Make step smaller
 			h = delta*h;
 		}
-    printf("p = %lf\n", p);
 	}
-	//	printf("Exiting evaluate integral2 RK\n");
-	return w;
+  
+  return Y;
 }
 
 double integrand2(double* x_i, double* x_j, double p, double* t_i, double* n_i,\
                   double mu_i, double beta_i, double gamma_i, double alpha)
 {
-	double func;
   double eta_i = (mu_i + (beta_i + gamma_i*p)*p)*p;
   
-  //func = p*(2.0*beta_i + 3.0*gamma_i*p)/pow(p*sqrt(x_sq + y_sq), alpha);
+  // Integrand
+  double x_part = (x_i[0] - x_j[0] - t_i[0]*p + eta_i*n_i[0]);
+  double y_part = (x_i[1] - x_j[1] - t_i[1]*p + eta_i*n_i[1]);
   
-  /*
-  func2 = p*(2.0*beta_i + 3.0*gamma_i*p)/pow(sqrt(p*p*t_i[0]*t_i[0] + 2*p*t_i[0]*eta_i*n_i[0] + eta_i*eta_i*n_i[0]*n_i[0] \
-						+ p*p*t_i[1]*t_i[1] +2*p*t_i[1]*eta_i*n_i[1] + eta_i*eta_i*n_i[1]*n_i[1]), alpha);
-  */
+  double w = p*(2.0*beta_i + 3.0*gamma_i*p)/pow(x_part*x_part + y_part*y_part, 0.5*alpha);
   
-  double x_part = (x_i[0] - x_j[0] - t_i[0]*p + (mu_i + (beta_i + gamma_i*p)*p)*p*n_i[0]);
-  double y_part = (x_i[1] - x_j[1] - t_i[1]*p + (mu_i + (beta_i + gamma_i*p)*p)*p*n_i[1]);
-  
-  //func = p*(2.0*beta_i + 3.0*gamma_i*p)
-  func = 1/pow(x_part*x_part + y_part*y_part, 0.5*alpha);
-  //printf("func = %lf\n", func);
-  //ssleep(1);
-  
-	return func;
+	return w;
 }
+
+
 /*
 void runge_kutta_2D(double** dxdt, double** x)
 {

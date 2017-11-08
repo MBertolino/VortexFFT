@@ -18,15 +18,15 @@ void evaluate_integral_g(double* dxdt, double mu_i, double beta_i, double gamma_
 
 // Evaluate integral in case 4
 void evaluate_integral_RK(double* dxdt, double* x_i, double* x_j, double mu_i, double beta_i, double gamma_i,\
-                          double eps, double h, double int_IC, double* t_i, double* n_i, double alpha);
+                          double eps, double h, double* t_i, double* n_i, double alpha);
 
-double evaluate_integral1_RK(double* x_i, double* x_j, double eps, double h, double int_IC, double* t_i,\
+double evaluate_integral1_RK(double* x_i, double* x_j, double eps, double h, double* t_i,\
 									double* n_i, double mu_i, double beta_i, double gamma_i, double alpha);
 
-double evaluate_integral2_RK(double* x_i, double* x_j, double eps, double h, double int_IC, double* t_i,\
+double evaluate_integral2_RK(double* x_i, double* x_j, double eps, double h, double* t_i,\
 									double* n_i, double mu_i, double beta_i, double gamma_i, double alpha);
 
-double integrand1(double* x_i, double* x_j, double p, double w, double* t_i, double* n_i, double mu_i,\
+double integrand1(double* x_i, double* x_j, double p, double* t_i, double* n_i, double mu_i,\
                   double beta_i, double gamma_i, double alpha);
 
 double integrand2(double* x_i, double* x_j, double p, double* t_i, double* n_i,\

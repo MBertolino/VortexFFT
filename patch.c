@@ -8,8 +8,8 @@
 int main() {
   
   // Number of points
-  int N = 450; // Points
-  int P = 3;// Interpolation points
+  int N = 4500; // Points
+  int P = 2;// Interpolation points
   int n_dim = 2;
   int T = 100;
   long double eps = 0.000001;
@@ -63,7 +63,6 @@ int main() {
     // Interpolate
     interpolate(x, N, P, n_dim, t, n, p, eta, d, kappa, kappa_den, mu, beta, gamma);
     // printf("dt = %d\n", dt);
-    local_coeffs(N*P, x, t_loc, n_loc, mu_loc, beta_loc, gamma_loc);
     
     // Calculate derivatives
     for (int j = 0; j < N; j++)

@@ -1,11 +1,11 @@
-void interpolate(double** x, int N, int P, int n_dim, double** t, double** n, double* p,\
-                 double* eta, double* d, double* kappa, double* kappa_den, double* mu,\
+void interpolate(double** x, int N, int n_dim, double** t, double** n,\
+                 double* d, double* kappa, double* kappa_den, double* mu,\
                  double* beta, double* gamma); 
 
 void autder(double* f, double* c_coeff, double alpha, int order);
 
 // Return the derivative of x
-void compute_derivative(double* dxdt, double** x, double* mu, double* beta, double* gamma, double** t, double** n, int N, int P, double alpha, double h, double eps, int j);
+void compute_derivative(double* dxdt, double** x, double* mu, double* beta, double* gamma, double** t, double** n, int N, double alpha, double h, double eps, int j);
 
 // Evaluate integral in case 1 and 2
 void evaluate_integral(double* dxdt, double mu_i, double beta_i, double gamma_i,\

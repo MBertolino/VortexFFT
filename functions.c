@@ -9,25 +9,22 @@
 #define PRINT 0
 
 
-void interpolate(double** x, int N, int P, int n_dim, double** t, double** n, double* p,\
-                 double* eta, double* d, double* kappa, double* kappa_den, double* mu,\
+void interpolate(double** x, int N, int n_dim, double** t, double** n,\
+                 double* d, double* kappa, double* kappa_den, double* mu,\
                  double* beta, double* gamma)
 {
 
-  for (int i = 0; i < P; i++)
-    p[i] = (double)i/P;
-
   // Calculate t an n
   for (int j = 0; j < N-1; j++) {
-    t[j][0] = x[(j+1)*P][0] - x[j*P][0];
-    t[j][1] = x[(j+1)*P][1] - x[j*P][1];
+    t[j][0] = x[j+1][0] - x[j][0];
+    t[j][1] = x[j+1][1] - x[j][1];
     n[j][0] = -t[j][1];
     n[j][1] = t[j][0];
     d[j] = sqrt(t[j][0]*t[j][0] + t[j][1]*t[j][1]);
   }  
   // Special case j = N-1
-  t[N-1][0] = x[0][0] - x[(N-1)*P][0];
-  t[N-1][1] = x[0][1] - x[(N-1)*P][1];
+  t[N-1][0] = x[0][0] - x[N-1][0];
+  t[N-1][1] = x[0][1] - x[N-1][1];
   n[N-1][0] = -t[N-1][1];
   n[N-1][1] = t[N-1][0];
   d[N-1] = sqrt(t[N-1][0]*t[N-1][0] + t[N-1][1]*t[N-1][1]);
@@ -53,12 +50,6 @@ void interpolate(double** x, int N, int P, int n_dim, double** t, double** n, do
     mu[j] = -(double)1/3*d[j]*kappa[j] - (double)1/6*d[j]*kappa[j+1];
     beta[j] = 0.5*d[j]*kappa[j];
     gamma[j] = (double)1/6*d[j]*(kappa[j+1] - kappa[j]);
-    
-    for (int i = 0; i < P; i++) {
-      eta[i] = mu[j]*p[i] + beta[j]*p[i]*p[i] + gamma[j]*p[i]*p[i]*p[i];
-      x[j*P + i][0] = x[j*P][0] + p[i]*t[j][0] + eta[i]*n[j][0];
-      x[j*P + i][1] = x[j*P][1] + p[i]*t[j][1] + eta[i]*n[j][1];
-    }
   }
 
   return;
@@ -99,15 +90,14 @@ void autder(double* f, double* c_coeff, double alpha, int order)
   return;
 }
 
-void compute_derivative(double* dxdt, double** x, double* mu, double* beta, double* gamma, double** t, double** n, int N, int P, double alpha, double h, double eps, int j)
+void compute_derivative(double* dxdt, double** x, double* mu, double* beta, double* gamma, double** t, double** n, int N, double alpha, double h, double eps, int j)
 {
   //printf("Entering compute derivative\n");
   double d_x, d_ni, d_ti, d_xi;
   int order = 11;
-  int ip, jp; // Index i + j
   double Q = 0.01;
   double f = 1/sqrt(Q);
-  jp = j*P;
+  
   // Generate coefficients
   double c[order];
   double g[order];
@@ -117,25 +107,24 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
   
   // Evolve the contour integrals
   for (int i = 0; i < N; i++) { // i < ???
-    ip = i*P;
     #if PRINT    
-      //printf("ip = %d,  ", ip);
-      //printf("jp = %d,  ", jp);
+      printf("i = %d,  ", i);
+      printf("j = %d,  ", j);
     #endif
     
-	  d_x = sqrt((x[ip][0] - x[jp][0])*(x[ip][0] - x[jp][0])\
-				  + (x[ip][1] - x[jp][1])*(x[ip][1] - x[jp][1]));
+	  d_x = sqrt((x[i][0] - x[j][0])*(x[i][0] - x[j][0])\
+				  + (x[i][1] - x[j][1])*(x[i][1] - x[j][1]));
 
-    d_ti = -((x[jp][0] - x[ip][0])*t[j][0] + (x[jp][1] - x[ip][1])*t[j][1]);
-    d_ni = -((x[jp][0] - x[ip][0])*n[j][0] + (x[jp][1] - x[ip][1])*n[j][1]);
+    d_ti = -((x[j][0] - x[i][0])*t[j][0] + (x[j][1] - x[i][1])*t[j][1]);
+    d_ni = -((x[j][0] - x[i][0])*n[j][0] + (x[j][1] - x[i][1])*n[j][1]);
    
     // Distance between x_i and x_{i+1}
-    if (ip+P == N*P) {
-      d_xi = sqrt((x[0][0] - x[ip][0])*(x[0][0] - x[ip][0])\
-            + (x[0][1] - x[ip][1])*(x[0][1] - x[ip][1]));
+    if (i+1 == N) {
+      d_xi = sqrt((x[0][0] - x[i][0])*(x[0][0] - x[i][0])\
+            + (x[0][1] - x[i][1])*(x[0][1] - x[i][1]));
     } else {
-        d_xi = sqrt((x[ip+P][0] - x[ip][0])*(x[ip+P][0] - x[ip][0])\
-              + (x[ip+P][1] - x[ip][1])*(x[ip+P][1] - x[ip][1])); 
+        d_xi = sqrt((x[i+1][0] - x[i][0])*(x[i+1][0] - x[i][0])\
+              + (x[i+1][1] - x[i][1])*(x[i+1][1] - x[i][1])); 
     }
     
     // Initialize Taylor coefficients
@@ -147,10 +136,9 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
     }
     poly_coeff_c[0] = 1;
     poly_coeff_g[0] = 1;
-    //printf("ip+P = %d, N*P = %d\n", ip+P, N*P);
     // Evaluate integrals
     //printf("dx = %lf, d_xi = %lf\n", d_x, d_xi);
-    if (ip+P == N*P && jp == 0) {
+    if (i+1 == N && j == 0) {
           // Edge case
       // Case 2: Use formula (29) with shifted params
       #if PRINT
@@ -173,7 +161,7 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
     
       } else {
       
-      if (ip == jp) {
+      if (i == j) {
         //Case 1: Use formula (29)
         #if PRINT
           printf("Case 1\n");
@@ -189,7 +177,7 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
       
         evaluate_integral(dxdt, mu[i], beta[i], gamma[i], t[i], n[i], c, alpha); // Look at inputs in these functions
       
-      } else if (ip == jp - P) {
+      } else if (i == j - 1) {
         // Case 2: Use formula (29) with shifted params
         #if PRINT
           printf("Case 2\n");      
@@ -232,7 +220,7 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
           printf("Case 4\n");
         #endif
         // Case 4: Use Runge-Kutta 4-5
-        evaluate_integral_RK(dxdt, x[ip], x[jp], mu[i], beta[i], gamma[i], eps, h, t[i], n[i], alpha);
+        evaluate_integral_RK(dxdt, x[i], x[j], mu[i], beta[i], gamma[i], eps, h, t[i], n[i], alpha);
       }
     } 
   }
@@ -517,7 +505,7 @@ void points_reloc(double** x, double NP) {
   for (int j = 0; j < NP; j++)
     kappai_breve += d[j]*abs(kappa_bar[j])/(h[i][j]*h[i][j])/kappa_breve_temp;
   double kappai_tilde = pow((kappai_breve*L), a)/(v*L) + SQRTTWO*kappai_breve;
-  double kappai_hat = 0.5*(kappai_tilde + kappaip_tilde);
+  double kappai_hat = 0.5*(kappai_tilde + kappai_tilde);
   
   double density = kappai_hat*kappa_hat/(1 + epsilon*kappai_hat/SQRTTWO);
   double sigmai = 

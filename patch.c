@@ -10,7 +10,6 @@ int main() {
   
   // Number of points
   int N = 450; // Points
-  int P = 10;// Interpolation points
   int n_dim = 2;
   int T = 2;
   long double eps = 0.00001;
@@ -20,15 +19,13 @@ int main() {
   double dt = 0.1;
 
   // Allocate coordinates
-  double** x = (double**)malloc(N*P*sizeof(double*));
-  double** x_temp = (double**)malloc(N*P*sizeof(double*));
+  double** x = (double**)malloc(N*sizeof(double*));
+  double** x_temp = (double**)malloc(N*sizeof(double*));
   double** dxdt_k1 = (double**)malloc(N*sizeof(double*));
   double** dxdt_k2 = (double**)malloc(N*sizeof(double*));
   double** dxdt_k3 = (double**)malloc(N*sizeof(double*));
   double** dxdt_k4 = (double**)malloc(N*sizeof(double*));
   
-  double* p = (double*)malloc(P*sizeof(double));
-  double* eta = (double*)malloc(P*sizeof(double));
   double* d = (double*)malloc(N*sizeof(double));
   double* kappa = (double*)malloc(N*sizeof(double));
   double kappa_den[2];  
@@ -42,7 +39,7 @@ int main() {
     t[i] = (double*)malloc(n_dim*sizeof(double));
     n[i] = (double*)malloc(n_dim*sizeof(double));
   }
-  for (int i = 0; i < N*P; i++)
+  for (int i = 0; i < N; i++)
   {
     x[i] = (double*)malloc(n_dim*sizeof(double));
     x_temp[i] = (double*)malloc(n_dim*sizeof(double));
@@ -58,11 +55,12 @@ int main() {
   
   // Generate circle. (j*P) to avoid the interpolated nodes)
   for (int j = 0; j < N; j++) {
-    x[j*P][0] = cos(TWOPI*j/(double)N);
-    x[j*P][1] = sin(TWOPI*j/(double)N);
+    x[j][0] = cos(TWOPI*j/(double)N);
+    x[j][1] = sin(TWOPI*j/(double)N);
   }
+  
   // Interpolates
-  interpolate(x, N, P, n_dim, t, n, p, eta, d, kappa, kappa_den, mu, beta, gamma);
+  interpolate(x, N, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
   
   printf("mu[0] = %lf\n", mu[0]);
   
@@ -73,7 +71,7 @@ int main() {
   strcat(str, str2);
   strcat(str, ".csv");
   FILE* f = fopen(str, "wb");
-  for (int i = 0; i < N*P; i++) {
+  for (int i = 0; i < N; i++) {
     fprintf(f, "%lf,%lf\n", x[i][0], x[i][1]);
   }
   fclose(f);
@@ -86,7 +84,7 @@ int main() {
     for (int j = 0; j < N; j++)
     {
       //printf("j = %d\n", j);
-      compute_derivative(dxdt_k1[j], x, mu, beta, gamma, t, n, N, P, alpha, h, eps, j);
+      compute_derivative(dxdt_k1[j], x, mu, beta, gamma, t, n, N, alpha, h, eps, j);
       dxdt_k1[j][0] = dxdt_k1[j][0]*theta/(TWOPI);
       dxdt_k1[j][1] = dxdt_k1[j][1]*theta/(TWOPI);
       //printf("\n");
@@ -175,17 +173,12 @@ int main() {
     
     // Redistribute the nodes
     // points_reloc();
-
-
-  
   }
   
   
-
-  
   
   // Free memory
-  for (int i = 0; i < N*P; i++)
+  for (int i = 0; i < N; i++)
   { 
     free(x[i]);
     free(x_temp[i]);
@@ -207,8 +200,6 @@ int main() {
   free(t);
   free(n);
   free(d);
-  free(p);
-  free(eta);
   free(kappa);
   free(mu);
   free(beta);

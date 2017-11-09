@@ -9,14 +9,14 @@
 int main() {
   
   // Number of points
-  int N = 450; // Points
+  int N = 120; // Points
   int n_dim = 2;
-  int T = 2;
+  int T = 25;
   long double eps = 0.00001;
   long double h = 0.001;
   double alpha = 0.5; // Interpolation between 2D Euler and Quasi-geostrophic
   double theta = -1.0;
-  double dt = 0.1;
+  double dt = 0.001;
 
   // Allocate coordinates
   double** x = (double**)malloc(N*sizeof(double*));
@@ -59,8 +59,6 @@ int main() {
     x[j][1] = sin(TWOPI*j/(double)N);
   }
   
-  // Interpolates
-  interpolate(x, N, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
   
   printf("mu[0] = %lf\n", mu[0]);
   
@@ -77,10 +75,12 @@ int main() {
   fclose(f);
   
   // Step in time
-  T = 1;
   for (int k = 0; k < T; k++) {
     printf("k = %d\n", k);
     
+    // Interpolates
+    interpolate(x, N, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
+    /*
     for (int j = 0; j < N; j++)
     {
       //printf("j = %d\n", j);
@@ -91,13 +91,14 @@ int main() {
     }
     printf("dxdt[0][0] = %lf\n", dxdt_k1[0][0]);
     printf("dxdt[0][1] = %lf\n", dxdt_k1[0][1]);
+    */
     
-    /*
+    
     // Runge-Kutta
     // Step 1 in RK
     for (int j = 0; j < N; j++)
     {
-      compute_derivative(dxdt_k1[j], x, mu, beta, gamma, t, n, N, P, alpha, h, eps, j);
+      compute_derivative(dxdt_k1[j], x, mu, beta, gamma, t, n, N, alpha, h, eps, j);
       dxdt_k1[j][0] = dt*dxdt_k1[j][0]*theta/(TWOPI);
       dxdt_k1[j][1] = dt*dxdt_k1[j][1]*theta/(TWOPI);
     }
@@ -110,8 +111,7 @@ int main() {
     // Step 2 in RK
     for (int j = 0; j < N; j++)
     {      
-      compute_derivative(dxdt_k2[j], x_temp, mu, beta, gamma, t, n, N, P, alpha, h, eps, j);
-      printf("test\n");
+      compute_derivative(dxdt_k2[j], x_temp, mu, beta, gamma, t, n, N, alpha, h, eps, j);
       dxdt_k2[j][0] = dt*dxdt_k2[j][0]*theta/(TWOPI);
       dxdt_k2[j][1] = dt*dxdt_k2[j][1]*theta/(TWOPI);
     }
@@ -124,7 +124,7 @@ int main() {
     // Step 3 in RK
     for (int j = 0; j < N; j++)
     {
-      compute_derivative(dxdt_k3[j], x_temp, mu, beta, gamma, t, n, N, P, alpha, h, eps, j);
+      compute_derivative(dxdt_k3[j], x_temp, mu, beta, gamma, t, n, N, alpha, h, eps, j);
       dxdt_k3[j][0] = dt*dxdt_k3[j][0]*theta/(TWOPI);
       dxdt_k3[j][1] = dt*dxdt_k3[j][1]*theta/(TWOPI);
     }
@@ -137,7 +137,7 @@ int main() {
     // Step 4 in RK
     for (int j = 0; j < N; j++)
     {
-      compute_derivative(dxdt_k4[j], x_temp, mu, beta, gamma, t, n, N, P, alpha, h, eps, j);
+      compute_derivative(dxdt_k4[j], x_temp, mu, beta, gamma, t, n, N, alpha, h, eps, j);
       dxdt_k4[j][0] = dxdt_k4[j][0]*theta/(TWOPI);
       dxdt_k4[j][1] = dxdt_k4[j][1]*theta/(TWOPI);
     }
@@ -147,21 +147,21 @@ int main() {
       x[j][0] = x[j][0] + (dxdt_k1[j][0] + 2*dxdt_k2[j][0] + 2*dxdt_k3[j][0] + dxdt_k4[j][0])/6;
       x[j][1] = x[j][1] + (dxdt_k1[j][1] + 2*dxdt_k2[j][1] + 2*dxdt_k3[j][1] + dxdt_k4[j][1])/6;
     }
-    /*
     
-    /*
-    // Print to file  
-    char str[80] = "../circle_";
-    char str2[80] = "";
-    sprintf(str2, "%d", k);
-    strcat(str, str2);
-    strcat(str, ".csv");
-    FILE* f = fopen(str, "wb");
-    for (int i = 0; i < N*P; i++) {
-      fprintf(f, "%lf,%lf\n", x[i][0], x[i][1]);
+    
+    if (k%1 == 0) {
+      // Print to file
+      char str[80] = "../circle_";
+      char str2[80] = "";
+      sprintf(str2, "%d", k);
+      strcat(str, str2);
+      strcat(str, ".csv");
+      FILE* f = fopen(str, "wb");
+      for (int i = 0; i < N; i++) {
+        fprintf(f, "%lf,%lf\n", x[i][0], x[i][1]);
+      }
+      fclose(f);
     }
-    fclose(f);
-    */
     
     //intf("\n");
      //for (int j = 0; j < N; j++)

@@ -144,7 +144,7 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
       #if PRINT
         printf("Edge Case 2\n"); 
       #endif
-      printf("test\n");   
+      //printf("test\n");   
 		  // Update parameters
       mu_2 = mu[i] + 2*beta[i] + 3*gamma[i];
       beta_2 = -beta[i] - 3*gamma[i];
@@ -356,7 +356,10 @@ double evaluate_integral1_RK(double* x_i, double* x_j, double eps, double h, dou
 		//Calculate update factor
 		delta = 0.84*pow((eps/R), 0.25);
 		
-		// Check if to progress to next step or recalculate current step with
+    //printf("Y1 = %lf,   Y2 = %lf\n", Y1, Y2);
+    //printf("R = %lf\n", R);
+		//printf("\n");
+    // Check if to progress to next step or recalculate current step with
 		// new step size.
 		if (R <= eps)
 		{
@@ -384,7 +387,7 @@ double integrand1(double* x_i, double* x_j, double p, double* t_i, double* n_i, 
   double x_part = (x_j[0] - x_i[0] - t_i[0]*p - eta_i*n_i[0]);
   double y_part = (x_j[1] - x_i[1] - t_i[1]*p - eta_i*n_i[1]);
   double w = 1.0/pow(x_part*x_part + y_part*y_part, 0.5*alpha);
-
+  
   return w;
 }
 

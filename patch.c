@@ -16,7 +16,7 @@ int main() {
   long double h = 0.001;
   double alpha = 0.5; // Interpolation between 2D Euler and Quasi-geostrophic
   double theta = -1.0;
-  double dt = 0.001;
+  double dt = 0.01*h;
 
   // Allocate coordinates
   double** x = (double**)malloc(N*sizeof(double*));
@@ -96,11 +96,15 @@ int main() {
     
     // Runge-Kutta
     // Step 1 in RK
+	double F, thetatwopi;
+	thetatwopi = theta/(TWOPI);	
+	F = dt*thetatwopi;
+
     for (int j = 0; j < N; j++)
     {
       compute_derivative(dxdt_k1[j], x, mu, beta, gamma, t, n, N, alpha, h, eps, j);
-      dxdt_k1[j][0] = dt*dxdt_k1[j][0]*theta/(TWOPI);
-      dxdt_k1[j][1] = dt*dxdt_k1[j][1]*theta/(TWOPI);
+      dxdt_k1[j][0] = F*dxdt_k1[j][0];
+      dxdt_k1[j][1] = F*dxdt_k1[j][1];
     }
     for (int j = 0; j < N; j++)
     {
@@ -112,8 +116,8 @@ int main() {
     for (int j = 0; j < N; j++)
     {      
       compute_derivative(dxdt_k2[j], x_temp, mu, beta, gamma, t, n, N, alpha, h, eps, j);
-      dxdt_k2[j][0] = dt*dxdt_k2[j][0]*theta/(TWOPI);
-      dxdt_k2[j][1] = dt*dxdt_k2[j][1]*theta/(TWOPI);
+      dxdt_k2[j][0] = F*dxdt_k2[j][0];
+      dxdt_k2[j][1] = F*dxdt_k2[j][1];
     }
     for (int j = 0; j < N; j++)
     {
@@ -125,21 +129,21 @@ int main() {
     for (int j = 0; j < N; j++)
     {
       compute_derivative(dxdt_k3[j], x_temp, mu, beta, gamma, t, n, N, alpha, h, eps, j);
-      dxdt_k3[j][0] = dt*dxdt_k3[j][0]*theta/(TWOPI);
-      dxdt_k3[j][1] = dt*dxdt_k3[j][1]*theta/(TWOPI);
+      dxdt_k3[j][0] = F*dxdt_k3[j][0];
+      dxdt_k3[j][1] = F*dxdt_k3[j][1];
     }
     for (int j = 0; j < N; j++)
     {
-      x_temp[j][0] = x[j][0] + dxdt_k2[j][0];
-      x_temp[j][1] = x[j][1] + dxdt_k2[j][1];
+      x_temp[j][0] = x[j][0] + dxdt_k3[j][0];
+      x_temp[j][1] = x[j][1] + dxdt_k3[j][1];
     }
     
     // Step 4 in RK
     for (int j = 0; j < N; j++)
     {
       compute_derivative(dxdt_k4[j], x_temp, mu, beta, gamma, t, n, N, alpha, h, eps, j);
-      dxdt_k4[j][0] = dxdt_k4[j][0]*theta/(TWOPI);
-      dxdt_k4[j][1] = dxdt_k4[j][1]*theta/(TWOPI);
+      dxdt_k4[j][0] = dxdt_k4[j][0]*thetatwopi;
+      dxdt_k4[j][1] = dxdt_k4[j][1]*thetatwopi;
     }
     
     for (int j = 0; j < N; j++)

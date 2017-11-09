@@ -205,14 +205,30 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
 
         // Generate Taylor coefficients
         poly_coeff_g[1] = (d_ti + d_ni*mu[i])/(d_x*d_x);
-        poly_coeff_g[2] = ((t[i][0]*t[i][0] + t[i][1]*t[i][1]) + mu[i]*mu[i]*(n[i][0]*n[i][0] + n[i][1]*n[i][1]) + d_x*beta[i])/(d_x*d_x);
-        poly_coeff_g[3] = (2*mu[i]*beta[i]*(n[i][0]*n[i][0] + n[i][1]*n[i][1]) + d_ni*gamma[i])/(d_x*d_x);
-        poly_coeff_g[4] = ((beta[i] + 2*mu[i]*gamma[i])*(n[i][0]*n[i][0] + n[i][1]*n[i][1]))/(d_x*d_x);
-        poly_coeff_g[5] = 2*beta[i]*gamma[i]*(n[i][0]*n[i][0] + n[i][1]*n[i][1])/(d_x*d_x);
-        poly_coeff_g[6] = gamma[i]*gamma[i]/6/(d_x*d_x);
-    
+        
+        
+        poly_coeff_g[2] = ((t[i][0]*t[i][0] + t[i][1]*t[i][1])\
+                        + mu[i]*mu[i]*(n[i][0]*n[i][0] + n[i][1]*n[i][1])\
+                        + d_ni*beta[i])/(d_x*d_x);
+        
+        
+        poly_coeff_g[3] = (2*mu[i]*beta[i]*(n[i][0]*n[i][0]\
+                        + n[i][1]*n[i][1]) + d_ni*gamma[i])/(d_x*d_x);
+        
+        
+        poly_coeff_g[4] = ((beta[i]*beta[i] + 2*mu[i]*gamma[i])\
+                        *(n[i][0]*n[i][0] + n[i][1]*n[i][1]))/(d_x*d_x);
+        
+        
+        poly_coeff_g[5] = 2*beta[i]*gamma[i]*(n[i][0]*n[i][0]\
+                        + n[i][1]*n[i][1])/(d_x*d_x);
+        
+        
+        poly_coeff_g[6] = (gamma[i]*gamma[i]*(n[i][0]*n[i][0]\
+                        + n[i][1]*n[i][1]))/(d_x*d_x);
+        
         autder(g, poly_coeff_g, alpha, order);
-
+        //printf("g1 = %lf, g1_an = %lf \n", g[1], -(alpha*(d_ti + d_ni*mu[i])/(2*d_x*d_x)));
         evaluate_integral_g(dxdt, mu[i], beta[i], gamma[i], d_x, d_ni, d_ti, t[i], n[i], g, alpha);
 
       } else {
@@ -301,7 +317,7 @@ double evaluate_integral1_RK(double* x_i, double* x_j, double eps, double h, dou
 	double p_end = 1; 
   double k1, k2, k3, k4, k5, k6;
 	double Y = 0, Y1, Y2, R, delta, p_temp;
-  double tol = 0.001;
+  double tol = 0.00001;
   
   /*
   // Print to file
@@ -399,7 +415,7 @@ double evaluate_integral2_RK(double* x_i, double* x_j, double eps, double h,\
 	double p_end = 1; 
   double k1, k2, k3, k4, k5, k6;
 	double Y = 0, Y1, Y2, R, delta, p_temp;
-  double tol = 0.001;
+  double tol = 0.00001;
 
   do
 	{
@@ -489,8 +505,8 @@ void runge_kutta_2D(double** dxdt, double** x)
 }
 */
 
-/* To be implemented later
-void points_reloc(double** x, double NP) {
+// Relocating nodes
+void points_reloc(double** x, int N, double* kappa) {
   
   double epsilon = 10^-6;
   double L = 3.0;
@@ -499,19 +515,101 @@ void points_reloc(double** x, double NP) {
   
   // Either calculate all d[j]'s here or use input
   // Same goes with kappa and h
+  double *d, *kappa_bar, *kappai_breve, *kappai_tilde;
+  double  *kappai_hat, *rho, *sigmai, *sigmai_tilde, **h;
+  d = (double*)malloc(N*sizeof(double));
+  kappa_bar = (double*)malloc(N*sizeof(double));
+  kappai_breve = (double*)malloc(N*sizeof(double));
+  kappai_tilde = (double*)malloc(N*sizeof(double));  
+  kappai_hat = (double*)malloc(N*sizeof(double));
+  rho = (double*)malloc(N*sizeof(double));
+  sigmai = (double*)malloc(N*sizeof(double));
+  sigmai_tilde = (double*)malloc(N*sizeof(double));
+  h = (double**)malloc(N*sizeof(double*));
+  for (int k = 0; k < N; k++)
+    h[k] = (double*)malloc(N*sizeof(double));
   
-  double kappa_bar = 0.5*(kappa[j] + kappa[j+1]);
-  double kappai_breve = 0;
-  double kappa_breve_temp = 0;
-  for (int j = 0; j < NP; j++)
-    kappa_breve_temp += d[j]/(h[i][j]*h[i][j]);
-  for (int j = 0; j < NP; j++)
-    kappai_breve += d[j]*abs(kappa_bar[j])/(h[i][j]*h[i][j])/kappa_breve_temp;
-  double kappai_tilde = pow((kappai_breve*L), a)/(v*L) + SQRTTWO*kappai_breve;
-  double kappai_hat = 0.5*(kappai_tilde + kappai_tilde);
+  double kappa_breve_temp;
   
-  double density = kappai_hat*kappa_hat/(1 + epsilon*kappai_hat/SQRTTWO);
-  double sigmai = 
+  for (int i = 0; i < N-1; i++)
+  {
+    for (int j = 0; j < N-1; j++)
+    {
+      h[i][j] = sqrt((x[i][0] - (x[j+1][0] + x[j][0])/2)\
+                  * (x[i][0] - (x[j+1][0] + x[j][0])/2)\
+                  + (x[i][1] - (x[j+1][1] + x[j][1])/2)\
+                  * (x[i][1] - (x[j+1][1] + x[j][1])/2));
+    }
+    kappa_bar[i] = 0.5*(kappa[i] + kappa[i+1]);
+    d[i] = sqrt((x[i+1][0] - x[i][0])*(x[i+1][0] - x[i][0])\
+         + (x[i+1][1] - x[i][1])*(x[i+1][1] - x[i][1]));
+  }
+  
+  d[N-1] = sqrt((x[0][0] - x[N-1][0])*(x[0][0] - x[N-1][0])\
+         + (x[0][1] - x[N-1][1])*(x[0][1] - x[N-1][1]));
+  
+  h[N-1][N-1] = sqrt((x[N-1][0] - (x[0][0] + x[N-1][0])/2)\
+                  * (x[N-1][0] - (x[0][0] + x[N-1][0])/2)\
+                  + (x[N-1][1] - (x[0][1] + x[N-1][1])/2)\
+                  * (x[N-1][1] - (x[0][1] + x[N-1][1])/2));
+   
+  kappa_bar[N-1] = 0.5*(kappa[N-1] + kappa[0]);
+  
+  
+  
+  for (int i = 0; i < N; i++)
+  {
+    for (int j = 0; j < N; j++)
+      
+      kappa_breve_temp += d[j]/(h[i][j]*h[i][j]);
+    for (int j = 0; j < N; j++)
+      kappai_breve[i] += d[j]*abs(kappa_bar[j])/(h[i][j]*h[i][j])/kappa_breve_temp;
+    
+    kappai_tilde[i] = pow((kappai_breve[i]*L), a)/(v*L)\
+                    + SQRTTWO*kappai_breve[i];
+      
+      
+  
+  }
+
+  for (int i = 0; i < N-1; i++)
+  {
+
+         
+    kappai_hat[i] = 0.5*(kappai_tilde[i] + kappai_tilde[i+1]);
+    rho[i] = kappai_hat[i]/(1 + epsilon*kappai_hat[i]/SQRTTWO);
+    sigmai[i] = rho[i]*d[i];
+    //*kappai_hat[i]
+  } 
+   
+  
+  kappai_hat[N-1] = 0.5*(kappai_tilde[N-1] + kappai_tilde[0]);
+  rho[N-1] = kappai_hat[N-1]/(1 + epsilon*kappai_hat[N-1]/SQRTTWO);
+  sigmai[N-1] = rho[N-1]*d[N-1];
+  //*kappai_hat[N-1]
+  double q;
+  q = 0;
+  int N_tilde;
+  for (int i = 0; i < N; i++)
+    q += sigmai[i];
+ 
+  N_tilde = round(q) + 2; 
+ /* for (int i = 0; i < N, i++)
+    sigmai_prim = sigma_i*N_tilde/q;
+  
+  int i_min = 0;
+  for (int i = 0; i < N; i++) {
+    for (int l = 1, l < i; l++) {
+      rest = sigmai_prim[l] + sigmai_prim*p - j + 1;
+      
+      if (rest < rest_before) {
+        i_min = i;
+        p_min = p;
+      }*/
+  //double kappai_tilde = pow((kappai_breve*L), a)/(v*L) + SQRTTWO*kappai_breve;
+  //double kappai_hat = 0.5*(kappai_tilde + kappai_tilde);
+  //double rho = kappai_hat*kappa_hat/(1 + epsilon*kappai_hat/SQRTTWO);
+  //double sigmai = 
   
   return;
-}*/
+}

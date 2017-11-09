@@ -6,7 +6,7 @@
 
 #define TWOPI 6.2831853071795864769
 #define SQRTTWO 1.4142135623730950588
-#define PRINT 1
+#define PRINT 0
 
 
 void interpolate(double** x, int N, int P, int n_dim, double** t, double** n, double* p,\
@@ -119,8 +119,8 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
   for (int i = 0; i < N; i++) { // i < ???
     ip = i*P;
     #if PRINT    
-      printf("ip = %d,  ", ip);
-      printf("jp = %d,  ", jp);
+      //printf("ip = %d,  ", ip);
+      //printf("jp = %d,  ", jp);
     #endif
     
 	  d_x = sqrt((x[ip][0] - x[jp][0])*(x[ip][0] - x[jp][0])\
@@ -147,9 +147,32 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
     }
     poly_coeff_c[0] = 1;
     poly_coeff_g[0] = 1;
-    
+    //printf("ip+P = %d, N*P = %d\n", ip+P, N*P);
     // Evaluate integrals
-    if (ip+P != N*P && jp == 0) {
+    //printf("dx = %lf, d_xi = %lf\n", d_x, d_xi);
+    if (ip+P == N*P && jp == 0) {
+          // Edge case
+      // Case 2: Use formula (29) with shifted params
+      #if PRINT
+        printf("Edge Case 2\n"); 
+      #endif
+      printf("test\n");   
+		  // Update parameters
+      mu_2 = mu[i] + 2*beta[i] + 3*gamma[i];
+      beta_2 = -beta[i] - 3*gamma[i];
+      
+      // Generate Taylor coefficients
+      poly_coeff_c[1] = 2*mu_2*beta_2/(1 + mu_2*mu_2);
+      poly_coeff_c[2] = (beta_2*beta_2 + 2*mu_2*gamma[i])/(1 + mu_2*mu_2);
+      poly_coeff_c[3] = 2*beta_2*gamma[i]/(1 + mu_2*mu_2);
+      poly_coeff_c[4] = gamma[i]*gamma[i]/(1 + mu_2*mu_2);
+      
+      autder(c, poly_coeff_c, alpha, order); // Should these be divided by two maybe?
+      
+      evaluate_integral(dxdt, mu_2, beta_2, gamma[i], t[i], n[i], c, alpha); // Look at inputs in these functio
+    
+      } else {
+      
       if (ip == jp) {
         //Case 1: Use formula (29)
         #if PRINT
@@ -211,27 +234,7 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
         // Case 4: Use Runge-Kutta 4-5
         evaluate_integral_RK(dxdt, x[ip], x[jp], mu[i], beta[i], gamma[i], eps, h, t[i], n[i], alpha);
       }
-    } else {
-      // Edge case
-      // Case 2: Use formula (29) with shifted params
-      #if PRINT
-        printf("Edge Case 2\n"); 
-      #endif
-      printf("test\n");   
-		  // Update parameters
-      mu_2 = mu[i] + 2*beta[i] + 3*gamma[i];
-      beta_2 = -beta[i] - 3*gamma[i];
-      
-      // Generate Taylor coefficients
-      poly_coeff_c[1] = 2*mu_2*beta_2/(1 + mu_2*mu_2);
-      poly_coeff_c[2] = (beta_2*beta_2 + 2*mu_2*gamma[i])/(1 + mu_2*mu_2);
-      poly_coeff_c[3] = 2*beta_2*gamma[i]/(1 + mu_2*mu_2);
-      poly_coeff_c[4] = gamma[i]*gamma[i]/(1 + mu_2*mu_2);
-      
-      autder(c, poly_coeff_c, alpha, order); // Should these be divided by two maybe?
-      
-      evaluate_integral(dxdt, mu_2, beta_2, gamma[i], t[i], n[i], c, alpha); // Look at inputs in these functions
-    }
+    } 
   }
   
   return;

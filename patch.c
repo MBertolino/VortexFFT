@@ -9,11 +9,11 @@
 int main() {
   
   // Number of points
-  int N = 10; // Points
-  int P = 5;// Interpolation points
+  int N = 450; // Points
+  int P = 10;// Interpolation points
   int n_dim = 2;
   int T = 2;
-  long double eps = 0.001;
+  long double eps = 0.00001;
   long double h = 0.001;
   double alpha = 0.5; // Interpolation between 2D Euler and Quasi-geostrophic
   double theta = -1.0;
@@ -61,8 +61,10 @@ int main() {
     x[j*P][0] = cos(TWOPI*j/(double)N);
     x[j*P][1] = sin(TWOPI*j/(double)N);
   }
-  // Interpolate
+  // Interpolates
   interpolate(x, N, P, n_dim, t, n, p, eta, d, kappa, kappa_den, mu, beta, gamma);
+  
+  printf("mu[0] = %lf\n", mu[0]);
   
   // Print to file  
   char str[80] = "../circle_";
@@ -87,7 +89,7 @@ int main() {
       compute_derivative(dxdt_k1[j], x, mu, beta, gamma, t, n, N, P, alpha, h, eps, j);
       dxdt_k1[j][0] = dxdt_k1[j][0]*theta/(TWOPI);
       dxdt_k1[j][1] = dxdt_k1[j][1]*theta/(TWOPI);
-      printf("\n");
+      //printf("\n");
     }
     printf("dxdt[0][0] = %lf\n", dxdt_k1[0][0]);
     printf("dxdt[0][1] = %lf\n", dxdt_k1[0][1]);

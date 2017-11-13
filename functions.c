@@ -8,7 +8,6 @@
 #define SQRTTWO 1.4142135623730950588
 #define PRINT 0
 
-
 void interpolate(double** x, int N, int n_dim, double** t, double** n,\
                  double* d, double* kappa, double* kappa_den, double* mu,\
                  double* beta, double* gamma)
@@ -44,14 +43,16 @@ void interpolate(double** x, int N, int n_dim, double** t, double** n,\
   }
   
   // Construct the cubic interpolation
-  for (int j = 0; j < N; j++) {
+  for (int j = 0; j < N-1; j++) {
     
     // Cubic interpolation coefficients
-    mu[j] = -(double)1/3*d[j]*kappa[j] - (double)1/6*d[j]*kappa[j+1];
+    mu[j] = -1./3.*d[j]*kappa[j] - 1./6.*d[j]*kappa[j+1];
     beta[j] = 0.5*d[j]*kappa[j];
-    gamma[j] = (double)1/6*d[j]*(kappa[j+1] - kappa[j]);
+    gamma[j] = 1./6.*d[j]*(kappa[j+1] - kappa[j]);
   }
-
+  mu[N-1] = -1./3.*d[N-1]*kappa[N-1] - 1./6.*d[N-1]*kappa[0];
+  beta[N-1] = 0.5*d[N-1]*kappa[N-1];
+  gamma[N-1] = 1./6.*d[N-1]*(kappa[0] - kappa[N-1]);
   return;
 }
 
@@ -61,8 +62,11 @@ void autder(double* f, double* c_coeff, double alpha, int order)
   // Allocate memory for temporary coefficients
   double* a_ = (double*)malloc(order*sizeof(double));
   for (int n = 1; n < order; n++)
+  {
     a_[n] = 0;
-  a_[0] = 1;
+    f[n] = 0;
+  }
+    a_[0] = 1;
 
   // Calculate temporary coefficients
   for (int n = 1; n < order; n++)
@@ -82,9 +86,9 @@ void autder(double* f, double* c_coeff, double alpha, int order)
     {
       f[n] += (n*alpha - j*(alpha + 1))*a_[n-j]*f[j];
     }
-    f[n] /= (n+1); // What exactly should it be here?
+    f[n] /= (n); // What exactly should it be here?
   }
-  
+  //printf("f[%d-1] = %e\n", order, f[order-1]);
   free(a_);
   //	printf("Exiting autoder\n");
   return;
@@ -111,10 +115,11 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
       printf("i = %d,  ", i);
       printf("j = %d,  ", j);
     #endif
-    
+          printf("i = %d, j = %d, \n", i, j);
+      
 	  d_x = sqrt((x[i][0] - x[j][0])*(x[i][0] - x[j][0])\
-				  + (x[i][1] - x[j][1])*(x[i][1] - x[j][1]));
-
+				  + (x[i][1] - x[j][1])*(x[i][1] - x[j][1])); //abs(x[i][0] - x[j][0]) + abs(x[i][1] - x[j][1]);
+    // printf("d_x = %e \n", d_x);
     d_ti = -((x[j][0] - x[i][0])*t[j][0] + (x[j][1] - x[i][1])*t[j][1]);
     d_ni = -((x[j][0] - x[i][0])*n[j][0] + (x[j][1] - x[i][1])*n[j][1]);
    
@@ -157,7 +162,8 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
       
       autder(c, poly_coeff_c, alpha, order); // Should these be divided by two maybe?
       
-      evaluate_integral(dxdt, mu_2, beta_2, gamma[i], t[i], n[i], c, alpha); // Look at inputs in these functio
+      // Look at inputs in these functions
+      evaluate_integral(dxdt, mu_2, beta_2, gamma[i], t[i], n[i], c, alpha); 
     
       } else {
       
@@ -173,8 +179,8 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
         poly_coeff_c[3] = 2*beta[i]*gamma[i]/(1 + mu[i]*mu[i]);
         poly_coeff_c[4] = gamma[i]*gamma[i]/(1 + mu[i]*mu[i]);
 
-        autder(c, poly_coeff_c, alpha, order); // Should these be divided by two maybe?
-      
+        autder(c, poly_coeff_c, alpha/2., order); // Should these be divided by two maybe?
+      //  printf("c[1] = %e,  c_an[1] = %e \n", c[1], -alpha*(mu[i]*beta[i])/(1+mu[i]*mu[i]));
         evaluate_integral(dxdt, mu[i], beta[i], gamma[i], t[i], n[i], c, alpha); // Look at inputs in these functions
       
       } else if (i == j - 1) {
@@ -193,8 +199,8 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
         poly_coeff_c[3] = 2*beta_2*gamma[i]/(1 + mu_2*mu_2);
         poly_coeff_c[4] = gamma[i]*gamma[i]/(1 + mu_2*mu_2);
       
-        autder(c, poly_coeff_c, alpha, order); // Should these be divided by two maybe?
-        
+        autder(c, poly_coeff_c, alpha/2., order); // Should these be divided by two maybe?
+       
         evaluate_integral(dxdt, mu_2, beta_2, gamma[i], t[i], n[i], c, alpha); // Look at inputs in these functions
         //printf("dxdt[%d] = %lf\n", j, dxdt[0]);
       } else if (d_x > f*d_xi) {
@@ -227,8 +233,8 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
         poly_coeff_g[6] = (gamma[i]*gamma[i]*(n[i][0]*n[i][0]\
                         + n[i][1]*n[i][1]))/(d_x*d_x);
         
-        autder(g, poly_coeff_g, alpha, order);
-        //printf("g1 = %lf, g1_an = %lf \n", g[1], -(alpha*(d_ti + d_ni*mu[i])/(2*d_x*d_x)));
+        autder(g, poly_coeff_g, alpha/2., order);
+       // printf("g1 = %lf, g1_an = %lf \n", g[1], -(alpha*(d_ti + d_ni*mu[i])/(2*d_x*d_x)));
         evaluate_integral_g(dxdt, mu[i], beta[i], gamma[i], d_x, d_ni, d_ti, t[i], n[i], g, alpha);
 
       } else {
@@ -237,6 +243,7 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
         #endif
         // Case 4: Use Runge-Kutta 4-5
         evaluate_integral_RK(dxdt, x[i], x[j], mu[i], beta[i], gamma[i], eps, h, t[i], n[i], alpha);
+        //printf("asfgdhseagdfgj");
       }
     } 
   }
@@ -316,9 +323,9 @@ double evaluate_integral1_RK(double* x_i, double* x_j, double eps, double h, dou
 	double p = 0;
 	double p_end = 1; 
   double k1, k2, k3, k4, k5, k6;
-	double Y = 0, Y1, Y2, R, delta, p_temp;
-  double tol = 0.00001;
-  
+	double Y = 0, Y1, Y2, delta, p_temp;
+  double tol =1.e-12;
+  long double R;
   /*
   // Print to file
   char str[80] = "../w_spike.csv";
@@ -367,10 +374,17 @@ double evaluate_integral1_RK(double* x_i, double* x_j, double eps, double h, dou
 				-9.0*k5/50.0 + 2.0*k6/55.0;
       
 		// Compute error
-		R = sqrt((Y2 - Y1)*(Y2 - Y1))/h;
-
+		R = abs(Y2-Y1)/h;
+    if (R == 0)
+    {
+      delta = 1.5;
+      
+    } else
+    {
+		  delta = 0.84*sqrt(sqrt(eps/R));
+    }
+    
 		//Calculate update factor
-		delta = 0.84*pow((eps/R), 0.25);
 		
     //printf("Y1 = %lf,   Y2 = %lf\n", Y1, Y2);
     //printf("R = %lf\n", R);
@@ -389,8 +403,10 @@ double evaluate_integral1_RK(double* x_i, double* x_j, double eps, double h, dou
       // Make step smaller
 			h = delta*h;
 		}
+  // printf("h = %e,  p = %e\n", h, p);
 	} while (p_end - p > tol || p - p_end > tol);
-  
+  //printf("dsadsadsadsa h = %e\n", h );
+  //printf("Y = %e \n", Y);
   return Y;
 }
 
@@ -515,7 +531,7 @@ void points_reloc(double** x, int N, double* kappa) {
   
   // Either calculate all d[j]'s here or use input
   // Same goes with kappa and h
-  double *d, *kappa_bar, *kappai_breve, *kappai_tilde;
+  double *d, *kappa_bar, *kappai_breve, *kappai_tilde, *sigmai_prim;
   double  *kappai_hat, *rho, *sigmai, *sigmai_tilde, **h;
   d = (double*)malloc(N*sizeof(double));
   kappa_bar = (double*)malloc(N*sizeof(double));
@@ -525,11 +541,12 @@ void points_reloc(double** x, int N, double* kappa) {
   rho = (double*)malloc(N*sizeof(double));
   sigmai = (double*)malloc(N*sizeof(double));
   sigmai_tilde = (double*)malloc(N*sizeof(double));
+  sigmai_prim = (double*)malloc(N*sizeof(double));
   h = (double**)malloc(N*sizeof(double*));
   for (int k = 0; k < N; k++)
     h[k] = (double*)malloc(N*sizeof(double));
   
-  double kappa_breve_temp;
+  
   
   for (int i = 0; i < N-1; i++)
   {
@@ -556,9 +573,12 @@ void points_reloc(double** x, int N, double* kappa) {
   kappa_bar[N-1] = 0.5*(kappa[N-1] + kappa[0]);
   
   
-  
+  double kappa_breve_temp;
+    kappa_breve_temp = 0;
   for (int i = 0; i < N; i++)
   {
+    kappai_breve[i] = 0;
+
     for (int j = 0; j < N; j++)
       kappa_breve_temp += d[j]/(h[i][j]*h[i][j]);
     for (int j = 0; j < N; j++)
@@ -566,8 +586,12 @@ void points_reloc(double** x, int N, double* kappa) {
     
     kappai_tilde[i] = pow((kappai_breve[i]*L), a)/(v*L)\
                     + SQRTTWO*kappai_breve[i];
-  }
 
+    
+    
+  }
+  
+  
   for (int i = 0; i < N-1; i++)
   {
 
@@ -583,32 +607,44 @@ void points_reloc(double** x, int N, double* kappa) {
   rho[N-1] = kappai_hat[N-1]/(1 + epsilon*kappai_hat[N-1]/SQRTTWO);
   sigmai[N-1] = rho[N-1]*d[N-1];
   //*kappai_hat[N-1]
-  double q;
+  double q, rest, p, dp, i_min, p_min;
   q = 0;
+  dp = 0.005;
+  p = 0;
+  
   int N_tilde;
   for (int i = 0; i < N; i++)
     q += sigmai[i];
  
   N_tilde = round(q) + 2; 
-  for (int i = 0; i < N, i++)
-    sigmai_prim = sigma_i*N_tilde/q;
-  
-  int i_min = 0;
   for (int i = 0; i < N; i++)
+    sigmai_prim[i] = sigmai[i]*N_tilde/q;
+  
+  i_min = 0;
+  p_min = 0;
+  for (int j = 0; j < N; j++)
   {
-    for (int l = 1, l < i; l++)
+    for (int i = 0; i < N; i++)
     {
-      rest = sigmai_prim[l] + sigmai_prim*p;
-      printf("rest = %d\n", rest);
-      printf("j + 1 = %d\n", j + 1);
-      if (rest == j + 1) {
-        i_min = i;
-        p_min = p;
+      for (int l = 1; l < i; l++)
+      {
+        while (p < 1)
+        {
+          rest  = sigmai_prim[l] + sigmai_prim[i]*p;
+
+          if (rest == j + 1) {
+            i_min = i;
+            p_min = p;
+          }
+          p += dp;
+        }
       }
+     // printf("rest = %d\n", rest);
+     // printf("j + 1 = %d\n", j + 1);
     }
+   // x[j][0]
   }
-  
-  
+
   //double kappai_tilde = pow((kappai_breve*L), a)/(v*L) + SQRTTWO*kappai_breve;
   //double kappai_hat = 0.5*(kappai_tilde + kappai_tilde);
   //double rho = kappai_hat*kappa_hat/(1 + epsilon*kappai_hat/SQRTTWO);

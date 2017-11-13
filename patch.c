@@ -9,15 +9,15 @@
 int main() {
   
   // Number of points
-  int N = 120; // Points
+  int N = 12; // Points
   int n_dim = 2;
-  int T = 25;
-  long double eps = 0.00001;
-  long double h = 0.001;
+  int T = 3;
+  long double eps = 1.e-12;
+  long double h = 1.e-3;
   double alpha = 0.5; // Interpolation between 2D Euler and Quasi-geostrophic
   double theta = -1.0;
   double dt = 0.01*h;
-
+    
   // Allocate coordinates
   double** x = (double**)malloc(N*sizeof(double*));
   double** x_temp = (double**)malloc(N*sizeof(double*));
@@ -53,14 +53,14 @@ int main() {
     dxdt_k4[j] = (double*)malloc(n_dim*sizeof(double));
   }
   
-  // Generate circle. (j*P) to avoid the interpolated nodes)
+  // Generate circle
   for (int j = 0; j < N; j++) {
     x[j][0] = cos(TWOPI*j/(double)N);
     x[j][1] = sin(TWOPI*j/(double)N);
   }
   
   
-  printf("mu[0] = %lf\n", mu[0]);
+  //printf("mu[0] = %lf\n", mu[0]);
   
   // Print to file  
   char str[80] = "../circle_";
@@ -152,7 +152,7 @@ int main() {
       x[j][1] = x[j][1] + (dxdt_k1[j][1] + 2*dxdt_k2[j][1] + 2*dxdt_k3[j][1] + dxdt_k4[j][1])/6;
     }
     
-    
+    //Print to file
     if (k%1 == 0) {
       // Print to file
       char str[80] = "../circle_";
@@ -170,15 +170,16 @@ int main() {
     //intf("\n");
      //for (int j = 0; j < N; j++)
       //printf("dxdt_k1[%d][%d] = %lf\n", j, 1, dxdt_k1[j][1]);
-    //intf("dxdt_k1[0][0] = %lf\n", dxdt_k1[0][0]);
-    //intf("dxdt_k1[0][1] = %lf\n", dxdt_k1[0][1]);
+    //printf("dxdt_k1[0][0] = %lf\n", dxdt_k1[0][0]);
+    //printf("dxdt_k1[0][1] = %lf\n", dxdt_k1[0][1]);
     // Time integrate with RK4
     
     
     // Redistribute the nodes
-    points_reloc();
+    //points_reloc(x, N, kappa);
   }
-  
+    printf("dxdt_k1[0][0] = %lf\n", dxdt_k1[0][0]);
+    printf("dxdt_k1[0][1] = %lf\n", dxdt_k1[0][1]);
   
   
   // Free memory

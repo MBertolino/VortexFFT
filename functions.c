@@ -58,7 +58,6 @@ void interpolate(double** x, int N, int n_dim, double** t, double** n,\
 
 void autder(double* f, double* c_coeff, double alpha, int order)
 {
-  //	printf("Entering autoder\n");
   // Allocate memory for temporary coefficients
   double* a_ = (double*)malloc(order*sizeof(double));
   for (int n = 1; n < order; n++)
@@ -86,11 +85,10 @@ void autder(double* f, double* c_coeff, double alpha, int order)
     {
       f[n] += (n*alpha - j*(alpha + 1))*a_[n-j]*f[j];
     }
-    f[n] /= (n); // What exactly should it be here?
+    f[n] /= (n); 
   }
-  //printf("f[%d-1] = %e\n", order, f[order-1]);
   free(a_);
-  //	printf("Exiting autoder\n");
+
   return;
 }
 
@@ -114,12 +112,11 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
     #if PRINT    
       printf("i = %d,  ", i);
       printf("j = %d,  ", j);
+      printf("i = %d, j = %d, \n", i, j);
     #endif
-          printf("i = %d, j = %d, \n", i, j);
       
 	  d_x = sqrt((x[i][0] - x[j][0])*(x[i][0] - x[j][0])\
 				  + (x[i][1] - x[j][1])*(x[i][1] - x[j][1])); //abs(x[i][0] - x[j][0]) + abs(x[i][1] - x[j][1]);
-    // printf("d_x = %e \n", d_x);
     d_ti = -((x[j][0] - x[i][0])*t[j][0] + (x[j][1] - x[i][1])*t[j][1]);
     d_ni = -((x[j][0] - x[i][0])*n[j][0] + (x[j][1] - x[i][1])*n[j][1]);
    
@@ -141,16 +138,16 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
     }
     poly_coeff_c[0] = 1;
     poly_coeff_g[0] = 1;
+    
     // Evaluate integrals
-    //printf("dx = %lf, d_xi = %lf\n", d_x, d_xi);
     if (i+1 == N && j == 0) {
-          // Edge case
+      // Edge case
       // Case 2: Use formula (29) with shifted params
       #if PRINT
         printf("Edge Case 2\n"); 
       #endif
-      //printf("test\n");   
-		  // Update parameters
+
+      // Update parameters
       mu_2 = mu[i] + 2*beta[i] + 3*gamma[i];
       beta_2 = -beta[i] - 3*gamma[i];
       
@@ -160,7 +157,7 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
       poly_coeff_c[3] = 2*beta_2*gamma[i]/(1 + mu_2*mu_2);
       poly_coeff_c[4] = gamma[i]*gamma[i]/(1 + mu_2*mu_2);
       
-      autder(c, poly_coeff_c, alpha, order); // Should these be divided by two maybe?
+      autder(c, poly_coeff_c, alpha, order);
       
       // Look at inputs in these functions
       evaluate_integral(dxdt, mu_2, beta_2, gamma[i], t[i], n[i], c, alpha); 
@@ -168,7 +165,7 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
       } else {
       
       if (i == j) {
-        //Case 1: Use formula (29)
+        // Case 1: Use formula (29)
         #if PRINT
           printf("Case 1\n");
         #endif
@@ -180,7 +177,7 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
         poly_coeff_c[4] = gamma[i]*gamma[i]/(1 + mu[i]*mu[i]);
 
         autder(c, poly_coeff_c, alpha/2., order); // Should these be divided by two maybe?
-      //  printf("c[1] = %e,  c_an[1] = %e \n", c[1], -alpha*(mu[i]*beta[i])/(1+mu[i]*mu[i]));
+        
         evaluate_integral(dxdt, mu[i], beta[i], gamma[i], t[i], n[i], c, alpha); // Look at inputs in these functions
       
       } else if (i == j - 1) {
@@ -189,7 +186,7 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
           printf("Case 2\n");      
         #endif
         
-		// Update parameters
+		    // Update parameters
         mu_2 = mu[i] + 2*beta[i] + 3*gamma[i];
         beta_2 = -beta[i] - 3*gamma[i];
       
@@ -199,10 +196,10 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
         poly_coeff_c[3] = 2*beta_2*gamma[i]/(1 + mu_2*mu_2);
         poly_coeff_c[4] = gamma[i]*gamma[i]/(1 + mu_2*mu_2);
       
-        autder(c, poly_coeff_c, alpha/2., order); // Should these be divided by two maybe?
-       
+        autder(c, poly_coeff_c, alpha/2., order);
+        
         evaluate_integral(dxdt, mu_2, beta_2, gamma[i], t[i], n[i], c, alpha); // Look at inputs in these functions
-        //printf("dxdt[%d] = %lf\n", j, dxdt[0]);
+
       } else if (d_x > f*d_xi) {
         #if PRINT   
           printf("Case 3\n");
@@ -212,29 +209,24 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
         // Generate Taylor coefficients
         poly_coeff_g[1] = (d_ti + d_ni*mu[i])/(d_x*d_x);
         
-        
         poly_coeff_g[2] = ((t[i][0]*t[i][0] + t[i][1]*t[i][1])\
                         + mu[i]*mu[i]*(n[i][0]*n[i][0] + n[i][1]*n[i][1])\
                         + d_ni*beta[i])/(d_x*d_x);
         
-        
         poly_coeff_g[3] = (2*mu[i]*beta[i]*(n[i][0]*n[i][0]\
                         + n[i][1]*n[i][1]) + d_ni*gamma[i])/(d_x*d_x);
-        
         
         poly_coeff_g[4] = ((beta[i]*beta[i] + 2*mu[i]*gamma[i])\
                         *(n[i][0]*n[i][0] + n[i][1]*n[i][1]))/(d_x*d_x);
         
-        
         poly_coeff_g[5] = 2*beta[i]*gamma[i]*(n[i][0]*n[i][0]\
                         + n[i][1]*n[i][1])/(d_x*d_x);
-        
         
         poly_coeff_g[6] = (gamma[i]*gamma[i]*(n[i][0]*n[i][0]\
                         + n[i][1]*n[i][1]))/(d_x*d_x);
         
         autder(g, poly_coeff_g, alpha/2., order);
-       // printf("g1 = %lf, g1_an = %lf \n", g[1], -(alpha*(d_ti + d_ni*mu[i])/(2*d_x*d_x)));
+
         evaluate_integral_g(dxdt, mu[i], beta[i], gamma[i], d_x, d_ni, d_ti, t[i], n[i], g, alpha);
 
       } else {
@@ -243,7 +235,6 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
         #endif
         // Case 4: Use Runge-Kutta 4-5
         evaluate_integral_RK(dxdt, x[i], x[j], mu[i], beta[i], gamma[i], eps, h, t[i], n[i], alpha);
-        //printf("asfgdhseagdfgj");
       }
     } 
   }
@@ -502,25 +493,6 @@ double integrand2(double* x_i, double* x_j, double p, double* t_i, double* n_i,\
 	return w;
 }
 
-
-/*
-void runge_kutta_2D(double** dxdt, double** x)
-{
-  
-  double k1, k2, k3, k4, k5, k6;
-  double l1, l2, l3, l4, l5, l6;
-	double w = int_IC, w1, w2, R, delta, w_temp, p_temp;
-	int i = 0;
-  
-  k1 = dxdt[j][0];
-  l1 = dxdt[j][1];
-  
-  		
-  
-  return;
-}
-*/
-
 // Relocating nodes
 void points_reloc(double** x, int N, double* kappa) {
   
@@ -546,8 +518,6 @@ void points_reloc(double** x, int N, double* kappa) {
   for (int k = 0; k < N; k++)
     h[k] = (double*)malloc(N*sizeof(double));
   
-  
-  
   for (int i = 0; i < N-1; i++)
   {
     for (int j = 0; j < N-1; j++)
@@ -572,9 +542,8 @@ void points_reloc(double** x, int N, double* kappa) {
    
   kappa_bar[N-1] = 0.5*(kappa[N-1] + kappa[0]);
   
-  
   double kappa_breve_temp;
-    kappa_breve_temp = 0;
+  kappa_breve_temp = 0;
   for (int i = 0; i < N; i++)
   {
     kappai_breve[i] = 0;
@@ -586,16 +555,10 @@ void points_reloc(double** x, int N, double* kappa) {
     
     kappai_tilde[i] = pow((kappai_breve[i]*L), a)/(v*L)\
                     + SQRTTWO*kappai_breve[i];
-
-    
-    
   }
-  
   
   for (int i = 0; i < N-1; i++)
   {
-
-         
     kappai_hat[i] = 0.5*(kappai_tilde[i] + kappai_tilde[i+1]);
     rho[i] = kappai_hat[i]/(1 + epsilon*kappai_hat[i]/SQRTTWO);
     sigmai[i] = rho[i]*d[i];

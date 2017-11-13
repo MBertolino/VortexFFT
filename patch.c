@@ -176,7 +176,7 @@ int main() {
     
     
     // Redistribute the nodes
-    // points_reloc();
+    points_reloc();
   }
   
   

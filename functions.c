@@ -560,16 +560,12 @@ void points_reloc(double** x, int N, double* kappa) {
   for (int i = 0; i < N; i++)
   {
     for (int j = 0; j < N; j++)
-      
       kappa_breve_temp += d[j]/(h[i][j]*h[i][j]);
     for (int j = 0; j < N; j++)
       kappai_breve[i] += d[j]*abs(kappa_bar[j])/(h[i][j]*h[i][j])/kappa_breve_temp;
     
     kappai_tilde[i] = pow((kappai_breve[i]*L), a)/(v*L)\
                     + SQRTTWO*kappai_breve[i];
-      
-      
-  
   }
 
   for (int i = 0; i < N-1; i++)
@@ -594,18 +590,25 @@ void points_reloc(double** x, int N, double* kappa) {
     q += sigmai[i];
  
   N_tilde = round(q) + 2; 
- /* for (int i = 0; i < N, i++)
+  for (int i = 0; i < N, i++)
     sigmai_prim = sigma_i*N_tilde/q;
   
   int i_min = 0;
-  for (int i = 0; i < N; i++) {
-    for (int l = 1, l < i; l++) {
-      rest = sigmai_prim[l] + sigmai_prim*p - j + 1;
-      
-      if (rest < rest_before) {
+  for (int i = 0; i < N; i++)
+  {
+    for (int l = 1, l < i; l++)
+    {
+      rest = sigmai_prim[l] + sigmai_prim*p;
+      printf("rest = %d\n", rest);
+      printf("j + 1 = %d\n", j + 1);
+      if (rest == j + 1) {
         i_min = i;
         p_min = p;
-      }*/
+      }
+    }
+  }
+  
+  
   //double kappai_tilde = pow((kappai_breve*L), a)/(v*L) + SQRTTWO*kappai_breve;
   //double kappai_hat = 0.5*(kappai_tilde + kappai_tilde);
   //double rho = kappai_hat*kappa_hat/(1 + epsilon*kappai_hat/SQRTTWO);

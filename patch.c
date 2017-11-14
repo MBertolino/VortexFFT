@@ -9,15 +9,15 @@
 int main() {
   
   // Number of points
-  int N = 41; // Points
+  int N = 400; // Points
   int n_dim = 2;
-  int T = 201;
+  int T = 2001;
   long double eps = 1.e-12;
-  long double h = 1.e-3;
+  long double h = 1.e-8;
   double alpha = 0.5; // Interpolation between 2D Euler and Quasi-geostrophic
   double theta = -1.0;
-  double dt = 0.01*h;
-  double F, thetatwopi;
+  double dt = 1.e-3;//1.*h;
+  double F, tpi;
     
   // Allocate coordinates
   double** x = (double**)malloc(N*sizeof(double*));
@@ -54,17 +54,7 @@ int main() {
     dxdt_k4[j] = (double*)malloc(n_dim*sizeof(double));
   }
   
-  for (int j = 0; j < N; j++)
-  {
-    dxdt_k1[j][0] = 0;
-    dxdt_k1[j][1] = 0;
-    dxdt_k2[j][0] = 0;
-    dxdt_k2[j][1] = 0;
-    dxdt_k3[j][0] = 0;
-    dxdt_k3[j][1] = 0;
-    dxdt_k4[j][0] = 0;
-    dxdt_k4[j][1] = 0;
-  }
+
   
   // Generate circle
   for (int j = 0; j < N; j++) {
@@ -85,11 +75,28 @@ int main() {
   fclose(f);
   
   // Step in time
+  tpi = theta/(TWOPI);	
+	F = dt*tpi;
   for (int k = 0; k < T; k++) {
     printf("k = %d\n", k);
     
     // Interpolate
     interpolate(x, N, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
+    for (int j = 0; j < N; j++)
+    {
+      dxdt_k1[j][0] = 0.;
+      dxdt_k1[j][1] = 0.;
+      dxdt_k2[j][0] = 0.;
+      dxdt_k2[j][1] = 0.;
+      dxdt_k3[j][0] = 0.;
+      dxdt_k3[j][1] = 0.;
+      dxdt_k4[j][0] = 0.;
+      dxdt_k4[j][1] = 0.;
+      x_temp[j][0] = 0.;
+      x_temp[j][1] = 0.;
+      
+    }
+    
     /*
     for (int j = 0; j < N; j++)
     {
@@ -105,14 +112,14 @@ int main() {
     
     // Runge-Kutta
     // Step 1 in RK
-	  thetatwopi = theta/(TWOPI);	
-	  F = dt*thetatwopi;  
+  
     
     for (int j = 0; j < N; j++)
     {
       compute_derivative(dxdt_k1[j], x, mu, beta, gamma, t, n, N, alpha, h, eps, j);
       dxdt_k1[j][0] = F*dxdt_k1[j][0];
       dxdt_k1[j][1] = F*dxdt_k1[j][1];
+      //printf("dxdt dot x = %e\n", dxdt_k1[j][0]*x[j][0] + dxdt_k1[j][1]*x[j][1]);
     }
     for (int j = 0; j < N; j++)
     {
@@ -127,6 +134,7 @@ int main() {
       dxdt_k2[j][0] = F*dxdt_k2[j][0];
       dxdt_k2[j][1] = F*dxdt_k2[j][1];
     }
+    //printf("k = %d\n", k);
     for (int j = 0; j < N; j++)
     {
       x_temp[j][0] = x[j][0] + 0.5*dxdt_k2[j][0];
@@ -150,8 +158,8 @@ int main() {
     for (int j = 0; j < N; j++)
     {
       compute_derivative(dxdt_k4[j], x_temp, mu, beta, gamma, t, n, N, alpha, h, eps, j);
-      dxdt_k4[j][0] = dxdt_k4[j][0]*thetatwopi;
-      dxdt_k4[j][1] = dxdt_k4[j][1]*thetatwopi;
+      dxdt_k4[j][0] = dxdt_k4[j][0]*F;
+      dxdt_k4[j][1] = dxdt_k4[j][1]*F;
     }
     
     for (int j = 0; j < N; j++)
@@ -174,7 +182,6 @@ int main() {
       }
       fclose(f);
     }
-    
     // Redistribute the nodes
     //points_reloc(x, N, kappa);
   }

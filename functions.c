@@ -31,14 +31,14 @@ void interpolate(double** x, int N, int n_dim, double** t, double** n,\
   // kappa local curvature
   kappa_den[0] = d[N-1]*d[N-1]*t[0][0] + d[0]*d[0]*t[N-1][0];
   kappa_den[1] = d[N-1]*d[N-1]*t[0][1] + d[0]*d[0]*t[N-1][1];
-  kappa[0] = 2*(t[N-1][0]*t[0][1] - t[N-1][1]*t[0][0])\
+  kappa[0] = 2.*(t[N-1][0]*t[0][1] - t[N-1][1]*t[0][0])\
     /sqrt(kappa_den[0]*kappa_den[0] + kappa_den[1]*kappa_den[1]);
   
   for (int j = 1; j < N; j++) {
     // kappa local curvature
     kappa_den[0] = (d[j-1]*d[j-1]*t[j][0] + d[j]*d[j]*t[j-1][0]);
     kappa_den[1] = (d[j-1]*d[j-1]*t[j][1] + d[j]*d[j]*t[j-1][1]);
-    kappa[j] = 2*(t[j-1][0]*t[j][1] - t[j-1][1]*t[j][0])\
+    kappa[j] = 2.*(t[j-1][0]*t[j][1] - t[j-1][1]*t[j][0])\
       /sqrt(kappa_den[0]*kappa_den[0] + kappa_den[1]*kappa_den[1]);
   }
   
@@ -62,10 +62,10 @@ void autder(double* f, double* c_coeff, double alpha, int order)
   double* a_ = (double*)malloc(order*sizeof(double));
   for (int n = 1; n < order; n++)
   {
-    a_[n] = 0;
-    f[n] = 0;
+    a_[n] = 0.;
+    f[n] = 0.;
   }
-    a_[0] = 1;
+    a_[0] = 1.;
 
   // Calculate temporary coefficients
   for (int n = 1; n < order; n++)
@@ -76,16 +76,16 @@ void autder(double* f, double* c_coeff, double alpha, int order)
     }
   }
   
-  f[0] = 1;
+  f[0] = 1.;
   
   // Calculate Taylor coefficients of order, "order" :D
   for (int n = 1; n < order; n++)
   {
     for (int j = 0; j < n; j++)
     {
-      f[n] += (n*alpha - j*(alpha + 1))*a_[n-j]*f[j];
+      f[n] += (double)(n*alpha - j*(alpha + 1))*a_[n-j]*f[j];
     }
-    f[n] /= (n); 
+    f[n] /= (double)(n); 
   }
   free(a_);
 
@@ -98,7 +98,7 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
   double d_x, d_ni, d_ti, d_xi;
   int order = 11;
   double Q = 0.01;
-  double f = 1/sqrt(Q);
+  double f = 1./sqrt(Q);
   
   // Generate coefficients
   double c[order];
@@ -131,13 +131,13 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
     
     // Initialize Taylor coefficients
     for (int n = 0; n < order; n++) {
-      c[n] = 0;
-      g[n] = 0;
-      poly_coeff_c[n] = 0;
-      poly_coeff_g[n] = 0;
+      c[n] = 0.;
+      g[n] = 0.;
+      poly_coeff_c[n] = 0.;
+      poly_coeff_g[n] = 0.;
     }
-    poly_coeff_c[0] = 1;
-    poly_coeff_g[0] = 1;
+    poly_coeff_c[0] = 1.;
+    poly_coeff_g[0] = 1.;
     
     // Evaluate integrals
     if (i+1 == N && j == 0) {
@@ -148,16 +148,16 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
       #endif
 
       // Update parameters
-      mu_2 = mu[i] + 2*beta[i] + 3*gamma[i];
-      beta_2 = -beta[i] - 3*gamma[i];
+      mu_2 = mu[i] + 2.*beta[i] + 3.*gamma[i];
+      beta_2 = -beta[i] - 3.*gamma[i];
       
       // Generate Taylor coefficients
-      poly_coeff_c[1] = 2*mu_2*beta_2/(1 + mu_2*mu_2);
-      poly_coeff_c[2] = (beta_2*beta_2 + 2*mu_2*gamma[i])/(1 + mu_2*mu_2);
-      poly_coeff_c[3] = 2*beta_2*gamma[i]/(1 + mu_2*mu_2);
-      poly_coeff_c[4] = gamma[i]*gamma[i]/(1 + mu_2*mu_2);
+      poly_coeff_c[1] = 2.*mu_2*beta_2/(1. + mu_2*mu_2);
+      poly_coeff_c[2] = (beta_2*beta_2 + 2.*mu_2*gamma[i])/(1. + mu_2*mu_2);
+      poly_coeff_c[3] = 2.*beta_2*gamma[i]/(1. + mu_2*mu_2);
+      poly_coeff_c[4] = gamma[i]*gamma[i]/(1. + mu_2*mu_2);
       
-      autder(c, poly_coeff_c, alpha, order);
+      autder(c, poly_coeff_c, alpha/2., order);
       
       // Look at inputs in these functions
       evaluate_integral(dxdt, mu_2, beta_2, gamma[i], t[i], n[i], c, alpha); 
@@ -171,10 +171,10 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
         #endif
         
         // Generate Taylor coefficients
-        poly_coeff_c[1] = 2*mu[i]*beta[i]/(1 + mu[i]*mu[i]);
-        poly_coeff_c[2] = (beta[i]*beta[i] + 2*mu[i]*gamma[i])/(1 + mu[i]*mu[i]);
-        poly_coeff_c[3] = 2*beta[i]*gamma[i]/(1 + mu[i]*mu[i]);
-        poly_coeff_c[4] = gamma[i]*gamma[i]/(1 + mu[i]*mu[i]);
+        poly_coeff_c[1] = 2.*mu[i]*beta[i]/(1. + mu[i]*mu[i]);
+        poly_coeff_c[2] = (beta[i]*beta[i] + 2.*mu[i]*gamma[i])/(1. + mu[i]*mu[i]);
+        poly_coeff_c[3] = 2.*beta[i]*gamma[i]/(1. + mu[i]*mu[i]);
+        poly_coeff_c[4] = gamma[i]*gamma[i]/(1. + mu[i]*mu[i]);
 
         autder(c, poly_coeff_c, alpha/2., order); // Should these be divided by two maybe?
         
@@ -187,14 +187,14 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
         #endif
         
 		    // Update parameters
-        mu_2 = mu[i] + 2*beta[i] + 3*gamma[i];
-        beta_2 = -beta[i] - 3*gamma[i];
+        mu_2 = mu[i] + 2.*beta[i] + 3.*gamma[i];
+        beta_2 = -beta[i] - 3.*gamma[i];
       
         // Generate Taylor coefficients
-        poly_coeff_c[1] = 2*mu_2*beta_2/(1 + mu_2*mu_2);
-        poly_coeff_c[2] = (beta_2*beta_2 + 2*mu_2*gamma[i])/(1 + mu_2*mu_2);
-        poly_coeff_c[3] = 2*beta_2*gamma[i]/(1 + mu_2*mu_2);
-        poly_coeff_c[4] = gamma[i]*gamma[i]/(1 + mu_2*mu_2);
+        poly_coeff_c[1] = 2.*mu_2*beta_2/(1. + mu_2*mu_2);
+        poly_coeff_c[2] = (beta_2*beta_2 + 2.*mu_2*gamma[i])/(1. + mu_2*mu_2);
+        poly_coeff_c[3] = 2.*beta_2*gamma[i]/(1. + mu_2*mu_2);
+        poly_coeff_c[4] = gamma[i]*gamma[i]/(1. + mu_2*mu_2);
       
         autder(c, poly_coeff_c, alpha/2., order);
         
@@ -213,13 +213,13 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
                         + mu[i]*mu[i]*(n[i][0]*n[i][0] + n[i][1]*n[i][1])\
                         + d_ni*beta[i])/(d_x*d_x);
         
-        poly_coeff_g[3] = (2*mu[i]*beta[i]*(n[i][0]*n[i][0]\
+        poly_coeff_g[3] = (2.*mu[i]*beta[i]*(n[i][0]*n[i][0]\
                         + n[i][1]*n[i][1]) + d_ni*gamma[i])/(d_x*d_x);
         
-        poly_coeff_g[4] = ((beta[i]*beta[i] + 2*mu[i]*gamma[i])\
+        poly_coeff_g[4] = ((beta[i]*beta[i] + 2.*mu[i]*gamma[i])\
                         *(n[i][0]*n[i][0] + n[i][1]*n[i][1]))/(d_x*d_x);
         
-        poly_coeff_g[5] = 2*beta[i]*gamma[i]*(n[i][0]*n[i][0]\
+        poly_coeff_g[5] = 2.*beta[i]*gamma[i]*(n[i][0]*n[i][0]\
                         + n[i][1]*n[i][1])/(d_x*d_x);
         
         poly_coeff_g[6] = (gamma[i]*gamma[i]*(n[i][0]*n[i][0]\
@@ -245,18 +245,18 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
 void evaluate_integral(double* dxdt, double mu_i, double beta_i, double gamma_i, double* t_i, double* n_i, double* c, double alpha) {
   
   // Compute the integrals
-  double first = 0;
-  double second = 0;
+  double first = 0.;
+  double second = 0.;
   double p_coef, psq_coef;
   double t_abs = pow((t_i[0]*t_i[0] + t_i[1]*t_i[1]), alpha);
   
   double alpha_mu = pow((1 + mu_i*mu_i), 0.5*alpha);
   
   for (int n = 0; n < 11; n++) {
-    first += c[n]/(double)(n - alpha + 1);
+    first += c[n]/(double)(n - alpha + 1.);
     
-    p_coef = 2*beta_i/(double)(n - alpha + 2);
-    psq_coef = 3*gamma_i/(double)(n - alpha + 3);
+    p_coef = 2.*beta_i/(double)(n - alpha + 2.);
+    psq_coef = 3.*gamma_i/(double)(n - alpha + 3.);
     second += c[n]*(p_coef + psq_coef);
   }
   
@@ -273,15 +273,15 @@ void evaluate_integral(double* dxdt, double mu_i, double beta_i, double gamma_i,
 void evaluate_integral_g(double* dxdt, double mu_i, double beta_i, double gamma_i, double d_x, double d_ni, double d_ti, double* t_i, double* n_i, double* g, double alpha)
 {
   // Compute the integrals
-  double first = 0;
-  double second = 0;
+  double first = 0.;
+  double second = 0.;
   double p_coef, psq_coef;
 
   for (int n = 0; n < 11; n++) {
     first += g[n];
     
-    p_coef = 2*beta_i/(double)(n - alpha + 2);
-    psq_coef = 3*gamma_i/(double)(n - alpha + 3);
+    p_coef = 2.*beta_i/(double)(n - alpha + 2.);
+    psq_coef = 3.*gamma_i/(double)(n - alpha + 3.);
     second += g[n]*(p_coef + psq_coef);
   }
   
@@ -311,10 +311,10 @@ double evaluate_integral1_RK(double* x_i, double* x_j, double eps, double h, dou
 									double* n_i, double mu_i, double beta_i, double gamma_i, double alpha)
 {
   
-	double p = 0;
-	double p_end = 1; 
+	double p = 0.;
+	double p_end = 1.; 
   double k1, k2, k3, k4, k5, k6;
-	double Y = 0, Y1, Y2, delta, p_temp;
+	double Y = 0., Y1, Y2, delta, p_temp;
   double tol =1.e-12;
   long double R;
   /*
@@ -418,11 +418,11 @@ double evaluate_integral2_RK(double* x_i, double* x_j, double eps, double h,\
             double* t_i, double* n_i, double mu_i, double beta_i, double gamma_i, double alpha) 
 {
   
-	double p = 0;
-	double p_end = 1; 
+	double p = 0.;
+	double p_end = 1.; 
   double k1, k2, k3, k4, k5, k6;
-	double Y = 0, Y1, Y2, R, delta, p_temp;
-  double tol = 0.00001;
+	double Y = 0., Y1, Y2, R, delta, p_temp;
+  double tol = 1.e-12;
 
   do
 	{
@@ -456,11 +456,17 @@ double evaluate_integral2_RK(double* x_i, double* x_j, double eps, double h,\
 				-9.0*k5/50.0 + 2.0*k6/55.0;
     
 		// Compute error
-		R = sqrt((Y2 - Y1)*(Y2 - Y1))/h;
+		R = abs(Y2 - Y1)/h;
     
 		//Calculate update factor
-		delta = 0.84*pow((eps/R), 0.25);
-		
+    if (R == 0)
+    {
+      delta = 1.5;
+      
+    } else
+    {
+		  delta = 0.84*sqrt(sqrt(eps/R));
+    }
 		// Check if to progress to next step or recalculate current step with
 		// new step size. 		
 		if (R <= eps)
@@ -476,6 +482,7 @@ double evaluate_integral2_RK(double* x_i, double* x_j, double eps, double h,\
 			h = delta*h;
 		}
   } while (p_end - p > tol || p - p_end > tol);
+  //printf("delta = %e\n", delta);
   return Y;
 }
 
@@ -546,7 +553,7 @@ void points_reloc(double** x, int N, double* kappa) {
   kappa_breve_temp = 0;
   for (int i = 0; i < N; i++)
   {
-    kappai_breve[i] = 0;
+    kappai_breve[i] = 0.;
 
     for (int j = 0; j < N; j++)
       kappa_breve_temp += d[j]/(h[i][j]*h[i][j]);
@@ -560,20 +567,20 @@ void points_reloc(double** x, int N, double* kappa) {
   for (int i = 0; i < N-1; i++)
   {
     kappai_hat[i] = 0.5*(kappai_tilde[i] + kappai_tilde[i+1]);
-    rho[i] = kappai_hat[i]/(1 + epsilon*kappai_hat[i]/SQRTTWO);
+    rho[i] = kappai_hat[i]/(1. + epsilon*kappai_hat[i]/SQRTTWO);
     sigmai[i] = rho[i]*d[i];
     //*kappai_hat[i]
   } 
    
   
   kappai_hat[N-1] = 0.5*(kappai_tilde[N-1] + kappai_tilde[0]);
-  rho[N-1] = kappai_hat[N-1]/(1 + epsilon*kappai_hat[N-1]/SQRTTWO);
+  rho[N-1] = kappai_hat[N-1]/(1. + epsilon*kappai_hat[N-1]/SQRTTWO);
   sigmai[N-1] = rho[N-1]*d[N-1];
   //*kappai_hat[N-1]
   double q, rest, p, dp, i_min, p_min;
-  q = 0;
+  q = 0.;
   dp = 0.005;
-  p = 0;
+  p = 0.;
   
   int N_tilde;
   for (int i = 0; i < N; i++)
@@ -584,7 +591,7 @@ void points_reloc(double** x, int N, double* kappa) {
     sigmai_prim[i] = sigmai[i]*N_tilde/q;
   
   i_min = 0;
-  p_min = 0;
+  p_min = 0.;
   for (int j = 0; j < N; j++)
   {
     for (int i = 0; i < N; i++)

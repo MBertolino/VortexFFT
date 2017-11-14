@@ -489,7 +489,7 @@ double integrand2(double* x_i, double* x_j, double p, double* t_i, double* n_i,\
 // Relocating nodes
 void points_reloc(double** x, int N, double* kappa) {
   
-  double epsilon = 10^-6;
+  double epsilon = 1.e-6;
   double L = 3.0;
   double a = 2.0/3.0;
   double v = 0.05; // 0.01, 0.03, 0.05 (Smaller value => Larger densities of points on the curve)
@@ -508,9 +508,46 @@ void points_reloc(double** x, int N, double* kappa) {
   sigmai_tilde = (double*)malloc(N*sizeof(double));
   sigmai_prim = (double*)malloc(N*sizeof(double));
   h = (double**)malloc(N*sizeof(double*));
+
   for (int k = 0; k < N; k++)
     h[k] = (double*)malloc(N*sizeof(double));
+ 
+  for (int i = 0; i < N; i++)
+  {
+    for (int j = 0; j < N; j++)
+    {
+      if (j == N-1)
+	    {
+      h[i][j] = sqrt((x[i][0] - (x[0][0] + x[j][0])/2)\
+                  * (x[i][0] - (x[0][0] + x[j][0])/2)\
+                  + (x[i][1] - (x[0][1] + x[j][1])/2)\
+                  * (x[i][1] - (x[0][1] + x[j][1])/2));
+      }
+      else
+      {
+        h[i][j] = sqrt((x[i][0] - (x[j+1][0] + x[j][0])/2)\
+                  * (x[i][0] - (x[j+1][0] + x[j][0])/2)\
+                  + (x[i][1] - (x[j+1][1] + x[j][1])/2)\
+                  * (x[i][1] - (x[j+1][1] + x[j][1])/2));
+      }
+    printf("h[%d][%d] = %e\n", i, j, h[i][j]);
+    }
+    if (i == N-1)
+    {
+      kappa_bar[i] = 0.5*(kappa[i] + kappa[0]);
+      d[i] = sqrt((x[0][0] - x[i][0])*(x[0][0] - x[i][0])\
+          + (x[0][1] - x[i][1])*(x[0][1] - x[i][1]));
+    }
+    else
+    {
+      kappa_bar[i] = 0.5*(kappa[i] + kappa[i+1]);
+      d[i] = sqrt((x[i+1][0] - x[i][0])*(x[i+1][0] - x[i][0])\
+           + (x[i+1][1] - x[i][1])*(x[i+1][1] - x[i][1]));
+    }
+    
+  }
   
+  /* 
   for (int i = 0; i < N-1; i++)
   {
     for (int j = 0; j < N-1; j++)
@@ -534,27 +571,44 @@ void points_reloc(double** x, int N, double* kappa) {
                   * (x[N-1][1] - (x[0][1] + x[N-1][1])/2));
    
   kappa_bar[N-1] = 0.5*(kappa[N-1] + kappa[0]);
-  
+  */
   double kappa_breve_temp;
-  kappa_breve_temp = 0;
   for (int i = 0; i < N; i++)
   {
     kappai_breve[i] = 0.;
 
+  }
+    
+
+  for (int i = 0; i < N; i++)
+  {
+    kappa_breve_temp = 0.;
+
     for (int j = 0; j < N; j++)
       kappa_breve_temp += d[j]/(h[i][j]*h[i][j]);
+    //printf("kappa_breve_temp = %e\n", kappa_breve_temp);
     for (int j = 0; j < N; j++)
-      kappai_breve[i] += d[j]*fabs(kappa_bar[j])/(h[i][j]*h[i][j])/kappa_breve_temp;
-    
+    {
+      kappai_breve[i] += (d[j]*fabs(kappa_bar[j])/(h[i][j]*h[i][j]))*(1./kappa_breve_temp);
+      printf("kappa_bar[%d] = %e\n", i, kappa_bar[i]);
+      printf("burk = %e \n", fabs(kappa_bar[j]));
+    }
     kappai_tilde[i] = pow((kappai_breve[i]*L), a)/(v*L)\
                     + SQRTTWO*kappai_breve[i];
+    //printf("kappai_breve[%d] = %e\n", i, kappai_breve[i]);
+    kappa_breve_temp = 0;
+    
   }
-  
   for (int i = 0; i < N-1; i++)
   {
     kappai_hat[i] = 0.5*(kappai_tilde[i] + kappai_tilde[i+1]);
+    //printf("kappai_hat[%d] = %e \n", i, kappai_hat[i]);
+    //printf("eps = %lf\n", epsilon);
+    //printf("denom = %e\n", kappai_hat[i]/SQRTTWO);
     rho[i] = kappai_hat[i]/(1. + epsilon*kappai_hat[i]/SQRTTWO);
+    //printf("rho[%d] = %e \n", i, rho[i]);
     sigmai[i] = rho[i]*d[i];
+    
     //*kappai_hat[i]
   } 
    
@@ -571,14 +625,16 @@ void points_reloc(double** x, int N, double* kappa) {
   int N_tilde;
   for (int i = 0; i < N; i++)
     q += sigmai[i];
- 
+  printf("q = %e\n", q);
   N_tilde = round(q) + 2; 
   for (int i = 0; i < N; i++)
+  {
     sigmai_prim[i] = sigmai[i]*N_tilde/q;
-  
+    printf("sigmai_prim[%d] = %e\n", i, sigmai_prim[i]);
+  }
   i_min = 0;
   p_min = 0.;
-  for (int j = 0; j < N; j++)
+  for (int j = 1; j < N_tilde; j++)
   {
     for (int i = 0; i < N; i++)
     {
@@ -586,17 +642,18 @@ void points_reloc(double** x, int N, double* kappa) {
       {
         while (p < 1)
         {
-          rest  = sigmai_prim[l] + sigmai_prim[i]*p;
+          rest  = (sigmai_prim[l] + sigmai_prim[i]*p);
 
-          if (rest == j + 1) {
+          if (rest == j - 1) {
             i_min = i;
             p_min = p;
+            printf("i_min = %d\n", i);
+            printf("p_min = %e\n", p_min);
           }
           p += dp;
         }
       }
-     // printf("rest = %d\n", rest);
-     // printf("j + 1 = %d\n", j + 1);
+
     }
    // x[j][0]
   }
@@ -605,6 +662,17 @@ void points_reloc(double** x, int N, double* kappa) {
   //double kappai_hat = 0.5*(kappai_tilde + kappai_tilde);
   //double rho = kappai_hat*kappa_hat/(1 + epsilon*kappai_hat/SQRTTWO);
   //double sigmai = 
-  
+  free(kappa_bar);
+  free(d);
+  free(kappai_breve);
+  free(kappai_tilde);
+  free(kappai_hat);
+  free(rho);
+  free(sigmai);
+  free(sigmai_tilde);
+  free(sigmai_prim);
+  for (int k = 0; k < N; k++)
+    free(h[k]);
+  free(h); 
   return;
 }

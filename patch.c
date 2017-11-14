@@ -3,16 +3,18 @@
 #include <math.h>
 #include <string.h>
 #include "functions.h"
+#include <unistd.h>
 
 #define TWOPI 6.2831853071795864769
 
 int main() {
   
   // Number of points
-  int N = 400; // Points
+  int M = 30; // Number of points in each circle
+  int N = 2*M;
   int n_dim = 2;
-  int T = 2001;
-  long double eps = 1.e-12;
+  int T = 20001;
+  long double eps = 1.e-8;
   long double h = 1.e-8;
   double alpha = 0.5; // Interpolation between 2D Euler and Quasi-geostrophic
   double theta = -1.0;
@@ -54,12 +56,13 @@ int main() {
     dxdt_k4[j] = (double*)malloc(n_dim*sizeof(double));
   }
   
-
-  
   // Generate circle
-  for (int j = 0; j < N; j++) {
-    x[j][0] = cos(TWOPI*j/(double)N);
-    x[j][1] = sin(TWOPI*j/(double)N);
+  for (int j = 0; j < M; j++) {
+    x[j][0] = cos(TWOPI*j/(double)M) - 1.1;
+    x[j][1] = sin(TWOPI*j/(double)M);
+    
+    x[j+M][0] = cos(TWOPI*j/(double)M) + 1.1;
+    x[j+M][1] = sin(TWOPI*j/(double)M);
   }
   
   // Print to file  
@@ -67,7 +70,7 @@ int main() {
   char str2[80] = "";
   sprintf(str2, "%d", 1);
   strcat(str, str2);
-  strcat(str, ".csv");
+  strcat(str, "a.csv");
   FILE* f = fopen(str, "wb");
   for (int i = 0; i < N; i++) {
     fprintf(f, "%lf,%lf\n", x[i][0], x[i][1]);
@@ -81,7 +84,8 @@ int main() {
     printf("k = %d\n", k);
     
     // Interpolate
-    interpolate(x, N, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
+    interpolate(x, 0, M, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
+    interpolate(x, M, N, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
     for (int j = 0; j < N; j++)
     {
       dxdt_k1[j][0] = 0.;
@@ -94,32 +98,20 @@ int main() {
       dxdt_k4[j][1] = 0.;
       x_temp[j][0] = 0.;
       x_temp[j][1] = 0.;
-      
     }
-    
-    /*
-    for (int j = 0; j < N; j++)
-    {
-      //printf("j = %d\n", j);
-      compute_derivative(dxdt_k1[j], x, mu, beta, gamma, t, n, N, alpha, h, eps, j);
-      dxdt_k1[j][0] = dxdt_k1[j][0]*theta/(TWOPI);
-      dxdt_k1[j][1] = dxdt_k1[j][1]*theta/(TWOPI);
-      //printf("\n");
-    }
-    printf("dxdt[0][0] = %lf\n", dxdt_k1[0][0]);
-    printf("dxdt[0][1] = %lf\n", dxdt_k1[0][1]);
-    */
-    
     // Runge-Kutta
     // Step 1 in RK
-  
-    
     for (int j = 0; j < N; j++)
     {
-      compute_derivative(dxdt_k1[j], x, mu, beta, gamma, t, n, N, alpha, h, eps, j);
+      compute_derivative(dxdt_k1[j], x, mu, beta, gamma, t, n, M, N, alpha, h, eps, j);
       dxdt_k1[j][0] = F*dxdt_k1[j][0];
       dxdt_k1[j][1] = F*dxdt_k1[j][1];
       //printf("dxdt dot x = %e\n", dxdt_k1[j][0]*x[j][0] + dxdt_k1[j][1]*x[j][1]);
+    }
+    for (int j = M; j < N; j++)
+    {
+      dxdt_k1[j][0] = -dxdt_k1[j][0];
+      dxdt_k1[j][1] = -dxdt_k1[j][1];
     }
     for (int j = 0; j < N; j++)
     {
@@ -130,11 +122,15 @@ int main() {
     // Step 2 in RK
     for (int j = 0; j < N; j++)
     {
-      compute_derivative(dxdt_k2[j], x_temp, mu, beta, gamma, t, n, N, alpha, h, eps, j);
+      compute_derivative(dxdt_k2[j], x_temp, mu, beta, gamma, t, n, M, N, alpha, h, eps, j);
       dxdt_k2[j][0] = F*dxdt_k2[j][0];
       dxdt_k2[j][1] = F*dxdt_k2[j][1];
     }
-    //printf("k = %d\n", k);
+    for (int j = M; j < N; j++)
+    {
+      dxdt_k2[j][0] = -dxdt_k2[j][0];
+      dxdt_k2[j][1] = -dxdt_k2[j][1];
+    }
     for (int j = 0; j < N; j++)
     {
       x_temp[j][0] = x[j][0] + 0.5*dxdt_k2[j][0];
@@ -144,9 +140,14 @@ int main() {
     // Step 3 in RK
     for (int j = 0; j < N; j++)
     {
-      compute_derivative(dxdt_k3[j], x_temp, mu, beta, gamma, t, n, N, alpha, h, eps, j);
+      compute_derivative(dxdt_k3[j], x_temp, mu, beta, gamma, t, n, M, N, alpha, h, eps, j);
       dxdt_k3[j][0] = F*dxdt_k3[j][0];
       dxdt_k3[j][1] = F*dxdt_k3[j][1];
+    }
+    for (int j = M; j < N; j++)
+    {
+      dxdt_k3[j][0] = -dxdt_k3[j][0];
+      dxdt_k3[j][1] = -dxdt_k3[j][1];
     }
     for (int j = 0; j < N; j++)
     {
@@ -157,9 +158,14 @@ int main() {
     // Step 4 in RK
     for (int j = 0; j < N; j++)
     {
-      compute_derivative(dxdt_k4[j], x_temp, mu, beta, gamma, t, n, N, alpha, h, eps, j);
-      dxdt_k4[j][0] = dxdt_k4[j][0]*F;
-      dxdt_k4[j][1] = dxdt_k4[j][1]*F;
+      compute_derivative(dxdt_k4[j], x_temp, mu, beta, gamma, t, n, M, N, alpha, h, eps, j);
+      dxdt_k4[j][0] = F*dxdt_k4[j][0];
+      dxdt_k4[j][1] = F*dxdt_k4[j][1];
+    }
+    for (int j = M; j < N; j++)
+    {
+      dxdt_k4[j][0] = -dxdt_k4[j][0];
+      dxdt_k4[j][1] = -dxdt_k4[j][1];
     }
     
     for (int j = 0; j < N; j++)
@@ -169,7 +175,7 @@ int main() {
     }
     
     //Print to file
-    if (k%10 == 0) {
+    if (k%1 == 0) {
       // Print to file
       char str[80] = "../circle_";
       char str2[80] = "";

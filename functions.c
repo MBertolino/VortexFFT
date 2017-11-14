@@ -8,33 +8,34 @@
 #define SQRTTWO 1.4142135623730950588
 #define PRINT 0
 
-void interpolate(double** x, int N, int n_dim, double** t, double** n,\
+void interpolate(double** x, int start, int N, int n_dim, double** t, double** n,\
                  double* d, double* kappa, double* kappa_den, double* mu,\
                  double* beta, double* gamma)
 {
 
   // Calculate t an n
-  for (int j = 0; j < N-1; j++) {
+  for (int j = start; j < N-1; j++) {
     t[j][0] = x[j+1][0] - x[j][0];
     t[j][1] = x[j+1][1] - x[j][1];
     n[j][0] = -t[j][1];
     n[j][1] = t[j][0];
     d[j] = sqrt(t[j][0]*t[j][0] + t[j][1]*t[j][1]);
-  }  
+  }
+  
   // Special case j = N-1
-  t[N-1][0] = x[0][0] - x[N-1][0];
-  t[N-1][1] = x[0][1] - x[N-1][1];
+  t[N-1][0] = x[start][0] - x[N-1][0];
+  t[N-1][1] = x[start][1] - x[N-1][1];
   n[N-1][0] = -t[N-1][1];
   n[N-1][1] = t[N-1][0];
   d[N-1] = sqrt(t[N-1][0]*t[N-1][0] + t[N-1][1]*t[N-1][1]);
   
   // kappa local curvature
-  kappa_den[0] = d[N-1]*d[N-1]*t[0][0] + d[0]*d[0]*t[N-1][0];
-  kappa_den[1] = d[N-1]*d[N-1]*t[0][1] + d[0]*d[0]*t[N-1][1];
-  kappa[0] = 2.*(t[N-1][0]*t[0][1] - t[N-1][1]*t[0][0])\
+  kappa_den[0] = d[N-1]*d[N-1]*t[start][0] + d[start]*d[start]*t[N-1][0];
+  kappa_den[1] = d[N-1]*d[N-1]*t[start][1] + d[start]*d[start]*t[N-1][1];
+  kappa[start] = 2.*(t[N-1][0]*t[start][1] - t[N-1][1]*t[start][0])\
     /sqrt(kappa_den[0]*kappa_den[0] + kappa_den[1]*kappa_den[1]);
   
-  for (int j = 1; j < N; j++) {
+  for (int j = start+1; j < N; j++) {
     // kappa local curvature
     kappa_den[0] = (d[j-1]*d[j-1]*t[j][0] + d[j]*d[j]*t[j-1][0]);
     kappa_den[1] = (d[j-1]*d[j-1]*t[j][1] + d[j]*d[j]*t[j-1][1]);
@@ -43,16 +44,16 @@ void interpolate(double** x, int N, int n_dim, double** t, double** n,\
   }
   
   // Construct the cubic interpolation
-  for (int j = 0; j < N-1; j++) {
-    
+  for (int j = start; j < N-1; j++) {
     // Cubic interpolation coefficients
     mu[j] = -1./3.*d[j]*kappa[j] - 1./6.*d[j]*kappa[j+1];
     beta[j] = 0.5*d[j]*kappa[j];
     gamma[j] = 1./6.*d[j]*(kappa[j+1] - kappa[j]);
   }
-  mu[N-1] = -1./3.*d[N-1]*kappa[N-1] - 1./6.*d[N-1]*kappa[0];
+  mu[N-1] = -1./3.*d[N-1]*kappa[N-1] - 1./6.*d[N-1]*kappa[start];
   beta[N-1] = 0.5*d[N-1]*kappa[N-1];
-  gamma[N-1] = 1./6.*d[N-1]*(kappa[0] - kappa[N-1]);
+  gamma[N-1] = 1./6.*d[N-1]*(kappa[start] - kappa[N-1]);
+  
   return;
 }
 
@@ -92,7 +93,7 @@ void autder(double* f, double* c_coeff, double alpha, int order)
   return;
 }
 
-void compute_derivative(double* dxdt, double** x, double* mu, double* beta, double* gamma, double** t, double** n, int N, double alpha, double h, double eps, int j)
+void compute_derivative(double* dxdt, double** x, double* mu, double* beta, double* gamma, double** t, double** n, int M, int N, double alpha, double h, double eps, int j)
 {
   //printf("Entering compute derivative\n");
   double d_x, d_ni, d_ti, d_xi;
@@ -112,11 +113,11 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
     #if PRINT    
       printf("i = %d,  ", i);
       printf("j = %d,  ", j);
-      printf("i = %d, j = %d, \n", i, j);
+      //printf("i = %d, j = %d, \n", i, j);
     #endif
       
 	  d_x = sqrt((x[i][0] - x[j][0])*(x[i][0] - x[j][0])\
-				  + (x[i][1] - x[j][1])*(x[i][1] - x[j][1])); //abs(x[i][0] - x[j][0]) + abs(x[i][1] - x[j][1]);
+				  + (x[i][1] - x[j][1])*(x[i][1] - x[j][1]));
     d_ti = -((x[j][0] - x[i][0])*t[j][0] + (x[j][1] - x[i][1])*t[j][1]);
     d_ni = -((x[j][0] - x[i][0])*n[j][0] + (x[j][1] - x[i][1])*n[j][1]);
    
@@ -140,7 +141,7 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
     poly_coeff_g[0] = 1.;
     
     // Evaluate integrals
-    if (i+1 == N && j == 0) {
+    if ((i+1 == M && j == 0) || (i+1 == N && j == M)) {
       // Edge case
       // Case 2: Use formula (29) with shifted params
       #if PRINT
@@ -164,7 +165,7 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
     
       } else {
       
-      if (i == j) {
+      if ((x[i][0] == x[j][0]) && (x[i][0] == x[j][0])) {
         // Case 1: Use formula (29)
         #if PRINT
           printf("Case 1\n");
@@ -176,11 +177,13 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
         poly_coeff_c[3] = 2.*beta[i]*gamma[i]/(1. + mu[i]*mu[i]);
         poly_coeff_c[4] = gamma[i]*gamma[i]/(1. + mu[i]*mu[i]);
 
-        autder(c, poly_coeff_c, alpha/2., order); // Should these be divided by two maybe?
+        autder(c, poly_coeff_c, alpha/2., order);
         
-        evaluate_integral(dxdt, mu[i], beta[i], gamma[i], t[i], n[i], c, alpha); // Look at inputs in these functions
+        evaluate_integral(dxdt, mu[i], beta[i], gamma[i], t[i], n[i], c, alpha);
       
-      } else if (i == j - 1) {
+      }
+      else if ((i == j-1) && (i != M-1))
+      {
         // Case 2: Use formula (29) with shifted params
         #if PRINT
           printf("Case 2\n");      
@@ -205,7 +208,7 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
           printf("Case 3\n");
         #endif
         // Case 3: Use formula (31)
-
+        
         // Generate Taylor coefficients
         poly_coeff_g[1] = (d_ti + d_ni*mu[i])/(d_x*d_x);
         
@@ -236,8 +239,12 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
         // Case 4: Use Runge-Kutta 4-5
         evaluate_integral_RK(dxdt, x[i], x[j], mu[i], beta[i], gamma[i], eps, h, t[i], n[i], alpha);
       }
-    } 
+    }
+    //if (i == 3)
+    //  printf("\n");
+    //sleep(1);
   }
+  //printf("----------------------------\n\n");
   
   return;
 }
@@ -315,23 +322,8 @@ double evaluate_integral1_RK(double* x_i, double* x_j, double eps, double h, dou
 	double p_end = 1.; 
   double k1, k2, k3, k4, k5, k6;
 	double Y = 0., Y1, Y2, delta, p_temp;
-  double tol =1.e-12;
+  double tol = 1.e-12;
   long double R;
-  /*
-  // Print to file
-  char str[80] = "../w_spike.csv";
-  FILE* f = fopen(str, "wb");
-    
-  while (p < 1) {
-	  printf("p = %lf\n", p);
-    Y = integrand1(x_i, x_j, p, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
-    fprintf(f, "%lf,%lf\n", p, Y);
-	  printf("w = %lf\n\n", Y);
-    p = p + 0.001;
-  }
-  fclose(f);
-  sleep(5);
-  */
   
 	do
 	{
@@ -365,21 +357,17 @@ double evaluate_integral1_RK(double* x_i, double* x_j, double eps, double h, dou
 				-9.0*k5/50.0 + 2.0*k6/55.0;
       
 		// Compute error
-		R = abs(Y2-Y1)/h;
+		R = fabs(Y2-Y1)/h;
     if (R == 0)
     {
       delta = 1.5;
-      
-    } else
+    }
+    else
     {
 		  delta = 0.84*sqrt(sqrt(eps/R));
     }
     
 		//Calculate update factor
-		
-    //printf("Y1 = %lf,   Y2 = %lf\n", Y1, Y2);
-    //printf("R = %lf\n", R);
-		//printf("\n");
     // Check if to progress to next step or recalculate current step with
 		// new step size.
 		if (R <= eps)
@@ -394,10 +382,8 @@ double evaluate_integral1_RK(double* x_i, double* x_j, double eps, double h, dou
       // Make step smaller
 			h = delta*h;
 		}
-  // printf("h = %e,  p = %e\n", h, p);
 	} while (p_end - p > tol || p - p_end > tol);
-  //printf("dsadsadsadsa h = %e\n", h );
-  //printf("Y = %e \n", Y);
+  
   return Y;
 }
 
@@ -456,7 +442,7 @@ double evaluate_integral2_RK(double* x_i, double* x_j, double eps, double h,\
 				-9.0*k5/50.0 + 2.0*k6/55.0;
     
 		// Compute error
-		R = abs(Y2 - Y1)/h;
+		R = fabs(Y2 - Y1)/h;
     
 		//Calculate update factor
     if (R == 0)
@@ -482,7 +468,7 @@ double evaluate_integral2_RK(double* x_i, double* x_j, double eps, double h,\
 			h = delta*h;
 		}
   } while (p_end - p > tol || p - p_end > tol);
-  //printf("delta = %e\n", delta);
+
   return Y;
 }
 
@@ -558,7 +544,7 @@ void points_reloc(double** x, int N, double* kappa) {
     for (int j = 0; j < N; j++)
       kappa_breve_temp += d[j]/(h[i][j]*h[i][j]);
     for (int j = 0; j < N; j++)
-      kappai_breve[i] += d[j]*abs(kappa_bar[j])/(h[i][j]*h[i][j])/kappa_breve_temp;
+      kappai_breve[i] += d[j]*fabs(kappa_bar[j])/(h[i][j]*h[i][j])/kappa_breve_temp;
     
     kappai_tilde[i] = pow((kappai_breve[i]*L), a)/(v*L)\
                     + SQRTTWO*kappai_breve[i];

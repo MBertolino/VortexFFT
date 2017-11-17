@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <unistd.h>
+#include <string.h>
 
 #define TWOPI 6.2831853071795864769
 #define SQRTTWO 1.4142135623730950588
@@ -487,7 +488,8 @@ double integrand2(double* x_i, double* x_j, double p, double* t_i, double* n_i,\
 }
 
 // Relocating nodes
-void points_reloc(double** x, int N, double* kappa) {
+void points_reloc(double** x, double** t, double** n, int N, double* kappa,\
+									double* mu, double* beta, double* gamma) {
   
   double epsilon = 1.e-6;
   double L = 3.0;
@@ -497,7 +499,7 @@ void points_reloc(double** x, int N, double* kappa) {
   // Either calculate all d[j]'s here or use input
   // Same goes with kappa and h
   double *d, *kappa_bar, *kappai_breve, *kappai_tilde, *sigmai_prim;
-  double  *kappai_hat, *rho, *sigmai, *sigmai_tilde, **h;
+  double  *kappai_hat, *rho, *sigmai, *sigmai_tilde, **h, **x_temp;
   d = (double*)malloc(N*sizeof(double));
   kappa_bar = (double*)malloc(N*sizeof(double));
   kappai_breve = (double*)malloc(N*sizeof(double));
@@ -530,7 +532,7 @@ void points_reloc(double** x, int N, double* kappa) {
                   + (x[i][1] - (x[j+1][1] + x[j][1])/2)\
                   * (x[i][1] - (x[j+1][1] + x[j][1])/2));
       }
-    printf("h[%d][%d] = %e\n", i, j, h[i][j]);
+    //printf("h[%d][%d] = %e\n", i, j, h[i][j]);
     }
     if (i == N-1)
     {
@@ -590,8 +592,8 @@ void points_reloc(double** x, int N, double* kappa) {
     for (int j = 0; j < N; j++)
     {
       kappai_breve[i] += (d[j]*fabs(kappa_bar[j])/(h[i][j]*h[i][j]))*(1./kappa_breve_temp);
-      printf("kappa_bar[%d] = %e\n", i, kappa_bar[i]);
-      printf("burk = %e \n", fabs(kappa_bar[j]));
+      //printf("kappa_bar[%d] = %e\n", i, kappa_bar[i]);
+      //printf("burk = %e \n", fabs(kappa_bar[j]));
     }
     kappai_tilde[i] = pow((kappai_breve[i]*L), a)/(v*L)\
                     + SQRTTWO*kappai_breve[i];
@@ -625,38 +627,77 @@ void points_reloc(double** x, int N, double* kappa) {
   int N_tilde;
   for (int i = 0; i < N; i++)
     q += sigmai[i];
-  printf("q = %e\n", q);
+  //printf("q = %e\n", q);
   N_tilde = round(q) + 2; 
   for (int i = 0; i < N; i++)
   {
     sigmai_prim[i] = sigmai[i]*N_tilde/q;
-    printf("sigmai_prim[%d] = %e\n", i, sigmai_prim[i]);
+    //printf("sigmai_prim[%d] = %e\n", i, sigmai_prim[i]);
   }
+  
+  //Copy x into temporary matrix
+  x_temp = (double**)malloc(N*sizeof(double*));
+  for (int i = 0; i < N; i++)
+  {
+  		x_temp[i] = (double*)malloc(2*sizeof(double));
+  }
+  
+  for (int i = 0; i < N; i++)
+  {
+  		memcpy(&x_temp[i], &x[i], sizeof(x[i]));
+  		
+  }
+  
+  
+  //Free x and then reallocate memory for new size
+  for (int i = 0; i < N; i++)
+  {
+  	free(x[i]);
+  }
+  free(x);
+  
+  x = (double**)malloc(N_tilde*sizeof(double*));
+  for (int i = 0; i < N_tilde; i++)
+  {
+  	x[i] = (double*)malloc(2*sizeof(double));
+  }
+  
+  x[0][0] = x_temp[0][0];
+  
+
   i_min = 0;
   p_min = 0.;
+  int rest_prev;
+   
   for (int j = 1; j < N_tilde; j++)
   {
+  	// Assume minimum at i=0, p=0
+  	rest_prev = 1-j;
     for (int i = 0; i < N; i++)
     {
-      for (int l = 1; l < i; l++)
+      while (p < 1)
       {
-        while (p < 1)
-        {
-          rest  = (sigmai_prim[l] + sigmai_prim[i]*p);
-
-          if (rest == j - 1) {
-            i_min = i;
-            p_min = p;
-            printf("i_min = %d\n", i);
-            printf("p_min = %e\n", p_min);
-          }
-          p += dp;
+      	for (int l = 1; l < i; l++)
+      	{
+          rest += (sigmai_prim[l] + sigmai_prim[i]*p);
         }
+        rest = rest - 1 + j;
+        if (abs(rest) < abs(rest_prev))
+				{
+					i_min = i;
+					p_min = p;
+					rest_prev = rest;
+				}
+        p += dp;
       }
-
+			p = 0;
+      }
+      
+      x[j][0] = x_temp[i_min][0] + p_min*t[i_min][0] + (mu[i_min]*p_min + \
+      					beta[i_min]*p_min*p_min + gamma[i_min]*p_min*p_min*p_min)*n[i_min][0];  
+			x[j][1] = x_temp[i_min][1] + p_min*t[i_min][1] + (mu[i_min]*p_min + \
+      					beta[i_min]*p_min*p_min + gamma[i_min]*p_min*p_min*p_min)*n[i_min][1];
     }
-   // x[j][0]
-  }
 
   //double kappai_tilde = pow((kappai_breve*L), a)/(v*L) + SQRTTWO*kappai_breve;
   //double kappai_hat = 0.5*(kappai_tilde + kappai_tilde);

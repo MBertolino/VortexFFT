@@ -705,7 +705,6 @@ int points_reloc(double** x, double** t, double** n, int N, double* kappa,\
         printf("rest = %lf  fabs(rest) = %lf   fabs(rest_prev) = %lf\n", rest, fabs(rest), fabs(rest_prev));
         
         if (fabs(rest) < fabs(rest_prev))
-        if (rest < j-1 && j-1 < )
 				{
 				printf("test\n");
 					i_min = i;

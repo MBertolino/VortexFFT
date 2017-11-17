@@ -30,4 +30,4 @@ double integrand1(double* x_i, double* x_j, double p, double* t_i, double* n_i, 
 double integrand2(double* x_i, double* x_j, double p, double* t_i, double* n_i,\
                   double mu_i, double beta_i, double gamma_i, double alpha);
 
-void points_reloc(double** x, double **t, double **n, int N, double* kappa, double* mu, double* beta, double* gamma);
+int points_reloc(double** x, double **t, double **n, int N, double* kappa, double* mu, double* beta, double* gamma);

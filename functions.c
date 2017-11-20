@@ -744,19 +744,17 @@ int points_reloc(double** x, double** t, double** n, int N, double* kappa,\
 }
 */
 
-void runge_kutta45(double** x, double** dxdt, double** dxdt_k1, double** dxdt_k2, double** dxdt_k3, double** dxdt_k4, double** dxdt_k5, double** dxdt_k6, double** dxdt_RK4, double** dxdt_RK5, double tol, int M, int N, double* mu, double* beta, double* gamma, double** t, double** n, double alpha, double eps, double h)
+double runge_kutta45(double** x, double** dxdt, double** dxdt_k1, double** dxdt_k2, double** dxdt_k3, double** dxdt_k4, double** dxdt_k5, double** dxdt_k6, double** dxdt_RK4, double** dxdt_RK5, double tol, double dt, int M, int N, double* mu, double* beta, double* gamma, double** t, double** n, double alpha, double eps, double h)
 {
-  
-  double tau, F, delta, dt, theta;
-  tau = 0;
+  double F, delta, theta;
   theta = -1.;
-  dt = 1.e-4;
   F = dt*theta/(TWOPI);
   double R[2];
   double R_old[2];
   double R_max;
-  R[0] = 0;
-  R[1] = 0;
+  R[0] = 0.;
+  R[1] = 0.;
+  R_max = 0.;
   double** x_temp;
   //x_temp = (double*)malloc(2*N*sizeof(double));
   x_temp = (double**)malloc(N*sizeof(double*));
@@ -765,16 +763,12 @@ void runge_kutta45(double** x, double** dxdt, double** dxdt_k1, double** dxdt_k2
     x_temp[j] = (double*)malloc(2*sizeof(double)); 
     x_temp[j][0] = 0.;
     x_temp[j][1] = 0.;
+    dxdt[j][0] = 0.;
+    dxdt[j][1] = 0.;
   } 
   // Runge-Kutta 45
-  printf("Runge kutta 45\n");
   do
   {
-    if ((1 - tau) < dt)
-	 {
-	  dt = 1 - tau;
-	 }
-    printf(" tau = %e\n", tau);
     // Step 1 in RK
     for (int j = 0; j < N; j++)
     {
@@ -789,126 +783,143 @@ void runge_kutta45(double** x, double** dxdt, double** dxdt_k1, double** dxdt_k2
       x_temp[j][1] = x[j][1] + 0.25*dxdt_k1[j][1];
     }
     
-      // Step 2 in RK
-      for (int j = 0; j < N; j++)
-      {
-        compute_derivative(dxdt_k2[j], x_temp, mu, beta, gamma, t, n, M, N, alpha, h, eps, j);
-        dxdt_k2[j][0] = F*dxdt_k2[j][0];
-        dxdt_k2[j][1] = F*dxdt_k2[j][1];
-      }
-      for (int j = 0; j < N; j++)
-      {
-        x_temp[j][0] = x[j][0] + 3.0/8.0*dxdt_k2[j][0];
-        x_temp[j][1] = x[j][1] + 3.0/8.0*dxdt_k2[j][1];
-      }
-		  
-      // Step 3 in RK
-      for (int j = 0; j < N; j++)
-      {
-        compute_derivative(dxdt_k3[j], x_temp, mu, beta, gamma, t, n, M, N, alpha, h, eps, j);
-        dxdt_k3[j][0] = F*dxdt_k3[j][0];
-        dxdt_k3[j][1] = F*dxdt_k3[j][1];
-      }
-      for (int j = 0; j < N; j++)
-      {
-        x_temp[j][0] = x[j][0] + 12.0/13.0*dxdt_k3[j][0];
-        x_temp[j][1] = x[j][1] + 12.0/13.0*dxdt_k3[j][1];
-      }
-      
-      // Step 4 in RK
-      for (int j = 0; j < N; j++)
-      {
-        compute_derivative(dxdt_k4[j], x_temp, mu, beta, gamma, t, n, M, N, alpha, h, eps, j);
-        dxdt_k4[j][0] = F*dxdt_k4[j][0];
-        dxdt_k4[j][1] = F*dxdt_k4[j][1];
-      }
-      for (int j = 0; j < N; j++)
-      {
-        x_temp[j][0] = x[j][0] + dxdt_k3[j][0];
-        x_temp[j][1] = x[j][1] + dxdt_k3[j][1];
-      }
-      
-      // Step 5 in RK
-      for (int j = 0; j < N; j++)
-      {
-        compute_derivative(dxdt_k5[j], x, mu, beta, gamma, t, n, M, N, alpha, h, eps, j);
-        dxdt_k5[j][0] = F*dxdt_k5[j][0];
-        dxdt_k5[j][1] = F*dxdt_k5[j][1];
-      }
-      for (int j = 0; j < N; j++)
-      {
-        x_temp[j][0] = x[j][0] + 0.5*dxdt_k1[j][0];
-        x_temp[j][1] = x[j][1] + 0.5*dxdt_k1[j][1];
-      }
-      
-      // Step 5 in RK
-      for (int j = 0; j < N; j++)
-      {
-        compute_derivative(dxdt_k6[j], x, mu, beta, gamma, t, n, M, N, alpha, h, eps, j);
-        dxdt_k6[j][0] = F*dxdt_k6[j][0];
-        dxdt_k6[j][1] = F*dxdt_k6[j][1];
-      }
-      
-      for (int j = 0; j < N; j++)
-      {
-		  //RK4 approx
-  		dxdt_RK4[j][0] = 25.0*dxdt_k1[j][0]/216.0 + 1408.0*dxdt_k3[j][0]/2565.0 + 2197.0*dxdt_k4[j][0]/4104.0 - 0.2*dxdt_k5[j][0];
-  		dxdt_RK4[j][1] = 25.0*dxdt_k1[j][1]/216.0 + 1408.0*dxdt_k3[j][1]/2565.0 + 2197.0*dxdt_k4[j][1]/4104.0 - 0.2*dxdt_k5[j][1];
-  
-      //RK5 approx
-		  dxdt_RK5[j][0] = dxdt[j][0] + 16.0*dxdt_k1[j][0]/135.0 + 6656.0*dxdt_k3[j][0]/12825.0 + 28561.0*dxdt_k4[j][0]/56430.0\
-			  	-9.0*dxdt_k5[j][0]/50.0 + 2.0*dxdt_k6[j][0]/55.0;
-		  dxdt_RK5[j][1] = dxdt[j][0] + 16.0*dxdt_k1[j][1]/135.0 + 6656.0*dxdt_k3[j][1]/12825.0 + 28561.0*dxdt_k4[j][1]/56430.0\
-			  	-9.0*dxdt_k5[j][1]/50.0 + 2.0*dxdt_k6[j][1]/55.0;
-      }
-      
-  		// Compute error
-      R_old[0] = fabs(dxdt_RK5[0][0] - dxdt_RK4[0][0])/h;
-      R_old[1] = fabs(dxdt_RK5[0][1] - dxdt_RK4[0][1])/h;
-      for (int j = 1; j < N; j++)
-      {
-	  	  R[0] = fabs(dxdt_RK5[j][0] - dxdt_RK4[j][0])/h;
-        if (R[0] > R_old[0])
-          R_old[0] = R[0];
+    // Step 2 in RK
+    for (int j = 0; j < N; j++)
+    {
+      compute_derivative(dxdt_k2[j], x_temp, mu, beta, gamma, t, n, M, N, alpha, h, eps, j);
+      dxdt_k2[j][0] = F*dxdt_k2[j][0];
+      dxdt_k2[j][1] = F*dxdt_k2[j][1];
+    }
+    for (int j = 0; j < N; j++)
+    {
+      x_temp[j][0] = x[j][0] + 3.0/32.0*dxdt_k1[j][0] + 9.0/32.0*dxdt_k2[j][0];
+      x_temp[j][1] = x[j][1] + 3.0/32.0*dxdt_k1[j][1] + 9.0/32.0*dxdt_k2[j][1];
+    }
+		
+    // Step 3 in RK
+    for (int j = 0; j < N; j++)
+    {
+      compute_derivative(dxdt_k3[j], x_temp, mu, beta, gamma, t, n, M, N, alpha, h, eps, j);
+      dxdt_k3[j][0] = F*dxdt_k3[j][0];
+      dxdt_k3[j][1] = F*dxdt_k3[j][1];
+    }
+    for (int j = 0; j < N; j++)
+    {
+      x_temp[j][0] = x[j][0] + 1932.0/2197.0*dxdt_k1[j][0] - 7200.0/2197.0*dxdt_k2[j][0] + 7296.0/2197.0*dxdt_k3[j][0];
+      x_temp[j][1] = x[j][1] + 1932.0/2197.0*dxdt_k1[j][1] - 7200.0/2197.0*dxdt_k2[j][1] + 7296.0/2197.0*dxdt_k3[j][1];
+    }
+    
+    // Step 4 in RK
+    for (int j = 0; j < N; j++)
+    {
+      compute_derivative(dxdt_k4[j], x_temp, mu, beta, gamma, t, n, M, N, alpha, h, eps, j);
+      dxdt_k4[j][0] = F*dxdt_k4[j][0];
+      dxdt_k4[j][1] = F*dxdt_k4[j][1];
+    }
+    for (int j = 0; j < N; j++)
+    {
+      x_temp[j][0] = x[j][0] + 439.0/216.0*dxdt_k1[j][0] - 8.0*dxdt_k2[j][0] + 3680.0/513.0*dxdt_k3[j][0] - 845.0/4104.0*dxdt_k4[j][0];
+      x_temp[j][1] = x[j][1] + 439.0/216.0*dxdt_k1[j][1] - 8.0*dxdt_k2[j][1] + 3680.0/513.0*dxdt_k3[j][1] - 845.0/4104.0*dxdt_k4[j][1];
+    }
+    
+    // Step 5 in RK
+    for (int j = 0; j < N; j++)
+    {
+      compute_derivative(dxdt_k5[j], x_temp, mu, beta, gamma, t, n, M, N, alpha, h, eps, j);
+      dxdt_k5[j][0] = F*dxdt_k5[j][0];
+      dxdt_k5[j][1] = F*dxdt_k5[j][1];
+    }
+    for (int j = 0; j < N; j++)
+    {
+      x_temp[j][0] = x[j][0] - 8.0/27.0*dxdt_k1[j][0] + 2.0*dxdt_k2[j][0] - 3544.0/2565.0*dxdt_k3[j][0] + 1859.0/4104*dxdt_k4[j][0] - 11.0/40.0*dxdt_k5[j][0];
+      x_temp[j][1] = x[j][1] - 8.0/27.0*dxdt_k1[j][1] + 2.0*dxdt_k2[j][1] - 3544.0/2565.0*dxdt_k3[j][1] + 1859.0/4104*dxdt_k4[j][1] - 11.0/40.0*dxdt_k5[j][1];
+    }
+    
+    // Step 6 in RK
+    for (int j = 0; j < N; j++)
+    {
+      compute_derivative(dxdt_k6[j], x_temp, mu, beta, gamma, t, n, M, N, alpha, h, eps, j);
+      dxdt_k6[j][0] = F*dxdt_k6[j][0];
+      dxdt_k6[j][1] = F*dxdt_k6[j][1];
+    }
+    
+    for (int j = 0; j < N; j++)
+    {
+		// RK4 approx
+  	dxdt_RK4[j][0] = 25.0*dxdt_k1[j][0]/216.0 + 1408.0*dxdt_k3[j][0]/2565.0 + 2197.0*dxdt_k4[j][0]/4104.0 - 0.2*dxdt_k5[j][0];
+  	dxdt_RK4[j][1] = 25.0*dxdt_k1[j][1]/216.0 + 1408.0*dxdt_k3[j][1]/2565.0 + 2197.0*dxdt_k4[j][1]/4104.0 - 0.2*dxdt_k5[j][1];
+    
+    // RK5 approx
+		dxdt_RK5[j][0] = dxdt[j][0] + 16.0*dxdt_k1[j][0]/135.0 + 6656.0*dxdt_k3[j][0]/12825.0 + 28561.0*dxdt_k4[j][0]/56430.0\
+		 	-9.0*dxdt_k5[j][0]/50.0 + 2.0*dxdt_k6[j][0]/55.0;
+		dxdt_RK5[j][1] = dxdt[j][1] + 16.0*dxdt_k1[j][1]/135.0 + 6656.0*dxdt_k3[j][1]/12825.0 + 28561.0*dxdt_k4[j][1]/56430.0\
+		 	-9.0*dxdt_k5[j][1]/50.0 + 2.0*dxdt_k6[j][1]/55.0;
+    }
+    
+  	// Compute error
+    R_old[0] = fabs(dxdt_RK5[0][0] - dxdt_RK4[0][0]);
+    R_old[1] = fabs(dxdt_RK5[0][1] - dxdt_RK4[0][1]);
+    for (int j = 1; j < N; j++)
+    {
+	    R[0] = fabs(dxdt_RK5[j][0] - dxdt_RK4[j][0]);
+      if (R[0] > R_old[0])
+        R_old[0] = R[0];
 	  	  
-        R[1] = fabs(dxdt_RK5[j][1] - dxdt_RK4[j][1])/h;
-        if (R[1] > R_old[1])
-          R_old[1] = R[1];
-      }
-      R_max = R[0];
-      if (R[1] > R[0])
-        R_max = R[1];
-      
-      //Calculate update factor
-      if (R_max == 0)
-      {
-        delta = 1.5;
-      }
-      else
-      {
-		    delta = 0.84*sqrt(sqrt(eps/R_max));
-      }
-		  // Check if to progress to next step or recalculate current step with
-  		// new step size. 		
-	  	if (R_max <= eps)
-		  {
-        // Update
-        for (int j = 0; j < N; j++)
-        {
-          dxdt[j][0] = dxdt_RK4[j][0];
-          dxdt[j][1] = dxdt_RK4[j][1];
-        }
-        tau = tau + dt;
-        F = delta*F;
-  		}
-	  	else
-		  {
-        // Make step smaller
-        F = delta*F;
-		  }
-    } while (1 - tau > tol || tau - 1 > tol);
+      R[1] = fabs(dxdt_RK5[j][1] - dxdt_RK4[j][1]);
+      if (R[1] > R_old[1])
+        R_old[1] = R[1];
+      //printf("R[0][%d] = %e\n", j, R[0]);
+      //printf("R[1][%d] = %e\n", j, R[1]);
+    }
+    R_max = R_old[0];
+    if (R_old[1] > R_old[0])
+      R_max = R_old[1];
+    
+    // Calculate update factor
+    if (fabs(R_max) < tol)
+    {
+      delta = 1.5;
+    }
+    else
+    {
+		  delta = 0.84*sqrt(sqrt(eps/R_max));
+    }
+
+    printf("dt1 = %e\n", dt);
+    // Make step smaller
+    dt = delta*dt;
+    F = delta*F;
+    //printf("dxdt_RK5 = %e\n", dxdt_RK5[0][0]);
+    printf("R_max = %e\n", R_max);
+    printf("dt2 = %e\n\n", dt);
+    
+    /*
+    if (dt < tol)
+    {
+      dt = tol;
+      R_max = tol;
+    }*/
+    
+  } while (R_max > tol);
   
-  return;
+  // Update
+  for (int j = 0; j < N; j++)
+  {
+    dxdt[j][0] = dxdt_RK5[j][0];
+    dxdt[j][1] = dxdt_RK5[j][1];
+  }
+  
+  for (int j = 0; j < N; j++)
+  {
+    x[j][0] = x[j][0] + dxdt[j][0];
+    x[j][1] = x[j][1] + dxdt[j][1];
+  }
+  
+  for (int j = 0; j < N; j++)
+    free(x_temp[j]);
+  free(x_temp);
+  printf("--------------------------\n");
+  return dt;
 }
 
 double compute_area(double** x, int start, int stop)

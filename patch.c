@@ -10,17 +10,18 @@
 int main() {
   
   // Number of points
-  int M = 4; // Number of points in each circle
+  int M = 400; // Number of points in each circle
   int N = 2*M;
   int n_dim = 2;
-  int T = 11;
-  double tol = 1.e-6;
+  int T = 21;
+  double tol = 1.e-8;
   long double eps = 1.e-8;
-  long double h = 1.e-3;
+  long double h = 1.e-2;
   double alpha = 0.5; // Interpolation between 2D Euler and Quasi-geostrophic
   double theta = -1.0;
   double dt = 1.e-3;//1.*h;
-  double F, tpi;
+  double F, tpi, time;
+  time = 0;
     
   // Allocate coordinates
   double** x = (double**)malloc(N*sizeof(double*));
@@ -88,7 +89,6 @@ int main() {
       dxdt_RK5[j][0] = 0.;
       dxdt_RK5[j][1] = 0.;
     }
-    
   
   // Generate circle
   for (int j = 0; j < M; j++) {
@@ -191,9 +191,11 @@ int main() {
       
       
     // Evolve patches
-    runge_kutta45(x, dxdt, dxdt_k1, dxdt_k2, dxdt_k3, dxdt_k4, dxdt_k5,\
-                  dxdt_k6,  dxdt_RK4, dxdt_RK5, tol, M, N, mu, beta, gamma,\
+    dt = runge_kutta45(x, dxdt, dxdt_k1, dxdt_k2, dxdt_k3, dxdt_k4, dxdt_k5,\
+                  dxdt_k6,  dxdt_RK4, dxdt_RK5, tol, 2*dt, M, N, mu, beta, gamma,\
                   t, n, alpha, eps, h);
+    time += dt;
+    printf("time = %lf\n", time);
     
     // Compute area
     area1 = compute_area(x, 0, M);

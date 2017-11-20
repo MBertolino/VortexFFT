@@ -744,23 +744,37 @@ int points_reloc(double** x, double** t, double** n, int N, double* kappa,\
 }
 */
 
-void runge_kutta45(double** dxdt, double** dxdt_k1, double** dxdt_k2, double** dxdt_k3, double** dxdt_k4, double** dxdt_k5, double** dxdt_k6, double** dxdt_RK4, double** dxdt_RK5, double tol)
+void runge_kutta45(double** x, double** dxdt, double** dxdt_k1, double** dxdt_k2, double** dxdt_k3, double** dxdt_k4, double** dxdt_k5, double** dxdt_k6, double** dxdt_RK4, double** dxdt_RK5, double tol, int M, int N, double* mu, double* beta, double* gamma, double** t, double** n, double alpha, double eps, double h)
 {
   
-  double tau;
+  double tau, F, delta, dt, theta;
   tau = 0;
+  theta = -1.;
+  dt = 1.e-4;
+  F = dt*theta/(TWOPI);
   double R[2];
   double R_old[2];
   double R_max;
-  
+  R[0] = 0;
+  R[1] = 0;
+  double** x_temp;
+  //x_temp = (double*)malloc(2*N*sizeof(double));
+  x_temp = (double**)malloc(N*sizeof(double*));
+  for (int j = 0; j < N; j++)
+  {
+    x_temp[j] = (double*)malloc(2*sizeof(double)); 
+    x_temp[j][0] = 0.;
+    x_temp[j][1] = 0.;
+  } 
   // Runge-Kutta 45
+  printf("Runge kutta 45\n");
   do
   {
-    if ((1 - tau) < h)
+    if ((1 - tau) < dt)
 	 {
-	  h = 1 - tau;
+	  dt = 1 - tau;
 	 }
-    
+    printf(" tau = %e\n", tau);
     // Step 1 in RK
     for (int j = 0; j < N; j++)
     {
@@ -881,8 +895,8 @@ void runge_kutta45(double** dxdt, double** dxdt_k1, double** dxdt_k2, double** d
         // Update
         for (int j = 0; j < N; j++)
         {
-          dxdt[j][0] = dxdt_RK4[j][0]
-          dxdt[j][1] = dxdt_RK4[j][1]
+          dxdt[j][0] = dxdt_RK4[j][0];
+          dxdt[j][1] = dxdt_RK4[j][1];
         }
         tau = tau + dt;
         F = delta*F;

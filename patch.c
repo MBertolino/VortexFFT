@@ -14,8 +14,9 @@ int main() {
   int N = 2*M;
   int n_dim = 2;
   int T = 11;
+  double tol = 1.e-6;
   long double eps = 1.e-8;
-  long double h = 1.e-8;
+  long double h = 1.e-3;
   double alpha = 0.5; // Interpolation between 2D Euler and Quasi-geostrophic
   double theta = -1.0;
   double dt = 1.e-3;//1.*h;
@@ -188,6 +189,12 @@ int main() {
     }
     */
       
+      
+    // Evolve patches
+    runge_kutta45(x, dxdt, dxdt_k1, dxdt_k2, dxdt_k3, dxdt_k4, dxdt_k5,\
+                  dxdt_k6,  dxdt_RK4, dxdt_RK5, tol, M, N, mu, beta, gamma,\
+                  t, n, alpha, eps, h);
+    
     // Compute area
     area1 = compute_area(x, 0, M);
     area2 = compute_area(x, M, N);

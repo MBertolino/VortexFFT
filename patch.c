@@ -210,8 +210,7 @@ int main() {
     }
     
     // Redistribute the nodes
-    //points_reloc(x, t, n, N, kappa, mu, gamma, beta);
-    
+    // N = points_reloc(x, t, n, N, kappa, mu, gamma, beta);
   }
 
   

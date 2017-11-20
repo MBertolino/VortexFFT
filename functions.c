@@ -489,7 +489,7 @@ double integrand2(double* x_i, double* x_j, double p, double* t_i, double* n_i,\
 
 /*
 // Relocating nodes
-void points_reloc(double** x, double** t, double** n, int N, double* kappa,\
+int points_reloc(double** x, double** t, double** n, int N, double* kappa,\
 									double* mu, double* beta, double* gamma) {
   
   double epsilon = 1.e-6;
@@ -618,7 +618,7 @@ void points_reloc(double** x, double** t, double** n, int N, double* kappa,\
   rho[N-1] = kappai_hat[N-1]/(1. + epsilon*kappai_hat[N-1]/SQRTTWO);
   sigmai[N-1] = rho[N-1]*d[N-1];
   //*kappai_hat[N-1]
-  double q, rest, p, dp, p_min;
+  double q, rest, p, dp, p_min, rest_prev;
   int i_min;
   q = 0.;
   dp = 0.005;
@@ -629,6 +629,7 @@ void points_reloc(double** x, double** t, double** n, int N, double* kappa,\
     q += sigmai[i];
   // printf("q = %e\n", q);
   N_tilde = round(q) + 2; 
+  printf("N = %d         N_tilde = %d\n", N, N_tilde);
   for (int i = 0; i < N; i++)
   {
     sigmai_prim[i] = sigmai[i]*N_tilde/q;
@@ -647,47 +648,69 @@ void points_reloc(double** x, double** t, double** n, int N, double* kappa,\
   		memcpy(&x_temp[i], &x[i], sizeof(x[i]));
   }
   
+  printf("x_temp[0][0] = %lf       x_temp[0][1] = %lf\n", x_temp[0][0], x_temp[0][1]);
+  printf("x_[0][0] = %lf       x_[0][1] = %lf\n", x[0][0], x[0][1]);
+  
+  printf("before realloc\n");
+ 	x = (double**)realloc(x, N_tilde*sizeof(double*));
+ 	for (int i = 0; i < N_tilde; i++)
+ 	{
+ 		x[i] = realloc(x[i], 2*sizeof(double));
+ 	}
+ 	
+ 	printf("after realloc\n");
+ 	for (int i = 1; i < N_tilde; i++)
+ 	{
+ 		x[i][0] = 0;
+ 		x[i][1] = 0;
+ 	}
+  
+  printf("after zeroing \n");
+  
   //Free x and then reallocate memory for new size
-  /*for (int i = 0; i < N; i++)
+ /* for (int i = 0; i < N; i++)
   {
   	free(x[i]);
   }
   free(x);
   /////////////////////
   
-  x = (double**)realloc(x, N_tilde*sizeof(double*));
-  //for (int i = 0; i < N_tilde; i++)
-  //{
-  //	x[i] = (double*)malloc(2*sizeof(double));
-  //}
+  x = (double**)malloc(N_tilde*sizeof(double*));
+  for (int i = 0; i < N_tilde; i++)
+  {
+  	x[i] = (double*)malloc(2*sizeof(double));
+  }
+  //////////////
+  printf("x_temp[0][0] = %lf       x_temp[0][1] = %lf\n", x_temp[0][0], x_temp[0][1]);
   x[0][0] = x_temp[0][0];
-  
-  
-  // Find i and p
-  i_min = 0;
-  p_min = 0.;
-  rest = 0;
-  int rest_prev;
-   
+  x[0][1] = x_temp[0][1]; 
+  printf("x[0][0] = %lf       x[0][1] = %lf\n", x[0][0], x[0][1]);
+	
   for (int j = 1; j < N_tilde; j++)
   {
   	// Assume minimum at i=0, p=0
   	rest_prev = 1-j;
+  	i_min = 0;
+  	p_min = 0.;
     for (int i = 0; i < N; i++)
     {
       while (p < 1)
       {
-        for (int l = 1; l < i; l++)
-        {
+      	rest = 0.;
+      	for (int l = 1; l < i; l++)
+      	{
           rest += (sigmai_prim[l] + sigmai_prim[i]*p);
         }
         rest = rest - 1 + j;
-        if (abs(rest) < abs(rest_prev))
-			  {
-			    i_min = i;
-				  p_min = p;
-			    rest_prev = rest;
-	      }
+        printf("rest = %lf  fabs(rest) = %lf   fabs(rest_prev) = %lf\n", rest, fabs(rest), fabs(rest_prev));
+        
+        if (fabs(rest) < fabs(rest_prev))
+				{
+				printf("test\n");
+					i_min = i;
+					p_min = p;
+					rest_prev = rest;
+				}
         p += dp;
       }
 	    p = 0;
@@ -710,12 +733,16 @@ void points_reloc(double** x, double** t, double** n, int N, double* kappa,\
   free(sigmai_prim);
   for (int k = 0; k < N; k++)
     free(h[k]);
-  free(h);
+  free(h); 
+  for (int i = 0; i < N; i++)
+  {
+  	free(x_temp[i]);
+  }
+  free(x_temp);
   
-  return;
+  return N_tilde;
 }
 */
-
 
 void runge_kutta45(double** dxdt, double** dxdt_k1, double** dxdt_k2, double** dxdt_k3, double** dxdt_k4, double** dxdt_k5, double** dxdt_k6, double** dxdt_RK4, double** dxdt_RK5, double tol)
 {

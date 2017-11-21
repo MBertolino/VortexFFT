@@ -10,7 +10,7 @@
 int main() {
   
   // Number of points
-  int M = 400; // Number of points in each circle
+  int M = 40; // Number of points in each circle
   int N = 2*M;
   int n_dim = 2;
   int T = 21;
@@ -92,10 +92,10 @@ int main() {
   
   // Generate circle
   for (int j = 0; j < M; j++) {
-    x[j][0] = cos(TWOPI*j/(double)M) - 1.1;
+    x[j][0] = cos(TWOPI*j/(double)M) - 1.01;
     x[j][1] = sin(TWOPI*j/(double)M);
     
-    x[j+M][0] = cos(TWOPI*j/(double)M) + 1.1;
+    x[j+M][0] = cos(TWOPI*j/(double)M) + 1.01;
     x[j+M][1] = sin(TWOPI*j/(double)M);
   }
   double area1;
@@ -121,8 +121,7 @@ int main() {
   tpi = theta/(TWOPI);	
 	F = dt*tpi;
   for (int k = 0; k < T; k++) {
-    if (k % 10 == 0)
-      printf("k = %d\n", k);
+  printf("k = %d\n", k);
     
     // Interpolate
     interpolate(x, 0, M, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
@@ -192,7 +191,7 @@ int main() {
       
     // Evolve patches
     dt = runge_kutta45(x, dxdt, dxdt_k1, dxdt_k2, dxdt_k3, dxdt_k4, dxdt_k5,\
-                  dxdt_k6,  dxdt_RK4, dxdt_RK5, tol, 2*dt, M, N, mu, beta, gamma,\
+                  dxdt_k6, dxdt_RK4, dxdt_RK5, tol, 2*dt, M, N, mu, beta, gamma,\
                   t, n, alpha, eps, h);
     time += dt;
     printf("time = %lf\n", time);
@@ -201,7 +200,8 @@ int main() {
     area1 = compute_area(x, 0, M);
     area2 = compute_area(x, M, N);
     printf("area1 = %lf\n", area1);
-    printf("area2 = %lf\n", area2);
+    printf("area2 = %lf\n\n", area2);
+    printf("--------------------------\n");
     
     //Print to file
     if (k%1 == 0) {

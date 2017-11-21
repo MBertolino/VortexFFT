@@ -359,7 +359,7 @@ double evaluate_integral1_RK(double* x_i, double* x_j, double eps, double h, dou
       
 		// Compute error
 		R = fabs(Y2-Y1)/h;
-    if (R == 0)
+    if (R <= 1.e-12)
     {
       delta = 1.5;
     }
@@ -446,7 +446,7 @@ double evaluate_integral2_RK(double* x_i, double* x_j, double eps, double h,\
 		R = fabs(Y2 - Y1)/h;
     
 		//Calculate update factor
-    if (R == 0)
+    if (R <= 1.e-12)
     {
       delta = 1.5;
       
@@ -868,8 +868,6 @@ double runge_kutta45(double** x, double** dxdt, double** dxdt_k1, double** dxdt_
       R[1] = fabs(dxdt_RK5[j][1] - dxdt_RK4[j][1]);
       if (R[1] > R_old[1])
         R_old[1] = R[1];
-      //printf("R[0][%d] = %e\n", j, R[0]);
-      //printf("R[1][%d] = %e\n", j, R[1]);
     }
     R_max = R_old[0];
     if (R_old[1] > R_old[0])
@@ -889,18 +887,11 @@ double runge_kutta45(double** x, double** dxdt, double** dxdt_k1, double** dxdt_
     // Make step smaller
     dt = delta*dt;
     F = delta*F;
-    //printf("dxdt_RK5 = %e\n", dxdt_RK5[0][0]);
     printf("R_max = %e\n", R_max);
     printf("dt2 = %e\n\n", dt);
     
-    /*
-    if (dt < tol)
-    {
-      dt = tol;
-      R_max = tol;
-    }*/
-    
   } while (R_max > tol);
+  dt = dt/delta; // The last dt = delta*dt has no effect
   
   // Update
   for (int j = 0; j < N; j++)
@@ -918,7 +909,7 @@ double runge_kutta45(double** x, double** dxdt, double** dxdt_k1, double** dxdt_
   for (int j = 0; j < N; j++)
     free(x_temp[j]);
   free(x_temp);
-  printf("--------------------------\n");
+  
   return dt;
 }
 
@@ -929,7 +920,7 @@ double compute_area(double** x, int start, int stop)
   for (int j = start; j < stop-1; j++)
     area += x[j][0]*(x[j+1][1] - x[j][1]);
   area += x[stop-1][0]*(x[start][1] - x[stop-1][1]);
-  area = area;//(double)(stop - start);
+  area = area;
   
   return area;
 }

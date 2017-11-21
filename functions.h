@@ -30,7 +30,7 @@ double integrand1(double* x_i, double* x_j, double p, double* t_i, double* n_i, 
 double integrand2(double* x_i, double* x_j, double p, double* t_i, double* n_i,\
                   double mu_i, double beta_i, double gamma_i, double alpha);
 
-int points_reloc(double** x, double **t, double **n, int N, double* kappa, double* mu, double* beta, double* gamma);
+void points_reloc(double*** px, double **t, double **n, int* N, double* kappa, double* mu, double* beta, double* gamma);
 
 double runge_kutta45(double** x, double** dxdt, double** dxdt_k1, double** dxdt_k2, double** dxdt_k3, double** dxdt_k4, double** dxdt_k5, double** dxdt_k6, double** dxdt_RK4, double** dxdt_RK5, double tol, double dt, int M, int N, double* mu, double* beta, double* gamma, double** t, double** n, double alpha, double eps, double h);
 

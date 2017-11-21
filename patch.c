@@ -10,17 +10,21 @@
 int main() {
   
   // Number of points
-  int M = 40; // Number of points in each circle
-  int N = 2*M;
+  int M = 256; // Number of points in each circle
+  int N = M;
   int n_dim = 2;
-  int T = 21;
-  double tol = 1.e-8;
-  long double eps = 1.e-8;
-  long double h = 1.e-2;
+  int T = 50000;
+  double tol_rk45_time = 1.e-8;
+  long double tol_rk45_space = 1.e-8;
+  long double h = 1.e-3;
   double alpha = 0.5; // Interpolation between 2D Euler and Quasi-geostrophic
   double theta = -1.0;
   double dt = 1.e-3;//1.*h;
   double F, tpi, time;
+  int* pN;
+  double*** px;
+  
+  int N_old;
   time = 0;
     
   // Allocate coordinates
@@ -35,26 +39,14 @@ int main() {
   double** dxdt_k6 = (double**)malloc(N*sizeof(double*));
   double** dxdt_RK4 = (double**)malloc(N*sizeof(double*));
   double** dxdt_RK5 = (double**)malloc(N*sizeof(double*));
-  
-  double* d = (double*)malloc(N*sizeof(double));
-  double* kappa = (double*)malloc(N*sizeof(double));
   double kappa_den[2];  
-  double* mu = (double*)malloc(N*sizeof(double*));
-  double* beta = (double*)malloc(N*sizeof(double*));
-  double* gamma = (double*)malloc(N*sizeof(double*));
-  double** t = (double**)malloc(N*sizeof(double*)); 
-  double** n = (double**)malloc(N*sizeof(double*));
-  for (int i = 0; i < N; i++)
-  {
-    t[i] = (double*)malloc(n_dim*sizeof(double));
-    n[i] = (double*)malloc(n_dim*sizeof(double));
-  }
   for (int i = 0; i < N; i++)
   {
     x[i] = (double*)malloc(n_dim*sizeof(double));
     x_temp[i] = (double*)malloc(n_dim*sizeof(double));
   }
-  
+  px = &x;
+  pN = &N;
   for (int j = 0; j < N; j++)
   {
     dxdt[j] = (double*)malloc(n_dim*sizeof(double));
@@ -92,18 +84,18 @@ int main() {
   
   // Generate circle
   for (int j = 0; j < M; j++) {
-    x[j][0] = cos(TWOPI*j/(double)M) - 1.01;
+    x[j][0] = cos(TWOPI*j/(double)M);// - 1.01;
     x[j][1] = sin(TWOPI*j/(double)M);
     
-    x[j+M][0] = cos(TWOPI*j/(double)M) + 1.01;
-    x[j+M][1] = sin(TWOPI*j/(double)M);
+    //x[j+M][0] = cos(TWOPI*j/(double)M) + 1.01;
+    //x[j+M][1] = sin(TWOPI*j/(double)M);
   }
   double area1;
-  double area2;
+  //double area2;
   area1 = compute_area(x, 0, M);
-  area2 = compute_area(x, M, N);
-  printf("area1 = %lf\n", area1);
-  printf("area2 = %lf\n", area2);
+  //area2 = compute_area(x, M, N);
+  //printf("area1 = %lf\n", area1);
+  //printf("area2 = %lf\n", area2);
 
   // Print to file  
   char str[80] = "../circle_";
@@ -121,86 +113,46 @@ int main() {
   tpi = theta/(TWOPI);	
 	F = dt*tpi;
   for (int k = 0; k < T; k++) {
+    double* d = (double*)malloc(N*sizeof(double));
+    double* kappa = (double*)malloc(N*sizeof(double));
+    double* mu = (double*)malloc(N*sizeof(double*));
+    double* beta = (double*)malloc(N*sizeof(double*));
+    double* gamma = (double*)malloc(N*sizeof(double*));
+    double** t = (double**)malloc(N*sizeof(double*)); 
+    double** n = (double**)malloc(N*sizeof(double*));
+    for (int i = 0; i < N; i++)
+    {
+      t[i] = (double*)malloc(n_dim*sizeof(double));
+      n[i] = (double*)malloc(n_dim*sizeof(double));
+    }
+
+  
+  
   printf("k = %d\n", k);
-    
+    M = N;//M = (int)N/2;
     // Interpolate
     interpolate(x, 0, M, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
-    interpolate(x, M, N, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
+    //interpolate(x, M, N, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
     for (int j = 0; j < N; j++)
     {
       x_temp[j][0] = 0.;
       x_temp[j][1] = 0.;
     }
     
-    /*
-    // Runge-Kutta
-    // Step 1 in RK
-    for (int j = 0; j < N; j++)
-    {
-      compute_derivative(dxdt_k1[j], x, mu, beta, gamma, t, n, M, N, alpha, h, eps, j);
-      dxdt_k1[j][0] = F*dxdt_k1[j][0];
-      dxdt_k1[j][1] = F*dxdt_k1[j][1];
-      //printf("dxdt dot x = %e\n", dxdt_k1[j][0]*x[j][0] + dxdt_k1[j][1]*x[j][1]);
-    }
-    for (int j = 0; j < N; j++)
-    {
-      x_temp[j][0] = x[j][0] + 0.5*dxdt_k1[j][0];
-      x_temp[j][1] = x[j][1] + 0.5*dxdt_k1[j][1];
-    }
     
-    // Step 2 in RK
-    for (int j = 0; j < N; j++)
-    {
-      compute_derivative(dxdt_k2[j], x_temp, mu, beta, gamma, t, n, M, N, alpha, h, eps, j);
-      dxdt_k2[j][0] = F*dxdt_k2[j][0];
-      dxdt_k2[j][1] = F*dxdt_k2[j][1];
-    }
-    for (int j = 0; j < N; j++)
-    {
-      x_temp[j][0] = x[j][0] + 0.5*dxdt_k2[j][0];
-      x_temp[j][1] = x[j][1] + 0.5*dxdt_k2[j][1];
-    }
-    
-    // Step 3 in RK
-    for (int j = 0; j < N; j++)
-    {
-      compute_derivative(dxdt_k3[j], x_temp, mu, beta, gamma, t, n, M, N, alpha, h, eps, j);
-      dxdt_k3[j][0] = F*dxdt_k3[j][0];
-      dxdt_k3[j][1] = F*dxdt_k3[j][1];
-    }
-    for (int j = 0; j < N; j++)
-    {
-      x_temp[j][0] = x[j][0] + dxdt_k3[j][0];
-      x_temp[j][1] = x[j][1] + dxdt_k3[j][1];
-    }
-    
-    // Step 4 in RK
-    for (int j = 0; j < N; j++)
-    {
-      compute_derivative(dxdt_k4[j], x_temp, mu, beta, gamma, t, n, M, N, alpha, h, eps, j);
-      dxdt_k4[j][0] = F*dxdt_k4[j][0];
-      dxdt_k4[j][1] = F*dxdt_k4[j][1];
-    }
-    for (int j = 0; j < N; j++)
-    {
-      x[j][0] = x[j][0] + (dxdt_k1[j][0] + 2*dxdt_k2[j][0] + 2*dxdt_k3[j][0] + dxdt_k4[j][0])/6;
-      x[j][1] = x[j][1] + (dxdt_k1[j][1] + 2*dxdt_k2[j][1] + 2*dxdt_k3[j][1] + dxdt_k4[j][1])/6;
-    }
-    */
-      
       
     // Evolve patches
     dt = runge_kutta45(x, dxdt, dxdt_k1, dxdt_k2, dxdt_k3, dxdt_k4, dxdt_k5,\
-                  dxdt_k6, dxdt_RK4, dxdt_RK5, tol, 2*dt, M, N, mu, beta, gamma,\
-                  t, n, alpha, eps, h);
+                  dxdt_k6, dxdt_RK4, dxdt_RK5, tol_rk45_time, 2*dt, M, N,\
+                  mu, beta, gamma, t, n, alpha, tol_rk45_space, h);
     time += dt;
-    printf("time = %lf\n", time);
+    printf("time = %1.15lf\n", time);
     
     // Compute area
     area1 = compute_area(x, 0, M);
-    area2 = compute_area(x, M, N);
+    //area2 = compute_area(x, M, N);
     printf("area1 = %lf\n", area1);
-    printf("area2 = %lf\n\n", area2);
+    //printf("area2 = %lf\n\n", area2);
     printf("--------------------------\n");
     
     //Print to file
@@ -219,7 +171,38 @@ int main() {
     }
     
     // Redistribute the nodes
-    // N = points_reloc(x, t, n, N, kappa, mu, gamma, beta);
+
+    N_old  = N;
+   // points_reloc(px, t, n, pN, kappa, mu, gamma, beta);
+    printf("N = %d\n", N);
+    printf(" \n");
+    
+    
+/*    d = (double*)realloc(d, N*sizeof(double));
+    t = (double**)realloc(t, N*sizeof(double*));
+   	n = (double**)realloc(n, N*sizeof(double*));
+   	kappa = (double*)realloc(kappa, N*sizeof(double));
+   	mu = (double*)realloc(mu, N*sizeof(double));
+    beta = (double*)realloc(beta, N*sizeof(double));
+   	gamma = (double*)realloc(gamma, N*sizeof(double));*/
+   /*	for (int i = 0; i < N; i++)
+   	{
+   	  printf("x[%d][0] = %e \n", i, x[i][0]);	 		
+   	}*/
+   	
+    for (int i = 0; i < N_old; i++)
+   	{
+   	  free(t[i]);
+      free(n[i]);	 		
+   	}  
+    free(t);
+    free(n);
+    free(d);
+    free(kappa);
+    free(mu);
+    free(beta);
+    free(gamma); 
+
   }
 
   
@@ -241,8 +224,6 @@ int main() {
     free(dxdt_k6[i]);
     free(dxdt_RK4[i]);
     free(dxdt_RK5[i]);
-    free(t[i]);
-    free(n[i]);
   }
   free(dxdt);
   free(dxdt_k1);
@@ -253,13 +234,7 @@ int main() {
   free(dxdt_k6);
   free(dxdt_RK4);
   free(dxdt_RK5);
-  free(t);
-  free(n);
-  free(d);
-  free(kappa);
-  free(mu);
-  free(beta);
-  free(gamma);
+
   
   return 0;
 }

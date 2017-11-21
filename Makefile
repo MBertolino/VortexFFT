@@ -1,6 +1,6 @@
 CC = gcc
 LD = gcc
-CFLAGS = -Wall -g -march=native #-Werror
+CFLAGS = -Wall -O3 -march=native #-Werror
 LDFLAGS = -lm 
 INCLUDES =
 RM = /bin/rm -f

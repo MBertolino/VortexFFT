@@ -13,29 +13,32 @@ void interpolate(double** x, int start, int N, int n_dim, double** t, double** n
                  double* d, double* kappa, double* kappa_den, double* mu,\
                  double* beta, double* gamma)
 {
-
+    printf("N = %d \n", N);
   // Calculate t an n
   for (int j = start; j < N-1; j++) {
+  // printf("j = %d \n", j);
     t[j][0] = x[j+1][0] - x[j][0];
+   
     t[j][1] = x[j+1][1] - x[j][1];
     n[j][0] = -t[j][1];
     n[j][1] = t[j][0];
     d[j] = sqrt(t[j][0]*t[j][0] + t[j][1]*t[j][1]);
   }
   
+
   // Special case j = N-1
   t[N-1][0] = x[start][0] - x[N-1][0];
   t[N-1][1] = x[start][1] - x[N-1][1];
   n[N-1][0] = -t[N-1][1];
   n[N-1][1] = t[N-1][0];
   d[N-1] = sqrt(t[N-1][0]*t[N-1][0] + t[N-1][1]*t[N-1][1]);
-  
+
   // kappa local curvature
   kappa_den[0] = d[N-1]*d[N-1]*t[start][0] + d[start]*d[start]*t[N-1][0];
   kappa_den[1] = d[N-1]*d[N-1]*t[start][1] + d[start]*d[start]*t[N-1][1];
   kappa[start] = 2.*(t[N-1][0]*t[start][1] - t[N-1][1]*t[start][0])\
     /sqrt(kappa_den[0]*kappa_den[0] + kappa_den[1]*kappa_den[1]);
-  
+    
   for (int j = start+1; j < N; j++) {
     // kappa local curvature
     kappa_den[0] = (d[j-1]*d[j-1]*t[j][0] + d[j]*d[j]*t[j-1][0]);
@@ -54,7 +57,7 @@ void interpolate(double** x, int start, int N, int n_dim, double** t, double** n
   mu[N-1] = -1./3.*d[N-1]*kappa[N-1] - 1./6.*d[N-1]*kappa[start];
   beta[N-1] = 0.5*d[N-1]*kappa[N-1];
   gamma[N-1] = 1./6.*d[N-1]*(kappa[start] - kappa[N-1]);
-  
+
   return;
 }
 
@@ -94,7 +97,7 @@ void autder(double* f, double* c_coeff, double alpha, int order)
   return;
 }
 
-void compute_derivative(double* dxdt, double** x, double* mu, double* beta, double* gamma, double** t, double** n, int M, int N, double alpha, double h, double eps, int j)
+void compute_derivative(double* dxdt, double** x, double* mu, double* beta, double* gamma, double** t, double** n, int M, int N, double alpha, double h, double tol_rk45_space, int j)
 {
   //printf("Entering compute derivative\n");
   double d_x, d_ni, d_ti, d_xi;
@@ -238,7 +241,7 @@ void compute_derivative(double* dxdt, double** x, double* mu, double* beta, doub
           printf("Case 4\n");
         #endif
         // Case 4: Use Runge-Kutta 4-5
-        evaluate_integral_RK(dxdt, x[i], x[j], mu[i], beta[i], gamma[i], eps, h, t[i], n[i], alpha);
+        evaluate_integral_RK(dxdt, x[i], x[j], mu[i], beta[i], gamma[i], tol_rk45_space, h, t[i], n[i], alpha);
       }
     }
     //if (i == 3)
@@ -304,10 +307,10 @@ void evaluate_integral_g(double* dxdt, double mu_i, double beta_i, double gamma_
 }
 
 void evaluate_integral_RK(double* dxdt, double* x_i, double* x_j, double mu_i, double beta_i, double gamma_i,\
-                          double eps, double h, double* t_i, double* n_i, double alpha)
+                          double tol_rk45_space, double h, double* t_i, double* n_i, double alpha)
 {
-  double first = evaluate_integral1_RK(x_i, x_j, eps, h, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
-  double second = evaluate_integral2_RK(x_i, x_j, eps, h, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
+  double first = evaluate_integral1_RK(x_i, x_j, tol_rk45_space, h, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
+  double second = evaluate_integral2_RK(x_i, x_j, tol_rk45_space, h, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
 
   dxdt[0] += first*(t_i[0] + mu_i*n_i[0]) + second*n_i[0];
   dxdt[1] += first*(t_i[1] + mu_i*n_i[1]) + second*n_i[1];
@@ -315,7 +318,7 @@ void evaluate_integral_RK(double* dxdt, double* x_i, double* x_j, double mu_i, d
   return;
 }
 
-double evaluate_integral1_RK(double* x_i, double* x_j, double eps, double h, double* t_i,\
+double evaluate_integral1_RK(double* x_i, double* x_j, double tol_rk45_space, double h, double* t_i,\
 									double* n_i, double mu_i, double beta_i, double gamma_i, double alpha)
 {
   
@@ -323,18 +326,14 @@ double evaluate_integral1_RK(double* x_i, double* x_j, double eps, double h, dou
 	double p_end = 1.; 
   double k1, k2, k3, k4, k5, k6;
 	double Y = 0., Y1, Y2, delta, p_temp;
-  double tol = 1.e-12;
   long double R;
-  
-	do
-	{
-		if ((p_end - p) < h)
-		{
-			h = p_end - p;
-		}
-    
+    while (p < p_end)
+  {
+    do
+    {
+        
 		k1 = h*integrand1(x_i, x_j, p, t_i, n_i, mu_i, beta_i, gamma_i, alpha); 
-    p_temp = p + 0.25*h;
+		p_temp = p + 0.25*h;
 		
 		k2 = h*integrand1(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
 		p_temp = p + 3.0*h/8.0;
@@ -352,39 +351,29 @@ double evaluate_integral1_RK(double* x_i, double* x_j, double eps, double h, dou
     
 		//RK4 approx
 		Y1 = Y + 25.0*k1/216.0 + 1408.0*k3/2565.0 + 2197.0*k4/4104.0 - 0.2*k5;
-    
-		//RK5 approx
+
+    //RK5 approx
 		Y2 = Y + 16.0*k1/135.0 + 6656.0*k3/12825.0 + 28561.0*k4/56430.0\
 				-9.0*k5/50.0 + 2.0*k6/55.0;
-      
-		// Compute error
-		R = fabs(Y2-Y1)/h;
-    if (R <= 1.e-12)
-    {
-      delta = 1.5;
-    }
-    else
-    {
-		  delta = 0.84*sqrt(sqrt(eps/R));
-    }
     
-		//Calculate update factor
-    // Check if to progress to next step or recalculate current step with
-		// new step size.
-		if (R <= eps)
-		{
-      // Update
-			Y = Y1;
-			p = p + h;
-			h = delta*h;
-		}
-		else
-		{
-      // Make step smaller
-			h = delta*h;
-		}
-	} while (p_end - p > tol || p - p_end > tol);
-  
+    // Compute error
+    R = fabs(Y2 - Y1);
+    if (R > tol_rk45_space)
+      h = 0.5*h;
+    } while (R > tol_rk45_space);
+    
+    p = p + h;
+    Y = Y2;
+    //printf("R = %e \n", R);
+    if (R == 0)
+    {
+      h = 1.5*h;
+    }
+    else 
+    {
+      h = 0.9*h*sqrt(sqrt((h*tol_rk45_space)/R));
+    }
+  }  
   return Y;
 }
 
@@ -401,23 +390,22 @@ double integrand1(double* x_i, double* x_j, double p, double* t_i, double* n_i, 
   return w;
 }
 
-double evaluate_integral2_RK(double* x_i, double* x_j, double eps, double h,\
+double evaluate_integral2_RK(double* x_i, double* x_j, double tol_rk45_space, double h,\
             double* t_i, double* n_i, double mu_i, double beta_i, double gamma_i, double alpha) 
 {
   
 	double p = 0.;
 	double p_end = 1.; 
   double k1, k2, k3, k4, k5, k6;
-	double Y = 0., Y1, Y2, R, delta, p_temp;
-  double tol = 1.e-12;
+	double Y = 0., Y1, Y2, R, delta, p_temp, h_new;
+  h_new = 0;
+  
+  while (p < p_end)
+  {
+    do
+    {
 
-  do
-	{
-		if ((p_end - p) < h)
-		{
-			h = p_end - p;
-		}
-    
+        
 		k1 = h*integrand2(x_i, x_j, p, t_i, n_i, mu_i, beta_i, gamma_i, alpha); 
 		p_temp = p + 0.25*h;
 		
@@ -442,33 +430,24 @@ double evaluate_integral2_RK(double* x_i, double* x_j, double eps, double h,\
 		Y2 = Y + 16.0*k1/135.0 + 6656.0*k3/12825.0 + 28561.0*k4/56430.0\
 				-9.0*k5/50.0 + 2.0*k6/55.0;
     
-		// Compute error
-		R = fabs(Y2 - Y1)/h;
+    // Compute error
+    R = fabs(Y2 - Y1);
+    if (R > tol_rk45_space)
+      h = 0.5*h;
+    } while (R > tol_rk45_space);
     
-		//Calculate update factor
-    if (R <= 1.e-12)
+    p = p + h;
+    Y = Y2;
+    //printf("R = %e \n", R);
+    if (R == 0)
     {
-      delta = 1.5;
-      
-    } else
-    {
-		  delta = 0.84*sqrt(sqrt(eps/R));
+      h = 1.5*h;
     }
-		// Check if to progress to next step or recalculate current step with
-		// new step size. 		
-		if (R <= eps)
-		{
-      // Update
-			Y = Y1;
-			p = p + h;
-			h = delta*h;
-		}
-		else
-		{
-      // Make step smaller
-			h = delta*h;
-		}
-  } while (p_end - p > tol || p - p_end > tol);
+    else 
+    {
+      h = 0.9*h*sqrt(sqrt((h*tol_rk45_space)/R));
+    }
+  }
 
   return Y;
 }
@@ -487,11 +466,14 @@ double integrand2(double* x_i, double* x_j, double p, double* t_i, double* n_i,\
 	return w;
 }
 
-/*
 // Relocating nodes
-int points_reloc(double** x, double** t, double** n, int N, double* kappa,\
+void points_reloc(double*** px, double** t, double** n, int* pN, double* kappa,\
 									double* mu, double* beta, double* gamma) {
   
+  double **x;
+  x = *px;
+  int N;
+  N = *pN;
   double epsilon = 1.e-6;
   double L = 3.0;
   double a = 2.0/3.0;
@@ -549,32 +531,8 @@ int points_reloc(double** x, double** t, double** n, int N, double* kappa,\
     }
     
   }
+
   
-  /* 
-  for (int i = 0; i < N-1; i++)
-  {
-    for (int j = 0; j < N-1; j++)
-    {
-      h[i][j] = sqrt((x[i][0] - (x[j+1][0] + x[j][0])/2)\
-                  * (x[i][0] - (x[j+1][0] + x[j][0])/2)\
-                  + (x[i][1] - (x[j+1][1] + x[j][1])/2)\
-                  * (x[i][1] - (x[j+1][1] + x[j][1])/2));
-    }
-    kappa_bar[i] = 0.5*(kappa[i] + kappa[i+1]);
-    d[i] = sqrt((x[i+1][0] - x[i][0])*(x[i+1][0] - x[i][0])\
-         + (x[i+1][1] - x[i][1])*(x[i+1][1] - x[i][1]));
-  }
-  
-  d[N-1] = sqrt((x[0][0] - x[N-1][0])*(x[0][0] - x[N-1][0])\
-         + (x[0][1] - x[N-1][1])*(x[0][1] - x[N-1][1]));
-  
-  h[N-1][N-1] = sqrt((x[N-1][0] - (x[0][0] + x[N-1][0])/2)\
-                  * (x[N-1][0] - (x[0][0] + x[N-1][0])/2)\
-                  + (x[N-1][1] - (x[0][1] + x[N-1][1])/2)\
-                  * (x[N-1][1] - (x[0][1] + x[N-1][1])/2));
-   
-  kappa_bar[N-1] = 0.5*(kappa[N-1] + kappa[0]);
-  ///////////////////
   double kappa_breve_temp;
   for (int i = 0; i < N; i++)
   {
@@ -588,37 +546,34 @@ int points_reloc(double** x, double** t, double** n, int N, double* kappa,\
 
     for (int j = 0; j < N; j++)
       kappa_breve_temp += d[j]/(h[i][j]*h[i][j]);
-    //printf("kappa_breve_temp = %e\n", kappa_breve_temp);
+
     for (int j = 0; j < N; j++)
     {
       kappai_breve[i] += (d[j]*fabs(kappa_bar[j])/(h[i][j]*h[i][j]))*(1./kappa_breve_temp);
-      //printf("kappa_bar[%d] = %e\n", i, kappa_bar[i]);
-      //printf("burk = %e \n", fabs(kappa_bar[j]));
+
     }
     kappai_tilde[i] = pow((kappai_breve[i]*L), a)/(v*L)\
                     + SQRTTWO*kappai_breve[i];
-    //printf("kappai_breve[%d] = %e\n", i, kappai_breve[i]);
+
     kappa_breve_temp = 0;
   }
 
   for (int i = 0; i < N-1; i++)
   {
     kappai_hat[i] = 0.5*(kappai_tilde[i] + kappai_tilde[i+1]);
-    //printf("kappai_hat[%d] = %e \n", i, kappai_hat[i]);
-    //printf("eps = %lf\n", epsilon);
-    //printf("denom = %e\n", kappai_hat[i]/SQRTTWO);
+
     rho[i] = kappai_hat[i]/(1. + epsilon*kappai_hat[i]/SQRTTWO);
-    //printf("rho[%d] = %e \n", i, rho[i]);
+
     sigmai[i] = rho[i]*d[i];
     
-    //*kappai_hat[i]
+
   } 
   
   kappai_hat[N-1] = 0.5*(kappai_tilde[N-1] + kappai_tilde[0]);
   rho[N-1] = kappai_hat[N-1]/(1. + epsilon*kappai_hat[N-1]/SQRTTWO);
   sigmai[N-1] = rho[N-1]*d[N-1];
   //*kappai_hat[N-1]
-  double q, rest, p, dp, p_min, rest_prev;
+  double q, rest, p, dp, p_min, rest_dp;
   int i_min;
   q = 0.;
   dp = 0.005;
@@ -653,9 +608,11 @@ int points_reloc(double** x, double** t, double** n, int N, double* kappa,\
   
   printf("before realloc\n");
  	x = (double**)realloc(x, N_tilde*sizeof(double*));
+
  	for (int i = 0; i < N_tilde; i++)
  	{
  		x[i] = realloc(x[i], 2*sizeof(double));
+ 		 		
  	}
  	
  	printf("after realloc\n");
@@ -673,43 +630,43 @@ int points_reloc(double** x, double** t, double** n, int N, double* kappa,\
   	free(x[i]);
   }
   free(x);
-  /////////////////////
+  */
+  ///////////////////
+  /*
   
   x = (double**)malloc(N_tilde*sizeof(double*));
   for (int i = 0; i < N_tilde; i++)
   {
   	x[i] = (double*)malloc(2*sizeof(double));
   }
-  //////////////
-  printf("x_temp[0][0] = %lf       x_temp[0][1] = %lf\n", x_temp[0][0], x_temp[0][1]);
+  *//////////////
+ /* printf("x_temp[0][0] = %lf       x_temp[0][1] = %lf\n", x_temp[0][0], x_temp[0][1]);
   x[0][0] = x_temp[0][0];
   x[0][1] = x_temp[0][1]; 
   printf("x[0][0] = %lf       x[0][1] = %lf\n", x[0][0], x[0][1]);
-	
+	*/
   for (int j = 1; j < N_tilde; j++)
   {
   	// Assume minimum at i=0, p=0
-  	rest_prev = 1-j;
   	i_min = 0;
   	p_min = 0.;
     for (int i = 0; i < N; i++)
     {
-      while (p < 1)
+      while (p < 1-dp)
       {
       	rest = 0.;
+      	rest_dp = 0.;
       	for (int l = 1; l < i; l++)
       	{
           rest += (sigmai_prim[l] + sigmai_prim[i]*p);
+          rest_dp += (sigmai_prim[l] + sigmai_prim[i]*(p+dp));
         }
-        rest = rest - 1 + j;
-        printf("rest = %lf  fabs(rest) = %lf   fabs(rest_prev) = %lf\n", rest, fabs(rest), fabs(rest_prev));
-        
-        if (fabs(rest) < fabs(rest_prev))
+          
+        if (j-1 > rest && j-1 < rest_dp)
 				{
-				printf("test\n");
+				//printf("test\n");
 					i_min = i;
 					p_min = p;
-					rest_prev = rest;
 				}
         p += dp;
       }
@@ -720,8 +677,11 @@ int points_reloc(double** x, double** t, double** n, int N, double* kappa,\
 	  x[j][1] = x_temp[i_min][1] + p_min*t[i_min][1] + (mu[i_min]*p_min + \
       					beta[i_min]*p_min*p_min + gamma[i_min]*p_min*p_min*p_min)*n[i_min][1];
   }
-
+   	for (int i = 0; i < N_tilde; i++)
+      printf("x[%d][0] =  %e, x[%d][1] =  %e \n", i, x[i][0],\
+  i, x[i][1]);
   // Free
+  
   free(kappa_bar);
   free(d);
   free(kappai_breve);
@@ -738,17 +698,21 @@ int points_reloc(double** x, double** t, double** n, int N, double* kappa,\
   {
   	free(x_temp[i]);
   }
+  *pN = N_tilde;
+  *px = x;
   free(x_temp);
+  printf("Exiting points_reloc\n");
   
-  return N_tilde;
+  return;
 }
-*/
 
-double runge_kutta45(double** x, double** dxdt, double** dxdt_k1, double** dxdt_k2, double** dxdt_k3, double** dxdt_k4, double** dxdt_k5, double** dxdt_k6, double** dxdt_RK4, double** dxdt_RK5, double tol, double dt, int M, int N, double* mu, double* beta, double* gamma, double** t, double** n, double alpha, double eps, double h)
+
+double runge_kutta45(double** x, double** dxdt, double** dxdt_k1, double** dxdt_k2, double** dxdt_k3, double** dxdt_k4, double** dxdt_k5, double** dxdt_k6, double** dxdt_RK4, double** dxdt_RK5, double tol_rk45_time, double dt, int M, int N, double* mu, double* beta, double* gamma, double** t, double** n, double alpha, double tol_rk45_space, double h)
 {
-  double F, delta, theta;
+  double F, delta, theta, tpi, dt_new;
   theta = -1.;
   F = dt*theta/(TWOPI);
+  tpi = theta/(TWOPI);
   double R[2];
   double R_old[2];
   double R_max;
@@ -772,7 +736,7 @@ double runge_kutta45(double** x, double** dxdt, double** dxdt_k1, double** dxdt_
     // Step 1 in RK
     for (int j = 0; j < N; j++)
     {
-      compute_derivative(dxdt_k1[j], x, mu, beta, gamma, t, n, M, N, alpha, h, eps, j);
+      compute_derivative(dxdt_k1[j], x, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j);
       dxdt_k1[j][0] = F*dxdt_k1[j][0];
       dxdt_k1[j][1] = F*dxdt_k1[j][1];
       //printf("dxdt dot x = %e\n", dxdt_k1[j][0]*x[j][0] + dxdt_k1[j][1]*x[j][1]);
@@ -786,7 +750,7 @@ double runge_kutta45(double** x, double** dxdt, double** dxdt_k1, double** dxdt_
     // Step 2 in RK
     for (int j = 0; j < N; j++)
     {
-      compute_derivative(dxdt_k2[j], x_temp, mu, beta, gamma, t, n, M, N, alpha, h, eps, j);
+      compute_derivative(dxdt_k2[j], x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j);
       dxdt_k2[j][0] = F*dxdt_k2[j][0];
       dxdt_k2[j][1] = F*dxdt_k2[j][1];
     }
@@ -799,7 +763,7 @@ double runge_kutta45(double** x, double** dxdt, double** dxdt_k1, double** dxdt_
     // Step 3 in RK
     for (int j = 0; j < N; j++)
     {
-      compute_derivative(dxdt_k3[j], x_temp, mu, beta, gamma, t, n, M, N, alpha, h, eps, j);
+      compute_derivative(dxdt_k3[j], x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j);
       dxdt_k3[j][0] = F*dxdt_k3[j][0];
       dxdt_k3[j][1] = F*dxdt_k3[j][1];
     }
@@ -812,7 +776,7 @@ double runge_kutta45(double** x, double** dxdt, double** dxdt_k1, double** dxdt_
     // Step 4 in RK
     for (int j = 0; j < N; j++)
     {
-      compute_derivative(dxdt_k4[j], x_temp, mu, beta, gamma, t, n, M, N, alpha, h, eps, j);
+      compute_derivative(dxdt_k4[j], x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j);
       dxdt_k4[j][0] = F*dxdt_k4[j][0];
       dxdt_k4[j][1] = F*dxdt_k4[j][1];
     }
@@ -825,7 +789,7 @@ double runge_kutta45(double** x, double** dxdt, double** dxdt_k1, double** dxdt_
     // Step 5 in RK
     for (int j = 0; j < N; j++)
     {
-      compute_derivative(dxdt_k5[j], x_temp, mu, beta, gamma, t, n, M, N, alpha, h, eps, j);
+      compute_derivative(dxdt_k5[j], x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j);
       dxdt_k5[j][0] = F*dxdt_k5[j][0];
       dxdt_k5[j][1] = F*dxdt_k5[j][1];
     }
@@ -838,7 +802,7 @@ double runge_kutta45(double** x, double** dxdt, double** dxdt_k1, double** dxdt_
     // Step 6 in RK
     for (int j = 0; j < N; j++)
     {
-      compute_derivative(dxdt_k6[j], x_temp, mu, beta, gamma, t, n, M, N, alpha, h, eps, j);
+      compute_derivative(dxdt_k6[j], x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j);
       dxdt_k6[j][0] = F*dxdt_k6[j][0];
       dxdt_k6[j][1] = F*dxdt_k6[j][1];
     }
@@ -874,25 +838,20 @@ double runge_kutta45(double** x, double** dxdt, double** dxdt_k1, double** dxdt_
       R_max = R_old[1];
     
     // Calculate update factor
-    if (fabs(R_max) < tol)
+    if (R_max > tol_rk45_time)
     {
-      delta = 1.5;
-    }
-    else
-    {
-		  delta = 0.84*sqrt(sqrt(eps/R_max));
+       dt = 0.5*dt;
     }
 
-    printf("dt1 = %e\n", dt);
+   // printf("dt1 = %e\n", dt);
     // Make step smaller
-    dt = delta*dt;
-    F = delta*F;
-    printf("R_max = %e\n", R_max);
-    printf("dt2 = %e\n\n", dt);
+    F = dt*tpi;
+   // printf("R_max = %e\n", R_max);
+   // printf("dt2 = %e\n\n", dt);
     
-  } while (R_max > tol);
-  dt = dt/delta; // The last dt = delta*dt has no effect
+  } while (R_max > tol_rk45_time);
   
+  dt = 10.*dt*sqrt(sqrt((dt*tol_rk45_time)/R_max));
   // Update
   for (int j = 0; j < N; j++)
   {
@@ -909,7 +868,7 @@ double runge_kutta45(double** x, double** dxdt, double** dxdt_k1, double** dxdt_
   for (int j = 0; j < N; j++)
     free(x_temp[j]);
   free(x_temp);
-  
+ //  printf("dt_after = %e\n", dt);
   return dt;
 }
 

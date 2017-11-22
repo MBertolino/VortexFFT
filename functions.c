@@ -689,8 +689,8 @@ double runge_kutta45(double** x, double** dxdt_k1, double** dxdt_k2, double** dx
   double R[2];
   double R_old[2];
   double R_max;
-  R[0] = 0.;
-  R[1] = 0.;
+ // R[0] = 0.;
+ // R[1] = 0.;
   R_max = 0.;
   double **x_temp, **x_RK4, **x_RK5;
   //x_temp = (double*)malloc(2*N*sizeof(double));
@@ -807,7 +807,7 @@ double runge_kutta45(double** x, double** dxdt_k1, double** dxdt_k2, double** dx
     }
     
   	// Compute maximum error
-    R_old[0] = fabs(x_RK5[0][0] - x_RK4[0][0]);
+    /*R_old[0] = fabs(x_RK5[0][0] - x_RK4[0][0]);
     R_old[1] = fabs(x_RK5[0][1] - x_RK4[0][1]);
     for (int j = 1; j < N; j++)
     {
@@ -821,7 +821,18 @@ double runge_kutta45(double** x, double** dxdt_k1, double** dxdt_k2, double** dx
     }
     R_max = R_old[0];
     if (R_old[1] > R_old[0])
-      R_max = R_old[1];
+      R_max = R_old[1];*/
+     // Compute average error
+    R[0] = 0.;
+    R[1] = 0.;
+    for (int i = 0; i < N; i++)
+    {
+      R[0] = R[0] + fabs(x_RK5[i][0] - x_RK4[i][0]);
+      R[1] = R[1] + fabs(x_RK5[i][1] - x_RK4[i][1]);
+    }
+    
+    R_max = 0.5*(R[0] + R[1])/N;
+    
     
     printf("dt1 = %e\n", dt);
     // Calculate update factor
@@ -858,14 +869,24 @@ double runge_kutta45(double** x, double** dxdt_k1, double** dxdt_k2, double** dx
   return dt_new;
 }
 
-double compute_area(double** x, int start, int stop)
+double compute_area(double** x, int start, int stop, double** t, double** n,\
+                    double* mu, double* beta, double* gamma)
 {
-  double area;
+  double area, area2;
   area = 0;
-  for (int j = start; j < stop-1; j++)
-    area += x[j][0]*(x[j+1][1] - x[j][1]);
-  area += x[stop-1][0]*(x[start][1] - x[stop-1][1]);
-  area = area;
+  area2 = 0;
+  for (int i = start; i < stop; i++)
+  {
+    area += (t[i][1] + (mu[i])*n[i][1])*x[i][0];
+    
+    //printf("%e, %e, %e, %e, %e\n",x[i][1], t[i][0]+mu[i]*n[i][0], t[i][1]+mu[i]*n[i][1], x[i+1][1] - x[i][1], fabs(x[i+1][1] - x[i][1] - t[i][1]+mu[i]*n[i][1]));
+  }
   
+  /*+ 2*beta[i] + 3*gamma[i]*/
+  /*for (int j = start; j < stop-1; j++)
+    area2 = area2 + x[j][0]*(x[j+1][1] - x[j][1]);
+  area2 =  area2 + x[stop-1][0]*(x[start][1] - x[stop-1][1]);
+  //area = area;
+  printf("area2 = %e\n", area2);*/
   return area;
 }

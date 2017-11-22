@@ -10,11 +10,11 @@
 int main() {
   
   // Number of points
-  int M = 264; // Number of points in each circle
+  int M = 256; // Number of points in each circle
   int N = M;
   int n_dim = 2;
   int T = 50000;
-  double tol_rk45_time = 1.e-8;
+  double tol_rk45_time = 1.e-5;
   long double tol_rk45_space = 1.e-8;
   long double h = 1.e-3;
   double alpha = 0.5; // Interpolation between 2D Euler and Quasi-geostrophic
@@ -91,12 +91,12 @@ int main() {
     //x[j+M][1] = sin(TWOPI*j/(double)M);
   }
   double area1;
-  //double area2;
-  area1 = compute_area(x, 0, M);
+/*  //double area2;
+  area1 = compute_area(x, 0, M, t, n, mu, beta, gamma);
   //area2 = compute_area(x, M, N);
   //printf("area1 = %lf\n", area1);
   //printf("area2 = %lf\n", area2);
-
+*/
   // Print to file  
   char str[80] = "../circle_";
   char str2[80] = "";
@@ -139,7 +139,11 @@ int main() {
       x_temp[j][1] = 0.;
     }
     
-    
+    // Compute area
+    area1 = compute_area(x, 0, M, t, n, mu, beta, gamma);
+    //area2 = compute_area(x, M, N);
+    printf("area1 = %lf\n", area1);
+    //printf("area2 = %lf\n\n", area2);
       
     // Evolve patches
     dt = runge_kutta45(x, dxdt_k1, dxdt_k2, dxdt_k3, dxdt_k4, dxdt_k5,\
@@ -148,11 +152,7 @@ int main() {
     time += dt;
     printf("time = %1.15lf\n", time);
     
-    // Compute area
-    area1 = compute_area(x, 0, M);
-    //area2 = compute_area(x, M, N);
-    printf("area1 = %lf\n", area1);
-    //printf("area2 = %lf\n\n", area2);
+
     
     printf("--------------------------\n");
     

@@ -10,7 +10,7 @@
 int main() {
   
   // Number of points
-  int M = 64; // Number of points in each circle
+  int M = 264; // Number of points in each circle
   int N = M;
   int n_dim = 2;
   int T = 50000;
@@ -142,7 +142,7 @@ int main() {
     
       
     // Evolve patches
-    dt = runge_kutta45(x, dxdt, dxdt_k1, dxdt_k2, dxdt_k3, dxdt_k4, dxdt_k5,\
+    dt = runge_kutta45(x, dxdt_k1, dxdt_k2, dxdt_k3, dxdt_k4, dxdt_k5,\
                   dxdt_k6, dxdt_RK4, dxdt_RK5, tol_rk45_time, dt, M, N,\
                   mu, beta, gamma, t, n, alpha, tol_rk45_space, h);
     time += dt;
@@ -154,7 +154,6 @@ int main() {
     printf("area1 = %lf\n", area1);
     //printf("area2 = %lf\n\n", area2);
     
-    printf("X dot dxdt = %e \n", x[0][0]*dxdt[0][0]+x[0][1]*dxdt[0][1]);
     printf("--------------------------\n");
     
     //Print to file

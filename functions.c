@@ -404,8 +404,6 @@ double evaluate_integral2_RK(double* x_i, double* x_j, double tol_rk45_space, do
   {
     do
     {
-
-        
 		k1 = h*integrand2(x_i, x_j, p, t_i, n_i, mu_i, beta_i, gamma_i, alpha); 
 		p_temp = p + 0.25*h;
 		
@@ -529,15 +527,12 @@ void points_reloc(double*** px, double** t, double** n, int* pN, double* kappa,\
       d[i] = sqrt((x[i+1][0] - x[i][0])*(x[i+1][0] - x[i][0])\
            + (x[i+1][1] - x[i][1])*(x[i+1][1] - x[i][1]));
     }
-    
   }
-
   
   double kappa_breve_temp;
   for (int i = 0; i < N; i++)
   {
     kappai_breve[i] = 0.;
-
   }
 
   for (int i = 0; i < N; i++)
@@ -565,8 +560,6 @@ void points_reloc(double*** px, double** t, double** n, int* pN, double* kappa,\
     rho[i] = kappai_hat[i]/(1. + epsilon*kappai_hat[i]/SQRTTWO);
 
     sigmai[i] = rho[i]*d[i];
-    
-
   } 
   
   kappai_hat[N-1] = 0.5*(kappai_tilde[N-1] + kappai_tilde[0]);
@@ -687,7 +680,7 @@ void points_reloc(double*** px, double** t, double** n, int* pN, double* kappa,\
 }
 
 
-double runge_kutta45(double** x, double** dxdt, double** dxdt_k1, double** dxdt_k2, double** dxdt_k3, double** dxdt_k4, double** dxdt_k5, double** dxdt_k6, double** dxdt_RK4, double** dxdt_RK5, double tol_rk45_time, double dt, int M, int N, double* mu, double* beta, double* gamma, double** t, double** n, double alpha, double tol_rk45_space, double h)
+double runge_kutta45(double** x, double** dxdt_k1, double** dxdt_k2, double** dxdt_k3, double** dxdt_k4, double** dxdt_k5, double** dxdt_k6, double** dxdt_RK4, double** dxdt_RK5, double tol_rk45_time, double dt, int M, int N, double* mu, double* beta, double* gamma, double** t, double** n, double alpha, double tol_rk45_space, double h)
 {
   double F, delta, theta, tpi, dt_new;
   theta = -1.;
@@ -699,16 +692,22 @@ double runge_kutta45(double** x, double** dxdt, double** dxdt_k1, double** dxdt_
   R[0] = 0.;
   R[1] = 0.;
   R_max = 0.;
-  double** x_temp;
+  double **x_temp, **x_RK4, **x_RK5;
   //x_temp = (double*)malloc(2*N*sizeof(double));
   x_temp = (double**)malloc(N*sizeof(double*));
+  x_RK4 = (double**)malloc(N*sizeof(double*));
+  x_RK5 = (double**)malloc(N*sizeof(double*));
   for (int j = 0; j < N; j++)
   {
     x_temp[j] = (double*)malloc(2*sizeof(double)); 
+    x_RK4[j] = (double*)malloc(2*sizeof(double)); 
+    x_RK5[j] = (double*)malloc(2*sizeof(double)); 
     x_temp[j][0] = 0.;
     x_temp[j][1] = 0.;
-    dxdt[j][0] = 0.;
-    dxdt[j][1] = 0.;
+    x_RK4[j][0] = 0.;
+    x_RK4[j][1] = 0.;
+    x_RK5[j][0] = 0.;
+    x_RK5[j][1] = 0.;
   } 
   // Runge-Kutta 45
   do
@@ -794,77 +793,69 @@ double runge_kutta45(double** x, double** dxdt, double** dxdt_k1, double** dxdt_
   	dxdt_RK4[j][1] = 25.0*dxdt_k1[j][1]/216.0 + 1408.0*dxdt_k3[j][1]/2565.0 + 2197.0*dxdt_k4[j][1]/4104.0 - 0.2*dxdt_k5[j][1];
     
     // RK5 approx
-		dxdt_RK5[j][0] = dxdt[j][0] + 16.0*dxdt_k1[j][0]/135.0 + 6656.0*dxdt_k3[j][0]/12825.0 + 28561.0*dxdt_k4[j][0]/56430.0\
+		dxdt_RK5[j][0] = 16.0*dxdt_k1[j][0]/135.0 + 6656.0*dxdt_k3[j][0]/12825.0 + 28561.0*dxdt_k4[j][0]/56430.0\
 		 	-9.0*dxdt_k5[j][0]/50.0 + 2.0*dxdt_k6[j][0]/55.0;
-		dxdt_RK5[j][1] = dxdt[j][1] + 16.0*dxdt_k1[j][1]/135.0 + 6656.0*dxdt_k3[j][1]/12825.0 + 28561.0*dxdt_k4[j][1]/56430.0\
+		dxdt_RK5[j][1] = 16.0*dxdt_k1[j][1]/135.0 + 6656.0*dxdt_k3[j][1]/12825.0 + 28561.0*dxdt_k4[j][1]/56430.0\
 		 	-9.0*dxdt_k5[j][1]/50.0 + 2.0*dxdt_k6[j][1]/55.0;
+
+    // RK x approximations
+    x_RK4[j][0] = x[j][0] + dxdt_RK4[j][0];
+    x_RK4[j][1] = x[j][1] + dxdt_RK4[j][1];
+    
+    x_RK5[j][0] = x[j][0] + dxdt_RK5[j][1];
+    x_RK5[j][1] = x[j][1] + dxdt_RK5[j][1];
     }
-    /*
+    
   	// Compute maximum error
-    R_old[0] = fabs(dxdt_RK5[0][0] - dxdt_RK4[0][0]);
-    R_old[1] = fabs(dxdt_RK5[0][1] - dxdt_RK4[0][1]);
+    R_old[0] = fabs(x_RK5[0][0] - x_RK4[0][0]);
+    R_old[1] = fabs(x_RK5[0][1] - x_RK4[0][1]);
     for (int j = 1; j < N; j++)
     {
-	    R[0] = fabs(dxdt_RK5[j][0] - dxdt_RK4[j][0]);
+	    R[0] = fabs(x_RK5[j][0] - x_RK4[j][0]);
       if (R[0] > R_old[0])
         R_old[0] = R[0];
 	  	  
-      R[1] = fabs(dxdt_RK5[j][1] - dxdt_RK4[j][1]);
+      R[1] = fabs(x_RK5[j][1] - x_RK4[j][1]);
       if (R[1] > R_old[1])
         R_old[1] = R[1];
     }
     R_max = R_old[0];
     if (R_old[1] > R_old[0])
       R_max = R_old[1];
-    */
     
-    // Compute average error
-    R[0] = 0.;
-    R[1] = 0.;
-    for (int i = 0; i < N; i++)
-    {
-      R[0] += fabs(dxdt_RK5[i][0] - dxdt_RK4[i][0]);
-      R[1] += fabs(dxdt_RK5[i][1] - dxdt_RK4[i][1]);
-    }
-    
-    R_max = 0.5*(R[0] + R[1])/N;
-    
-    
+    printf("dt1 = %e\n", dt);
     // Calculate update factor
     if (R_max > tol_rk45_time)
-    {
-       dt = 0.5*dt;
-    }
-
-    printf("dt1 = %e\n", dt);
+      dt = 0.5*dt;
+    
     // Make step smaller
     F = dt*tpi;
     printf("R_max = %e\n", R_max);
     printf("dt2 = %e\n\n", dt);
-    
   } while (R_max > tol_rk45_time);
+  dt_new = 0.9*dt*sqrt(sqrt(tol_rk45_time/R_max));
+  printf("dt_new = %e\n", dt_new);
   
-  dt_new = 10.*dt*sqrt(sqrt((fabs(dt)*tol_rk45_time)/R_max));
-  dt = dt_new;
   // Update
   for (int j = 0; j < N; j++)
   {
-    dxdt[j][0] = dxdt_RK5[j][0];
-    dxdt[j][1] = dxdt_RK5[j][1];
+    x[j][0] = x[j][0] + dxdt_RK5[j][0];
+    x[j][1] = x[j][1] + dxdt_RK5[j][1];
   }
   
   for (int j = 0; j < N; j++)
   {
-    x[j][0] = x[j][0] + dxdt[j][0];
-    x[j][1] = x[j][1] + dxdt[j][1];
-  }
-  
-  for (int j = 0; j < N; j++)
     free(x_temp[j]);
-  
+    free(x_RK4[j]);
+    free(x_RK5[j]);
+  }
   free(x_temp);
-   printf("dt_after = %e\n", dt);
-  return dt;
+  free(x_RK4);
+  free(x_RK5);
+  
+  printf("X dot dxdt = %e \n", x[0][0]*dxdt_RK5[0][0]+x[0][1]*dxdt_RK5[0][1]);
+
+  return dt_new;
 }
 
 double compute_area(double** x, int start, int stop)

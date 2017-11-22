@@ -13,7 +13,7 @@ void interpolate(double** x, int start, int N, int n_dim, double** t, double** n
                  double* d, double* kappa, double* kappa_den, double* mu,\
                  double* beta, double* gamma)
 {
-    printf("N = %d \n", N);
+    //printf("N = %d \n", N);
   // Calculate t an n
   for (int j = start; j < N-1; j++) {
   // printf("j = %d \n", j);
@@ -365,7 +365,7 @@ double evaluate_integral1_RK(double* x_i, double* x_j, double tol_rk45_space, do
     p = p + h;
     Y = Y2;
     //printf("R = %e \n", R);
-    if (R == 0)
+    if (R < 1.e-10*tol_rk45_space)
     {
       h = 1.5*h;
     }
@@ -439,9 +439,9 @@ double evaluate_integral2_RK(double* x_i, double* x_j, double tol_rk45_space, do
     p = p + h;
     Y = Y2;
     //printf("R = %e \n", R);
-    if (R == 0)
+    if (R < 1.e-10*tol_rk45_space)
     {
-      h = 1.5*h;
+      h = 2*h;
     }
     else 
     {
@@ -624,27 +624,7 @@ void points_reloc(double*** px, double** t, double** n, int* pN, double* kappa,\
   
   printf("after zeroing \n");
   
-  //Free x and then reallocate memory for new size
- /* for (int i = 0; i < N; i++)
-  {
-  	free(x[i]);
-  }
-  free(x);
-  */
-  ///////////////////
-  /*
-  
-  x = (double**)malloc(N_tilde*sizeof(double*));
-  for (int i = 0; i < N_tilde; i++)
-  {
-  	x[i] = (double*)malloc(2*sizeof(double));
-  }
-  *//////////////
- /* printf("x_temp[0][0] = %lf       x_temp[0][1] = %lf\n", x_temp[0][0], x_temp[0][1]);
-  x[0][0] = x_temp[0][0];
-  x[0][1] = x_temp[0][1]; 
-  printf("x[0][0] = %lf       x[0][1] = %lf\n", x[0][0], x[0][1]);
-	*/
+ 
   for (int j = 1; j < N_tilde; j++)
   {
   	// Assume minimum at i=0, p=0
@@ -819,8 +799,8 @@ double runge_kutta45(double** x, double** dxdt, double** dxdt_k1, double** dxdt_
 		dxdt_RK5[j][1] = dxdt[j][1] + 16.0*dxdt_k1[j][1]/135.0 + 6656.0*dxdt_k3[j][1]/12825.0 + 28561.0*dxdt_k4[j][1]/56430.0\
 		 	-9.0*dxdt_k5[j][1]/50.0 + 2.0*dxdt_k6[j][1]/55.0;
     }
-    
-  	// Compute error
+    /*
+  	// Compute maximum error
     R_old[0] = fabs(dxdt_RK5[0][0] - dxdt_RK4[0][0]);
     R_old[1] = fabs(dxdt_RK5[0][1] - dxdt_RK4[0][1]);
     for (int j = 1; j < N; j++)
@@ -836,6 +816,19 @@ double runge_kutta45(double** x, double** dxdt, double** dxdt_k1, double** dxdt_
     R_max = R_old[0];
     if (R_old[1] > R_old[0])
       R_max = R_old[1];
+    */
+    
+    // Compute average error
+    R[0] = 0.;
+    R[1] = 0.;
+    for (int i = 0; i < N; i++)
+    {
+      R[0] += fabs(dxdt_RK5[i][0] - dxdt_RK4[i][0]);
+      R[1] += fabs(dxdt_RK5[i][1] - dxdt_RK4[i][1]);
+    }
+    
+    R_max = 0.5*(R[0] + R[1])/N;
+    
     
     // Calculate update factor
     if (R_max > tol_rk45_time)
@@ -843,15 +836,16 @@ double runge_kutta45(double** x, double** dxdt, double** dxdt_k1, double** dxdt_
        dt = 0.5*dt;
     }
 
-   // printf("dt1 = %e\n", dt);
+    printf("dt1 = %e\n", dt);
     // Make step smaller
     F = dt*tpi;
-   // printf("R_max = %e\n", R_max);
-   // printf("dt2 = %e\n\n", dt);
+    printf("R_max = %e\n", R_max);
+    printf("dt2 = %e\n\n", dt);
     
   } while (R_max > tol_rk45_time);
   
-  dt = 10.*dt*sqrt(sqrt((dt*tol_rk45_time)/R_max));
+  dt_new = 10.*dt*sqrt(sqrt((fabs(dt)*tol_rk45_time)/R_max));
+  dt = dt_new;
   // Update
   for (int j = 0; j < N; j++)
   {
@@ -867,8 +861,9 @@ double runge_kutta45(double** x, double** dxdt, double** dxdt_k1, double** dxdt_
   
   for (int j = 0; j < N; j++)
     free(x_temp[j]);
+  
   free(x_temp);
- //  printf("dt_after = %e\n", dt);
+   printf("dt_after = %e\n", dt);
   return dt;
 }
 

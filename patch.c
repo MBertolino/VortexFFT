@@ -10,7 +10,7 @@
 int main() {
   
   // Number of points
-  int M = 256; // Number of points in each circle
+  int M = 64; // Number of points in each circle
   int N = M;
   int n_dim = 2;
   int T = 50000;
@@ -110,8 +110,8 @@ int main() {
   fclose(f);
   
   // Step in time
-  tpi = theta/(TWOPI);	
-	F = dt*tpi;
+  //tpi = theta/(TWOPI);	
+	//F = dt*tpi;
   for (int k = 0; k < T; k++) {
     double* d = (double*)malloc(N*sizeof(double));
     double* kappa = (double*)malloc(N*sizeof(double));
@@ -143,7 +143,7 @@ int main() {
       
     // Evolve patches
     dt = runge_kutta45(x, dxdt, dxdt_k1, dxdt_k2, dxdt_k3, dxdt_k4, dxdt_k5,\
-                  dxdt_k6, dxdt_RK4, dxdt_RK5, tol_rk45_time, 2*dt, M, N,\
+                  dxdt_k6, dxdt_RK4, dxdt_RK5, tol_rk45_time, dt, M, N,\
                   mu, beta, gamma, t, n, alpha, tol_rk45_space, h);
     time += dt;
     printf("time = %1.15lf\n", time);
@@ -153,6 +153,8 @@ int main() {
     //area2 = compute_area(x, M, N);
     printf("area1 = %lf\n", area1);
     //printf("area2 = %lf\n\n", area2);
+    
+    printf("X dot dxdt = %e \n", x[0][0]*dxdt[0][0]+x[0][1]*dxdt[0][1]);
     printf("--------------------------\n");
     
     //Print to file
@@ -174,8 +176,8 @@ int main() {
 
     N_old  = N;
    // points_reloc(px, t, n, pN, kappa, mu, gamma, beta);
-    printf("N = %d\n", N);
-    printf(" \n");
+    //printf("N = %d\n", N);
+    //printf(" \n");
     
     
 /*    d = (double*)realloc(d, N*sizeof(double));

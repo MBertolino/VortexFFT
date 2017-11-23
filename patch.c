@@ -10,7 +10,7 @@
 int main() {
   
   // Number of points
-  int M = 264; // Number of points in each circle
+  int M = 32; // Number of points in each circle
   int N = M;
   int n_dim = 2;
   int T = 50000;
@@ -132,14 +132,18 @@ int main() {
     M = N;//M = (int)N/2;
     // Interpolate
     interpolate(x, 0, M, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
+
+    /*for (int i = 0; i < M; i++)
+    {
+    	printf("x[%d][0] = %e,     x[%d][1] = %e\n", i, x[i][0], i, x[i][1]);
+    }*/
     //interpolate(x, M, N, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
-    for (int j = 0; j < N; j++)
+    /*for (int j = 0; j < N; j++)
     {
       x_temp[j][0] = 0.;
       x_temp[j][1] = 0.;
-    }
-    
-    
+    }*/
+      
       
     // Evolve patches
     dt = runge_kutta45(x, dxdt_k1, dxdt_k2, dxdt_k3, dxdt_k4, dxdt_k5,\
@@ -174,7 +178,7 @@ int main() {
     // Redistribute the nodes
 
     N_old  = N;
-   // points_reloc(px, t, n, pN, kappa, mu, gamma, beta);
+    points_reloc(px, t, n, pN, kappa, mu, gamma, beta);
     //printf("N = %d\n", N);
     //printf(" \n");
     

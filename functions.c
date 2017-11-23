@@ -15,6 +15,13 @@ void interpolate(double** x, int start, int N, int n_dim, double** t, double** n
 {
     //printf("N = %d \n", N);
   // Calculate t an n
+  
+  printf("In interpolate\n");
+  /*for (int i = 0; i < N; i++)
+  {
+      printf("x[%d][0] =  %e, x[%d][1] =  %e \n", i, x[i][0], i, x[i][1]);
+  }
+  */
   for (int j = start; j < N-1; j++) {
   // printf("j = %d \n", j);
     t[j][0] = x[j+1][0] - x[j][0];
@@ -23,6 +30,10 @@ void interpolate(double** x, int start, int N, int n_dim, double** t, double** n
     n[j][0] = -t[j][1];
     n[j][1] = t[j][0];
     d[j] = sqrt(t[j][0]*t[j][0] + t[j][1]*t[j][1]);
+    //printf("t[%d][0] = %e,    t[%d][1] = %e\n", j, t[j][0], j, t[j][1]);
+    //printf("n[%d][0] = %e,    n[%d][1] = %e\n", j, n[j][0], j, n[j][1]);
+    //printf("d[%d] = %e\n", j, d[j]);
+    //printf("------------------\n");
   }
   
 
@@ -33,11 +44,13 @@ void interpolate(double** x, int start, int N, int n_dim, double** t, double** n
   n[N-1][1] = t[N-1][0];
   d[N-1] = sqrt(t[N-1][0]*t[N-1][0] + t[N-1][1]*t[N-1][1]);
 
+
   // kappa local curvature
   kappa_den[0] = d[N-1]*d[N-1]*t[start][0] + d[start]*d[start]*t[N-1][0];
   kappa_den[1] = d[N-1]*d[N-1]*t[start][1] + d[start]*d[start]*t[N-1][1];
   kappa[start] = 2.*(t[N-1][0]*t[start][1] - t[N-1][1]*t[start][0])\
     /sqrt(kappa_den[0]*kappa_den[0] + kappa_den[1]*kappa_den[1]);
+
     
   for (int j = start+1; j < N; j++) {
     // kappa local curvature
@@ -46,6 +59,7 @@ void interpolate(double** x, int start, int N, int n_dim, double** t, double** n
     kappa[j] = 2.*(t[j-1][0]*t[j][1] - t[j-1][1]*t[j][0])\
       /sqrt(kappa_den[0]*kappa_den[0] + kappa_den[1]*kappa_den[1]);
   }
+
   
   // Construct the cubic interpolation
   for (int j = start; j < N-1; j++) {
@@ -54,9 +68,11 @@ void interpolate(double** x, int start, int N, int n_dim, double** t, double** n
     beta[j] = 0.5*d[j]*kappa[j];
     gamma[j] = 1./6.*d[j]*(kappa[j+1] - kappa[j]);
   }
+
   mu[N-1] = -1./3.*d[N-1]*kappa[N-1] - 1./6.*d[N-1]*kappa[start];
   beta[N-1] = 0.5*d[N-1]*kappa[N-1];
   gamma[N-1] = 1./6.*d[N-1]*(kappa[start] - kappa[N-1]);
+
 
   return;
 }
@@ -465,10 +481,10 @@ double integrand2(double* x_i, double* x_j, double p, double* t_i, double* n_i,\
 }
 
 // Relocating nodes
-void points_reloc(double*** px, double** t, double** n, int* pN, double* kappa,\
+void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
 									double* mu, double* beta, double* gamma) {
   
-  double **x;
+  double *x;
   x = *px;
   int N;
   N = *pN;
@@ -480,7 +496,7 @@ void points_reloc(double*** px, double** t, double** n, int* pN, double* kappa,\
   // Either calculate all d[j]'s here or use input
   // Same goes with kappa and h
   double *d, *kappa_bar, *kappai_breve, *kappai_tilde, *sigmai_prim;
-  double  *kappai_hat, *rho, *sigmai, *sigmai_tilde, **h, **x_temp;
+  double  *kappai_hat, *rho, *sigmai, *sigmai_tilde, *h, *x_temp;
   d = (double*)malloc(N*sizeof(double));
   kappa_bar = (double*)malloc(N*sizeof(double));
   kappai_breve = (double*)malloc(N*sizeof(double));
@@ -490,10 +506,7 @@ void points_reloc(double*** px, double** t, double** n, int* pN, double* kappa,\
   sigmai = (double*)malloc(N*sizeof(double));
   sigmai_tilde = (double*)malloc(N*sizeof(double));
   sigmai_prim = (double*)malloc(N*sizeof(double));
-  h = (double**)malloc(N*sizeof(double*));
-
-  for (int k = 0; k < N; k++)
-    h[k] = (double*)malloc(N*sizeof(double));
+  h = (double*)malloc(N*N*sizeof(double));
  
   for (int i = 0; i < N; i++)
   {
@@ -501,31 +514,31 @@ void points_reloc(double*** px, double** t, double** n, int* pN, double* kappa,\
     {
       if (j == N-1)
 	    {
-      h[i][j] = sqrt((x[i][0] - (x[0][0] + x[j][0])/2)\
-                  * (x[i][0] - (x[0][0] + x[j][0])/2)\
-                  + (x[i][1] - (x[0][1] + x[j][1])/2)\
-                  * (x[i][1] - (x[0][1] + x[j][1])/2));
+      h[i*N + j] = sqrt((x[2*i] - (x[0] + x[2*j])/2)\
+                  * (x[2*i] - (x[0] + x[2*j])/2)\
+                  + (x[2*i + 1] - (x[1] + x[2*j + 1])/2)\
+                  * (x[2*i + 1] - (x[1] + x[2*j + 1])/2));
       }
       else
       {
-        h[i][j] = sqrt((x[i][0] - (x[j+1][0] + x[j][0])/2)\
-                  * (x[i][0] - (x[j+1][0] + x[j][0])/2)\
-                  + (x[i][1] - (x[j+1][1] + x[j][1])/2)\
-                  * (x[i][1] - (x[j+1][1] + x[j][1])/2));
+        h[i*N + j] = sqrt((x[2*i] - (x[2*(j+1)] + x[2*j])/2)\
+                  * (x[2*i] - (x[2*(j+1)] + x[2*j])/2)\
+                  + (x[2*i + 1] - (x[2*(j+1) + 1] + x[2*j + 1])/2)\
+                  * (x[2*i + 1] - (x[2*(j+1) + 1] + x[2*j + 1])/2));
       }
     //printf("h[%d][%d] = %e\n", i, j, h[i][j]);
     }
     if (i == N-1)
     {
       kappa_bar[i] = 0.5*(kappa[i] + kappa[0]);
-      d[i] = sqrt((x[0][0] - x[i][0])*(x[0][0] - x[i][0])\
-          + (x[0][1] - x[i][1])*(x[0][1] - x[i][1]));
+      d[i] = sqrt((x[0] - x[2*i])*(x[0] - x[2*i])\
+          + (x[1] - x[2*i + 1])*(x[1] - x[2*i + 1]));
     }
     else
     {
       kappa_bar[i] = 0.5*(kappa[i] + kappa[i+1]);
-      d[i] = sqrt((x[i+1][0] - x[i][0])*(x[i+1][0] - x[i][0])\
-           + (x[i+1][1] - x[i][1])*(x[i+1][1] - x[i][1]));
+      d[i] = sqrt((x[2(i+1)] - x[2*i])*(x[2(i+1)] - x[2*i])\
+           + (x[2*(i+1) + 1] - x[2*i + 1])*(x[2*(i+1) + 1] - x[2*i + 1][1]));
     }
   }
   
@@ -540,11 +553,11 @@ void points_reloc(double*** px, double** t, double** n, int* pN, double* kappa,\
     kappa_breve_temp = 0.;
 
     for (int j = 0; j < N; j++)
-      kappa_breve_temp += d[j]/(h[i][j]*h[i][j]);
+      kappa_breve_temp += d[j]/(h[i*N + j]*h[i*N + j]);
 
     for (int j = 0; j < N; j++)
     {
-      kappai_breve[i] += (d[j]*fabs(kappa_bar[j])/(h[i][j]*h[i][j]))*(1./kappa_breve_temp);
+      kappai_breve[i] += (d[j]*fabs(kappa_bar[j])/(h[i*N + j]*h[i*N + j]))*(1./kappa_breve_temp);
 
     }
     kappai_tilde[i] = pow((kappai_breve[i]*L), a)/(v*L)\
@@ -566,18 +579,20 @@ void points_reloc(double*** px, double** t, double** n, int* pN, double* kappa,\
   rho[N-1] = kappai_hat[N-1]/(1. + epsilon*kappai_hat[N-1]/SQRTTWO);
   sigmai[N-1] = rho[N-1]*d[N-1];
   //*kappai_hat[N-1]
-  double q, rest, p, dp, p_min, rest_dp;
-  int i_min;
+  
+  double q, rest, p, dp, p_min, rest_dp, S;
+  int i_hat = 1, N_tilde;
   q = 0.;
-  dp = 0.005;
   p = 0.;
   
-  int N_tilde;
   for (int i = 0; i < N; i++)
+  {
     q += sigmai[i];
-  // printf("q = %e\n", q);
+	}
+	
   N_tilde = round(q) + 2; 
   printf("N = %d         N_tilde = %d\n", N, N_tilde);
+  
   for (int i = 0; i < N; i++)
   {
     sigmai_prim[i] = sigmai[i]*N_tilde/q;
@@ -585,40 +600,37 @@ void points_reloc(double*** px, double** t, double** n, int* pN, double* kappa,\
   }
   
   // Copy x into temporary matrix
-  x_temp = (double**)malloc(N*sizeof(double*));
-  for (int i = 0; i < N; i++)
-  {
-  		x_temp[i] = (double*)malloc(2*sizeof(double));
-  }
+  x_temp = (double*)malloc(N*N*sizeof(double));
+  memcpy(&x_temp, &x, sizeof(x));
   
-  for (int i = 0; i < N; i++)
-  {
-  		memcpy(&x_temp[i], &x[i], sizeof(x[i]));
-  }
-  
-  printf("x_temp[0][0] = %lf       x_temp[0][1] = %lf\n", x_temp[0][0], x_temp[0][1]);
-  printf("x_[0][0] = %lf       x_[0][1] = %lf\n", x[0][0], x[0][1]);
-  
-  printf("before realloc\n");
- 	x = (double**)realloc(x, N_tilde*sizeof(double*));
+  //Reallocate x
+ 	x = (double*)realloc(x, N_tilde*N_tilde*sizeof(double));
 
- 	for (int i = 0; i < N_tilde; i++)
- 	{
- 		x[i] = realloc(x[i], 2*sizeof(double));
- 		 		
- 	}
  	
- 	printf("after realloc\n");
- 	for (int i = 1; i < N_tilde; i++)
+ 	//Set to zero to avoid garbage
+ 	for (int i = 1; i < N_tilde*N_tilde; i++)
  	{
- 		x[i][0] = 0;
- 		x[i][1] = 0;
+ 		x[i] = 0.;
  	}
-  
-  printf("after zeroing \n");
-  
- 
+	
+	//Relocation of points
   for (int j = 1; j < N_tilde; j++)
+  {
+  	S = 0;
+  	for (int i = 1; i < N; i++)
+  	{
+  		S += sigmai_prim[i-1];
+  		p = (j - 1 - S)/sigmai_prim[i];
+  		if (p > 0 && p < 1)
+  		{
+  			i_hat = i;
+  			x[2*j] = x_temp[2*i] + p*t[2*i] + (mu[i]*p + beta[i]*p*p + gamma[i]*p*p*p)*n[2*i];
+      	x[2*j + 1] = x_temp[2*i + 1] + p*t[2*i + 1] + (mu[i]*p + beta[i]*p*p + gamma[i]*p*p*p)*n[2*i + 1];
+  		}
+  	}
+  }
+ 
+  /*for (int j = 1; j < N_tilde; j++)
   {
   	// Assume minimum at i=0, p=0
   	i_min = 0;
@@ -635,7 +647,7 @@ void points_reloc(double*** px, double** t, double** n, int* pN, double* kappa,\
           rest_dp += (sigmai_prim[l] + sigmai_prim[i]*(p+dp));
         }
           
-        if (j-1 > rest && j-1 < rest_dp)
+        if (j-1 > rest && j-1 < rest_dp)   //j-1-summa(sigma[l])/sigma[i] = p
 				{
 				//printf("test\n");
 					i_min = i;
@@ -646,13 +658,28 @@ void points_reloc(double*** px, double** t, double** n, int* pN, double* kappa,\
 	    p = 0;
     }
     x[j][0] = x_temp[i_min][0] + p_min*t[i_min][0] + (mu[i_min]*p_min + \
-      					beta[i_min]*p_min*p_min + gamma[i_min]*p_min*p_min*p_min)*n[i_min][0];  
+      					beta[i_min]*p_min*p_min + gamma[i_min]*p_min*p_min*p_min)*n[i_min][0];
+    if (j == 1) 
+    { 
+    	//printf("hej = %e\n", x_temp[i_min][0] + p_min*t[i_min][0] + (mu[i_min]*p_min + \
+      					beta[i_min]*p_min*p_min + gamma[i_min]*p_min*p_min*p_min)*n[i_min][0]);
+    }
+    					 
 	  x[j][1] = x_temp[i_min][1] + p_min*t[i_min][1] + (mu[i_min]*p_min + \
       					beta[i_min]*p_min*p_min + gamma[i_min]*p_min*p_min*p_min)*n[i_min][1];
+    if (j == 1)
+    {
+    	//printf("tja = %e\n", x_temp[i_min][1] + p_min*t[i_min][1] + (mu[i_min]*p_min + \
+      					beta[i_min]*p_min*p_min + gamma[i_min]*p_min*p_min*p_min)*n[i_min][1]);
+    }
   }
-   	for (int i = 0; i < N_tilde; i++)
-      printf("x[%d][0] =  %e, x[%d][1] =  %e \n", i, x[i][0],\
-  i, x[i][1]);
+  */
+  printf("After relocation loop\n");
+  for (int i = 0; i < N_tilde; i++)
+  {
+      printf("x[%d][0] =  %e, x[%d][1] =  %e \n", i, x[i][0], i, x[i][1]);
+  }
+  printf("-------------------\n");
   // Free
   
   free(kappa_bar);
@@ -664,16 +691,11 @@ void points_reloc(double*** px, double** t, double** n, int* pN, double* kappa,\
   free(sigmai);
   free(sigmai_tilde);
   free(sigmai_prim);
-  for (int k = 0; k < N; k++)
-    free(h[k]);
   free(h); 
-  for (int i = 0; i < N; i++)
-  {
-  	free(x_temp[i]);
-  }
+	free(x_temp);
+	
   *pN = N_tilde;
-  *px = x;
-  free(x_temp);
+  
   printf("Exiting points_reloc\n");
   
   return;
@@ -682,6 +704,7 @@ void points_reloc(double*** px, double** t, double** n, int* pN, double* kappa,\
 
 double runge_kutta45(double** x, double** dxdt_k1, double** dxdt_k2, double** dxdt_k3, double** dxdt_k4, double** dxdt_k5, double** dxdt_k6, double** dxdt_RK4, double** dxdt_RK5, double tol_rk45_time, double dt, int M, int N, double* mu, double* beta, double* gamma, double** t, double** n, double alpha, double tol_rk45_space, double h)
 {
+	printf("In time stepping RK45\n");
   double F, delta, theta, tpi, dt_new;
   theta = -1.;
   F = dt*theta/(TWOPI);
@@ -709,17 +732,23 @@ double runge_kutta45(double** x, double** dxdt_k1, double** dxdt_k2, double** dx
     x_RK5[j][0] = 0.;
     x_RK5[j][1] = 0.;
   } 
+  
+  printf("After allocations\n");
+  printf("N = %d\n", N);
   // Runge-Kutta 45
   do
   {
     // Step 1 in RK
     for (int j = 0; j < N; j++)
     {
+    	printf("j = %d\n", j);
       compute_derivative(dxdt_k1[j], x, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j);
+      printf("After compute_derivative\n");
       dxdt_k1[j][0] = F*dxdt_k1[j][0];
       dxdt_k1[j][1] = F*dxdt_k1[j][1];
       //printf("dxdt dot x = %e\n", dxdt_k1[j][0]*x[j][0] + dxdt_k1[j][1]*x[j][1]);
     }
+    
     for (int j = 0; j < N; j++)
     {
       x_temp[j][0] = x[j][0] + 0.25*dxdt_k1[j][0];
@@ -809,6 +838,7 @@ double runge_kutta45(double** x, double** dxdt_k1, double** dxdt_k2, double** dx
   	// Compute maximum error
     R_old[0] = fabs(x_RK5[0][0] - x_RK4[0][0]);
     R_old[1] = fabs(x_RK5[0][1] - x_RK4[0][1]);
+    printf("R_old[0] = %e,   R_old[1] = %e\n", R_old[0], R_old[1]);
     for (int j = 1; j < N; j++)
     {
 	    R[0] = fabs(x_RK5[j][0] - x_RK4[j][0]);

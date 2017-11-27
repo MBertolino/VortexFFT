@@ -10,10 +10,10 @@
 int main() {
   
   // Number of points
-  int M = 256; // Number of points in each circle
+  int M = 1024*4; // Number of points in each circle
   int N = M;
   int n_dim = 2;
-  int T = 50000;
+  int T = 5;
   double tol_rk45_time = 1.e-5;
   long double tol_rk45_space = 1.e-8;
   long double h = 1.e-3;
@@ -31,6 +31,7 @@ int main() {
   double** x = (double**)malloc(N*sizeof(double*));
   double** x_temp = (double**)malloc(N*sizeof(double*));
   double** dxdt = (double**)malloc(N*sizeof(double*));
+  double** dxdt_fft = (double**)malloc(N*sizeof(double*));
   double** dxdt_k1 = (double**)malloc(N*sizeof(double*));
   double** dxdt_k2 = (double**)malloc(N*sizeof(double*));
   double** dxdt_k3 = (double**)malloc(N*sizeof(double*));
@@ -51,7 +52,10 @@ int main() {
   {
     dxdt[j] = (double*)malloc(n_dim*sizeof(double));
     dxdt[j][0] = 0.;
-    dxdt[j][1] = 0.;
+    dxdt[j][1] = 0.;    
+    dxdt_fft[j] = (double*)malloc(n_dim*sizeof(double));
+    dxdt_fft[j][0] = 0.;
+    dxdt_fft[j][1] = 0.;
     dxdt_k1[j] = (double*)malloc(n_dim*sizeof(double));
     dxdt_k2[j] = (double*)malloc(n_dim*sizeof(double));
     dxdt_k3[j] = (double*)malloc(n_dim*sizeof(double));
@@ -125,7 +129,6 @@ int main() {
       t[i] = (double*)malloc(n_dim*sizeof(double));
       n[i] = (double*)malloc(n_dim*sizeof(double));
     }
-
   
   
   printf("k = %d\n", k);
@@ -139,6 +142,22 @@ int main() {
       x_temp[j][1] = 0.;
     }
     
+    // Compare FFT and Mancho
+    for (int j = 0; j < N; j++)
+    {
+      compute_fft(dxdt_fft[j], x, N, alpha, j);
+      compute_derivative(dxdt[j], x, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j);
+    }
+    
+    for (int j = 0; j < 8; j++)
+    {
+      printf("dxdt_fft[%d] = %lf\n", j, 2*dxdt_fft[j][0]);
+      printf("dxdt_ama[%d] = %lf\n\n", j, dxdt[j][0]);
+    }
+    
+    printf("Done\n");
+    //sleep(5);
+
     // Compute area
     area1 = compute_area(x, 0, M, t, n, mu, beta, gamma);
     //area2 = compute_area(x, M, N);
@@ -217,6 +236,7 @@ int main() {
   free(x_temp);
   for (int i = 0; i < N; i++) {
     free(dxdt[i]);
+    free(dxdt_fft[i]);
     free(dxdt_k1[i]);
     free(dxdt_k2[i]);
     free(dxdt_k3[i]);
@@ -227,6 +247,7 @@ int main() {
     free(dxdt_RK5[i]);
   }
   free(dxdt);
+  free(dxdt_fft);
   free(dxdt_k1);
   free(dxdt_k2);
   free(dxdt_k3);

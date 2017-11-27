@@ -1,7 +1,7 @@
 CC = gcc
 LD = gcc
 CFLAGS = -Wall -O3 -march=native #-Werror
-LDFLAGS = -lm 
+LDFLAGS = -lfftw3 -lm 
 INCLUDES =
 RM = /bin/rm -f
 OBJS = functions.o

@@ -135,12 +135,18 @@ int main() {
     M = N;//M = (int)N/2;
     // Interpolate
     interpolate(x, 0, M, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
+
+    /*for (int i = 0; i < M; i++)
+    {
+    	printf("x[%d][0] = %e,     x[%d][1] = %e\n", i, x[i][0], i, x[i][1]);
+    }*/
     //interpolate(x, M, N, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
-    for (int j = 0; j < N; j++)
+    /*for (int j = 0; j < N; j++)
     {
       x_temp[j][0] = 0.;
       x_temp[j][1] = 0.;
-    }
+    }*/
+      
     
     // Compare FFT and Mancho
     for (int j = 0; j < N; j++)
@@ -193,7 +199,7 @@ int main() {
     // Redistribute the nodes
 
     N_old  = N;
-   // points_reloc(px, t, n, pN, kappa, mu, gamma, beta);
+    points_reloc(px, t, n, pN, kappa, mu, gamma, beta);
     //printf("N = %d\n", N);
     //printf(" \n");
     

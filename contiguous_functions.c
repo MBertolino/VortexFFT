@@ -368,7 +368,7 @@ double evaluate_integral1_RK(double* x_i, double* x_j, double tol_rk45_space, do
   #if PRINT
     printf("Entering ev_integr111111_RK\n");
   #endif
-  
+   // printf("Entering eval int 1 RK\n");
 	double p = 0.;
 	double p_end = 1.; 
   double k1, k2, k3, k4, k5, k6;
@@ -376,40 +376,44 @@ double evaluate_integral1_RK(double* x_i, double* x_j, double tol_rk45_space, do
   long double R;
     while (p < p_end)
   {
+    if (p + h > 1)
+    {
+      h = 1-p;
+    }
     do
     {
-        
-		k1 = h*integrand1(x_i, x_j, p, t_i, n_i, mu_i, beta_i, gamma_i, alpha); 
-		p_temp = p + 0.25*h;
+          
+		  k1 = h*integrand1(x_i, x_j, p, t_i, n_i, mu_i, beta_i, gamma_i, alpha); 
+		  p_temp = p + 0.25*h;
 
-		k2 = h*integrand1(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
-		p_temp = p + 3.0*h/8.0;
-	
-		k3 = h*integrand1(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
-		p_temp = p + 12.0*h/13.0;
-	
-		k4 = h*integrand1(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
-		p_temp = p + h;
-		
-		k5 = h*integrand1(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
-		p_temp = p + 0.5*h;
+		  k2 = h*integrand1(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
+		  p_temp = p + 3.0*h/8.0;
+	  
+		  k3 = h*integrand1(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
+		  p_temp = p + 12.0*h/13.0;
+	  
+		  k4 = h*integrand1(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
+		  p_temp = p + h;
+		  
+		  k5 = h*integrand1(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
+		  p_temp = p + 0.5*h;
 
-		k6 = h*integrand1(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
+		  k6 = h*integrand1(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
 
-		//RK4 approx
-		Y1 = Y + 25.0*k1/216.0 + 1408.0*k3/2565.0 + 2197.0*k4/4104.0 - 0.2*k5;
+		  //RK4 approx
+		  Y1 = Y + 25.0*k1/216.0 + 1408.0*k3/2565.0 + 2197.0*k4/4104.0 - 0.2*k5;
 
-    //RK5 approx
-		Y2 = Y + 16.0*k1/135.0 + 6656.0*k3/12825.0 + 28561.0*k4/56430.0\
-				-9.0*k5/50.0 + 2.0*k6/55.0;
-    
-    // Compute error
-    R = fabs(Y2 - Y1);
-    
-    
-    
-    if (R > tol_rk45_space)
-      h = 0.5*h;
+      //RK5 approx
+		  Y2 = Y + 16.0*k1/135.0 + 6656.0*k3/12825.0 + 28561.0*k4/56430.0\
+				  -9.0*k5/50.0 + 2.0*k6/55.0;
+      
+      // Compute error
+      R = fabs(Y2 - Y1);
+      
+      
+      
+      if (R > tol_rk45_space)
+        h = 0.5*h;
    
     } while (R > tol_rk45_space);
     p = p + h;
@@ -426,7 +430,7 @@ double evaluate_integral1_RK(double* x_i, double* x_j, double tol_rk45_space, do
   #if PRINT
     printf("Exiting ev_integr11111_RK\n");
   #endif  
-  
+    //printf("Exiting eval int 1 RK\n");
   return Y;
 }
 
@@ -446,7 +450,7 @@ double integrand1(double* x_i, double* x_j, double p, double* t_i, double* n_i, 
 double evaluate_integral2_RK(double* x_i, double* x_j, double tol_rk45_space, double h,\
             double* t_i, double* n_i, double mu_i, double beta_i, double gamma_i, double alpha) 
 {
-  
+  //printf("Entering eval int 2 RK\n");
 	double p = 0.;
 	double p_end = 1.; 
   double k1, k2, k3, k4, k5, k6;
@@ -455,41 +459,46 @@ double evaluate_integral2_RK(double* x_i, double* x_j, double tol_rk45_space, do
   
   while (p < p_end)
   {
+    if (p + h > 1)
+    {
+      h = 1-p;
+    } 
     do
     {
-		k1 = h*integrand2(x_i, x_j, p, t_i, n_i, mu_i, beta_i, gamma_i, alpha); 
-		p_temp = p + 0.25*h;
-		
-		k2 = h*integrand2(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
-		p_temp = p + 3.0*h/8.0;
-		
-		k3 = h*integrand2(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
-		p_temp = p + 12.0*h/13.0;
-		
-		k4 = h*integrand2(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
-		p_temp = p + h;
-		
-		k5 = h*integrand2(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
-		p_temp = p + 0.5*h;
-		
-		k6 = h*integrand2(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
-    
-		//RK4 approx
-		Y1 = Y + 25.0*k1/216.0 + 1408.0*k3/2565.0 + 2197.0*k4/4104.0 - 0.2*k5;
+		  k1 = h*integrand2(x_i, x_j, p, t_i, n_i, mu_i, beta_i, gamma_i, alpha); 
+		  p_temp = p + 0.25*h;
+		  
+		  k2 = h*integrand2(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
+		  p_temp = p + 3.0*h/8.0;
+		  
+		  k3 = h*integrand2(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
+		  p_temp = p + 12.0*h/13.0;
+		  
+		  k4 = h*integrand2(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
+		  p_temp = p + h;
+		  
+		  k5 = h*integrand2(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
+		  p_temp = p + 0.5*h;
+		  
+		  k6 = h*integrand2(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
+      
+		  //RK4 approx
+		  Y1 = Y + 25.0*k1/216.0 + 1408.0*k3/2565.0 + 2197.0*k4/4104.0 - 0.2*k5;
 
-    //RK5 approx
-		Y2 = Y + 16.0*k1/135.0 + 6656.0*k3/12825.0 + 28561.0*k4/56430.0\
-				-9.0*k5/50.0 + 2.0*k6/55.0;
-    
-    // Compute error
-    R = fabs(Y2 - Y1);
-    if (R > tol_rk45_space)
-      h = 0.5*h;
+      //RK5 approx
+		  Y2 = Y + 16.0*k1/135.0 + 6656.0*k3/12825.0 + 28561.0*k4/56430.0\
+				  -9.0*k5/50.0 + 2.0*k6/55.0;
+      //printf("R = %e, h = %e \n", R, h);    
+      // Compute error
+      R = fabs(Y2 - Y1);
+      
+      if (R > tol_rk45_space)
+        h = 0.5*h;
     } while (R > tol_rk45_space);
-    
+
     p = p + h;
     Y = Y2;
-    //printf("R = %e \n", R);
+
     if (R < 1.e-10*tol_rk45_space)
     {
       h = 2*h;
@@ -499,7 +508,7 @@ double evaluate_integral2_RK(double* x_i, double* x_j, double tol_rk45_space, do
       h = 0.9*h*sqrt(sqrt((h*tol_rk45_space)/R));
     }
   }
-
+ // printf("Exiting eval int 2 RK\n");
   return Y;
 }
 
@@ -907,7 +916,7 @@ double runge_kutta45(double* x, double* dxdt_k1, double* dxdt_k2, double* dxdt_k
   free(x_RK4);
   free(x_RK5);
   
- // printf("X dot dxdt = %e \n", x[0]*dxdt_RK5[0]+x[1]*dxdt_RK5[1]);
+  printf("X dot dxdt = %e \n", x[0]*dxdt_RK5[0]+x[1]*dxdt_RK5[1]);
 
   return dt_new;
 }

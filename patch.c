@@ -159,6 +159,7 @@ int main() {
   // Free memory
   free(x);
   free(dxdt);
+  free(dxdt_fft);
   free(dxdt_k1);
   free(dxdt_k2);
   free(dxdt_k3);

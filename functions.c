@@ -4,6 +4,8 @@
 #include <math.h>
 #include <unistd.h>
 #include <string.h>
+#include <complex.h>
+#include <fftw3.h>
 
 #define TWOPI 6.2831853071795864769
 #define SQRTTWO 1.4142135623730950588
@@ -92,7 +94,7 @@ void autder(double* f, double* c_coeff, double alpha, int order)
 
   return;
 }
-
+/*
 void compute_fft(double* dxdt, double** x, int N, double alpha, int j)
 {
   int N_points = 0.5*N;
@@ -165,6 +167,7 @@ void compute_fft(double* dxdt, double** x, int N, double alpha, int j)
   
   return;
 }
+*/
 
 void compute_derivative(double* dxdtx, double* dxdty, double* x, double* mu, double* beta, double* gamma, double* t, double* n, int M, int N, double alpha, double h, double tol_rk45_space, int j)
 {

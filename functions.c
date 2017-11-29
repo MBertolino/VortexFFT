@@ -604,11 +604,17 @@ void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
   x = *px;
   int N;
   N = *pN;
-  double epsilon = 1.e-6;
-  double L = 3.0;
-  double a = 2.0/3.0;
-  double v = 0.05; // 0.01, 0.03, 0.05 (Smaller value => Larger densities of points on the curve)
+  double epsilon, L, a, v;
+  epsilon = 1.e-6;
+  L = 3.0;
+  a = 2.0/3.0;
+  v = 0.05; // 0.01, 0.03, 0.05 (Smaller value => Larger densities of points on the curve)
   
+  double q, p, S, kappa_breve_temp;
+  int N_tilde;
+  q = 0.;
+  p = 0.;
+    
   // Either calculate all d[j]'s here or use input
   // Same goes with kappa and h
   double *d, *kappa_bar, *kappai_breve, *kappai_tilde, *sigmai_prim;
@@ -657,7 +663,6 @@ void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
     }
   }
   
-  double kappa_breve_temp;
   for (int i = 0; i < N; i++)
     kappai_breve[i] = 0.;
 
@@ -684,11 +689,6 @@ void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
   kappai_hat[N-1] = 0.5*(kappai_tilde[N-1] + kappai_tilde[0]);
   rho[N-1] = kappai_hat[N-1]/(1. + epsilon*kappai_hat[N-1]/SQRTTWO);
   sigmai[N-1] = rho[N-1]*d[N-1];
-  
-  double q, p, S;
-  int N_tilde;
-  q = 0.;
-  p = 0.;
   
   for (int i = 0; i < N; i++)
     q += sigmai[i];

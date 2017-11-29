@@ -1,0 +1,746 @@
+==3972== Memcheck, a memory error detector
+==3972== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==3972== Using Valgrind-3.13.0 and LibVEX; rerun with -h for copyright info
+==3972== Command: ./patch 2
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x1097F1: interpolate (functions.c:21)
+==3972==    by 0x109220: main (patch.c:112)
+==3972==  Address 0x5572050 is 16 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x109808: interpolate (functions.c:21)
+==3972==    by 0x109220: main (patch.c:112)
+==3972==  Address 0x5572040 is 0 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10983B: interpolate (functions.c:23)
+==3972==    by 0x109220: main (patch.c:112)
+==3972==  Address 0x5572058 is 24 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x109853: interpolate (functions.c:23)
+==3972==    by 0x109220: main (patch.c:112)
+==3972==  Address 0x5572048 is 8 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10999A: interpolate (functions.c:30)
+==3972==    by 0x109220: main (patch.c:112)
+==3972==  Address 0x5572040 is 0 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x1099B2: interpolate (functions.c:30)
+==3972==    by 0x109220: main (patch.c:112)
+==3972==  Address 0x5572660 is 752 bytes inside a block of size 4,096 free'd
+==3972==    at 0x4C30D3B: free (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x5217B6A: _IO_setb (genops.c:382)
+==3972==    by 0x5215BCD: _IO_file_close_it@@GLIBC_2.2.5 (fileops.c:193)
+==3972==    by 0x520808E: fclose@@GLIBC_2.2.5 (iofclose.c:58)
+==3972==    by 0x108F3A: main (patch.c:81)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x5207E0B: _IO_file_doallocate (filedoalloc.c:101)
+==3972==    by 0x5217BC5: _IO_doallocbuf (genops.c:398)
+==3972==    by 0x5216D37: _IO_file_overflow@@GLIBC_2.2.5 (fileops.c:812)
+==3972==    by 0x51EB02B: __printf_fp_l (printf_fp.c:1254)
+==3972==    by 0x51E7067: vfprintf (vfprintf.c:1642)
+==3972==    by 0x51EED63: fprintf (fprintf.c:32)
+==3972==    by 0x108F16: main (patch.c:79)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x1099E6: interpolate (functions.c:31)
+==3972==    by 0x109220: main (patch.c:112)
+==3972==  Address 0x5572048 is 8 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x1099FE: interpolate (functions.c:31)
+==3972==    by 0x109220: main (patch.c:112)
+==3972==  Address 0x5572668 is 760 bytes inside a block of size 4,096 free'd
+==3972==    at 0x4C30D3B: free (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x5217B6A: _IO_setb (genops.c:382)
+==3972==    by 0x5215BCD: _IO_file_close_it@@GLIBC_2.2.5 (fileops.c:193)
+==3972==    by 0x520808E: fclose@@GLIBC_2.2.5 (iofclose.c:58)
+==3972==    by 0x108F3A: main (patch.c:81)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x5207E0B: _IO_file_doallocate (filedoalloc.c:101)
+==3972==    by 0x5217BC5: _IO_doallocbuf (genops.c:398)
+==3972==    by 0x5216D37: _IO_file_overflow@@GLIBC_2.2.5 (fileops.c:812)
+==3972==    by 0x51EB02B: __printf_fp_l (printf_fp.c:1254)
+==3972==    by 0x51E7067: vfprintf (vfprintf.c:1642)
+==3972==    by 0x51EED63: fprintf (fprintf.c:32)
+==3972==    by 0x108F16: main (patch.c:79)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x1104B8: compute_area (functions.c:916)
+==3972==    by 0x109265: main (patch.c:133)
+==3972==  Address 0x5572040 is 0 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10A89C: compute_derivative (functions.c:207)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572040 is 0 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10A8BF: compute_derivative (functions.c:208)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572048 is 8 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10A8DE: compute_derivative (functions.c:209)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572040 is 0 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10A8FE: compute_derivative (functions.c:210)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572048 is 8 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10A920: compute_derivative (functions.c:212)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572040 is 0 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10A93A: compute_derivative (functions.c:212)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572040 is 0 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10A95B: compute_derivative (functions.c:212)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572040 is 0 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10A975: compute_derivative (functions.c:212)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572040 is 0 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10A99B: compute_derivative (functions.c:213)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572048 is 8 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10A9B6: compute_derivative (functions.c:213)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572048 is 8 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10A9D8: compute_derivative (functions.c:213)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572048 is 8 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10A9F3: compute_derivative (functions.c:213)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572048 is 8 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10AA34: compute_derivative (functions.c:214)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572040 is 0 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10AA51: compute_derivative (functions.c:214)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572040 is 0 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10AA8E: compute_derivative (functions.c:214)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572048 is 8 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10AAAC: compute_derivative (functions.c:214)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572048 is 8 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10AB01: compute_derivative (functions.c:215)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572040 is 0 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10AB1E: compute_derivative (functions.c:215)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572040 is 0 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10AB5B: compute_derivative (functions.c:215)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572048 is 8 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10AB79: compute_derivative (functions.c:215)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572048 is 8 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10ACCD: compute_derivative (functions.c:222)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572050 is 16 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10ACEA: compute_derivative (functions.c:222)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572040 is 0 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10AD0F: compute_derivative (functions.c:222)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572050 is 16 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10AD2C: compute_derivative (functions.c:222)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572040 is 0 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10AD52: compute_derivative (functions.c:223)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572058 is 24 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10AD70: compute_derivative (functions.c:223)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572048 is 8 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10AD92: compute_derivative (functions.c:223)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572058 is 24 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10ADB0: compute_derivative (functions.c:223)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572048 is 8 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10B1C2: compute_derivative (functions.c:264)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572040 is 0 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10B1DC: compute_derivative (functions.c:264)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572040 is 0 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10B20E: compute_derivative (functions.c:264)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572048 is 8 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10B229: compute_derivative (functions.c:264)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572048 is 8 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10ABD1: compute_derivative (functions.c:219)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572040 is 0 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10ABEE: compute_derivative (functions.c:219)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572660 is 752 bytes inside a block of size 4,096 free'd
+==3972==    at 0x4C30D3B: free (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x5217B6A: _IO_setb (genops.c:382)
+==3972==    by 0x5215BCD: _IO_file_close_it@@GLIBC_2.2.5 (fileops.c:193)
+==3972==    by 0x520808E: fclose@@GLIBC_2.2.5 (iofclose.c:58)
+==3972==    by 0x108F3A: main (patch.c:81)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x5207E0B: _IO_file_doallocate (filedoalloc.c:101)
+==3972==    by 0x5217BC5: _IO_doallocbuf (genops.c:398)
+==3972==    by 0x5216D37: _IO_file_overflow@@GLIBC_2.2.5 (fileops.c:812)
+==3972==    by 0x51EB02B: __printf_fp_l (printf_fp.c:1254)
+==3972==    by 0x51E7067: vfprintf (vfprintf.c:1642)
+==3972==    by 0x51EED63: fprintf (fprintf.c:32)
+==3972==    by 0x108F16: main (patch.c:79)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10ABFD: compute_derivative (functions.c:219)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572040 is 0 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10AC1A: compute_derivative (functions.c:219)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572660 is 752 bytes inside a block of size 4,096 free'd
+==3972==    at 0x4C30D3B: free (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x5217B6A: _IO_setb (genops.c:382)
+==3972==    by 0x5215BCD: _IO_file_close_it@@GLIBC_2.2.5 (fileops.c:193)
+==3972==    by 0x520808E: fclose@@GLIBC_2.2.5 (iofclose.c:58)
+==3972==    by 0x108F3A: main (patch.c:81)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x5207E0B: _IO_file_doallocate (filedoalloc.c:101)
+==3972==    by 0x5217BC5: _IO_doallocbuf (genops.c:398)
+==3972==    by 0x5216D37: _IO_file_overflow@@GLIBC_2.2.5 (fileops.c:812)
+==3972==    by 0x51EB02B: __printf_fp_l (printf_fp.c:1254)
+==3972==    by 0x51E7067: vfprintf (vfprintf.c:1642)
+==3972==    by 0x51EED63: fprintf (fprintf.c:32)
+==3972==    by 0x108F16: main (patch.c:79)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10AC31: compute_derivative (functions.c:220)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572048 is 8 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10AC4F: compute_derivative (functions.c:220)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572668 is 760 bytes inside a block of size 4,096 free'd
+==3972==    at 0x4C30D3B: free (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x5217B6A: _IO_setb (genops.c:382)
+==3972==    by 0x5215BCD: _IO_file_close_it@@GLIBC_2.2.5 (fileops.c:193)
+==3972==    by 0x520808E: fclose@@GLIBC_2.2.5 (iofclose.c:58)
+==3972==    by 0x108F3A: main (patch.c:81)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x5207E0B: _IO_file_doallocate (filedoalloc.c:101)
+==3972==    by 0x5217BC5: _IO_doallocbuf (genops.c:398)
+==3972==    by 0x5216D37: _IO_file_overflow@@GLIBC_2.2.5 (fileops.c:812)
+==3972==    by 0x51EB02B: __printf_fp_l (printf_fp.c:1254)
+==3972==    by 0x51E7067: vfprintf (vfprintf.c:1642)
+==3972==    by 0x51EED63: fprintf (fprintf.c:32)
+==3972==    by 0x108F16: main (patch.c:79)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10AC62: compute_derivative (functions.c:220)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572048 is 8 bytes inside a block of size 128 free'd
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108C3B: main (patch.c:32)
+==3972== 
+==3972== Invalid read of size 8
+==3972==    at 0x10AC80: compute_derivative (functions.c:220)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972==  Address 0x5572668 is 760 bytes inside a block of size 4,096 free'd
+==3972==    at 0x4C30D3B: free (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x5217B6A: _IO_setb (genops.c:382)
+==3972==    by 0x5215BCD: _IO_file_close_it@@GLIBC_2.2.5 (fileops.c:193)
+==3972==    by 0x520808E: fclose@@GLIBC_2.2.5 (iofclose.c:58)
+==3972==    by 0x108F3A: main (patch.c:81)
+==3972==  Block was alloc'd at
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x5207E0B: _IO_file_doallocate (filedoalloc.c:101)
+==3972==    by 0x5217BC5: _IO_doallocbuf (genops.c:398)
+==3972==    by 0x5216D37: _IO_file_overflow@@GLIBC_2.2.5 (fileops.c:812)
+==3972==    by 0x51EB02B: __printf_fp_l (printf_fp.c:1254)
+==3972==    by 0x51E7067: vfprintf (vfprintf.c:1642)
+==3972==    by 0x51EED63: fprintf (fprintf.c:32)
+==3972==    by 0x108F16: main (patch.c:79)
+==3972== 
+==3972== 
+==3972== Process terminating with default action of signal 2 (SIGINT)
+==3972==    at 0x4E63ED2: log1 (e_pow.c:327)
+==3972==    by 0x4E63ED2: __ieee754_pow_sse2 (e_pow.c:103)
+==3972==    by 0x4E467A3: pow (w_pow_compat.c:27)
+==3972==    by 0x10CED3: integrand1 (functions.c:502)
+==3972==    by 0x10CA83: evaluate_integral1_RK (functions.c:457)
+==3972==    by 0x10C632: evaluate_integral_RK (functions.c:414)
+==3972==    by 0x10C098: compute_derivative (functions.c:344)
+==3972==    by 0x10ECBF: runge_kutta45 (functions.c:781)
+==3972==    by 0x10936D: main (patch.c:139)
+area1 = 3.296777
+dt = 1.000000e-03
+
+X dot dxdt = 1.938471e-06 
+time = 0.001000000000000
+--------------------------
+N = 99, N_old = 8 
+ 
+area1 = -nan
+==3972== 
+==3972== HEAP SUMMARY:
+==3972==     in use at exit: 26,136 bytes in 19 blocks
+==3972==   total heap usage: 901 allocs, 882 frees, 117,392 bytes allocated
+==3972== 
+==3972== 792 bytes in 1 blocks are still reachable in loss record 1 of 19
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108F5D: main (patch.c:85)
+==3972== 
+==3972== 792 bytes in 1 blocks are still reachable in loss record 2 of 19
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108F78: main (patch.c:86)
+==3972== 
+==3972== 792 bytes in 1 blocks are still reachable in loss record 3 of 19
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108F93: main (patch.c:87)
+==3972== 
+==3972== 792 bytes in 1 blocks are still reachable in loss record 4 of 19
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108FAE: main (patch.c:88)
+==3972== 
+==3972== 792 bytes in 1 blocks are still reachable in loss record 5 of 19
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108FC9: main (patch.c:89)
+==3972== 
+==3972== 1,584 bytes in 1 blocks are still reachable in loss record 6 of 19
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108FE4: main (patch.c:90)
+==3972== 
+==3972== 1,584 bytes in 1 blocks are still reachable in loss record 7 of 19
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x108FFF: main (patch.c:91)
+==3972== 
+==3972== 1,584 bytes in 1 blocks are still reachable in loss record 8 of 19
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10901A: main (patch.c:94)
+==3972== 
+==3972== 1,584 bytes in 1 blocks are still reachable in loss record 9 of 19
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x109035: main (patch.c:95)
+==3972== 
+==3972== 1,584 bytes in 1 blocks are still reachable in loss record 10 of 19
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x109050: main (patch.c:96)
+==3972== 
+==3972== 1,584 bytes in 1 blocks are still reachable in loss record 11 of 19
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10906B: main (patch.c:97)
+==3972== 
+==3972== 1,584 bytes in 1 blocks are still reachable in loss record 12 of 19
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x109086: main (patch.c:98)
+==3972== 
+==3972== 1,584 bytes in 1 blocks are still reachable in loss record 13 of 19
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x1090A1: main (patch.c:99)
+==3972== 
+==3972== 1,584 bytes in 1 blocks are still reachable in loss record 14 of 19
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x1090BC: main (patch.c:100)
+==3972== 
+==3972== 1,584 bytes in 1 blocks are still reachable in loss record 15 of 19
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x1090D7: main (patch.c:101)
+==3972== 
+==3972== 1,584 bytes in 1 blocks are still reachable in loss record 16 of 19
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10EB67: runge_kutta45 (functions.c:766)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972== 
+==3972== 1,584 bytes in 1 blocks are still reachable in loss record 17 of 19
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10EB7C: runge_kutta45 (functions.c:767)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972== 
+==3972== 1,584 bytes in 1 blocks are still reachable in loss record 18 of 19
+==3972==    at 0x4C2FB0F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10EB91: runge_kutta45 (functions.c:768)
+==3972==    by 0x10936D: main (patch.c:139)
+==3972== 
+==3972== 1,584 bytes in 1 blocks are definitely lost in loss record 19 of 19
+==3972==    at 0x4C31D2F: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==3972==    by 0x10E662: points_reloc (functions.c:707)
+==3972==    by 0x109638: main (patch.c:168)
+==3972== 
+==3972== LEAK SUMMARY:
+==3972==    definitely lost: 1,584 bytes in 1 blocks
+==3972==    indirectly lost: 0 bytes in 0 blocks
+==3972==      possibly lost: 0 bytes in 0 blocks
+==3972==    still reachable: 24,552 bytes in 18 blocks
+==3972==         suppressed: 0 bytes in 0 blocks
+==3972== 
+==3972== For counts of detected and suppressed errors, rerun with: -v
+==3972== ERROR SUMMARY: 25960 errors from 50 contexts (suppressed: 0 from 0)

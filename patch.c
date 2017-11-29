@@ -14,7 +14,7 @@ int main() {
   int N = M;
   int n_dim = 2;
   int size = N*n_dim;
-  int T = 200;
+  int T = 2000;
   double tol_rk45_time = 1.e-8;
   long double tol_rk45_space = 1.e-8;
   long double h = 1.e-3;
@@ -44,7 +44,7 @@ int main() {
 
   px = &x;
   pN = &N;
-  zeros = size*sizeof(double);
+  
  // memset(dxdt, 0, zeros);
   //memset(dxdt_fft, 0, zeros);
   /*memset(dxdt_k1, 0, zeros);
@@ -59,8 +59,8 @@ int main() {
    
   // Generate circle
   for (int j = 0; j < M; j++) {
-    x[2*j] = cos(TWOPI*j/(double)M);// - 1.1;
-    x[2*j+1] = sin(TWOPI*j/(double)M);
+    x[2*j] = 5*cos(TWOPI*j/(double)M)+0.2*cos(6*TWOPI*j/(double)M);// - 1.1;
+    x[2*j+1] = sin(TWOPI*j/(double)M)-0.2*sin(4*TWOPI*j/(double)M);
     
     //x[2*j+2*M] = cos(TWOPI*j/(double)M) + 1.1;
     //x[2*j+1+2*M] = sin(TWOPI*j/(double)M);
@@ -100,6 +100,7 @@ int main() {
     double* dxdt_RK4 = (double*)malloc(size*sizeof(double));
     double* dxdt_RK5 = (double*)malloc(size*sizeof(double));
     
+    zeros = size*sizeof(double);
     memset(dxdt_k1, 0, zeros);
     memset(dxdt_k2, 0, zeros);
     memset(dxdt_k3, 0, zeros);
@@ -154,27 +155,25 @@ int main() {
       fclose(f);
     }
     
-    // Redistribute the nodes
-    N_old  = N;
-    px = &x;
-    
-    printf("test2\n");
-    // Interpolate
-    interpolate(x, 0, M, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
-    
     // Compute area
     area1 = compute_area(x, 0, M, t, n, mu, beta, gamma);
     // area2 = compute_area(x, M, N, t, n, mu, beta, gamma);
     printf("area1 = %lf\n", area1);
     // printf("area2 = %lf\n\n", area2);
+
+    // Interpolate
+    interpolate(x, 0, M, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
+    N_old  = N;
+    px = &x;
     
+    // Redistribute the nodes
     points_reloc(px, t, n, pN, kappa, mu, gamma, beta);
     printf("N = %d, N_old = %d \n", N, N_old);
     printf(" \n");
-   	
     size = N*n_dim;
     M = N;
    	
+    // Free memory
     free(t);
     free(n);
     free(d);
@@ -182,7 +181,6 @@ int main() {
     free(mu);
     free(beta);
     free(gamma); 
-    // Free memory
 
     //free(dxdt);
     //free(dxdt_fft);
@@ -195,8 +193,7 @@ int main() {
     free(dxdt_RK4);
     free(dxdt_RK5);
   }
-       free(x);
-
+  free(x);
 
   return 0;
 }

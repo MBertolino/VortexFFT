@@ -4,7 +4,10 @@ void interpolate(double** x, int start, int N, int n_dim, double** t, double** n
 
 void autder(double* f, double* c_coeff, double alpha, int order);
 
-// Return the derivative of x
+// Return the derivative of x using fft
+void compute_fft(double* dxdt, double** x, int N, double alpha, int j);
+
+// Return the derivative of x Mancho's algorithm
 void compute_derivative(double* dxdt, double** x, double* mu, double* beta, double* gamma, double** t, double** n, int M, int N, double alpha, double h, double eps, int j);
 
 // Evaluate integral in case 1 and 2

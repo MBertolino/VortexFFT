@@ -4,6 +4,8 @@
 #include <math.h>
 #include <unistd.h>
 #include <string.h>
+#include <complex.h>
+#include <fftw3.h>
 
 #define TWOPI 6.2831853071795864769
 #define SQRTTWO 1.4142135623730950588
@@ -25,7 +27,6 @@ void interpolate(double** x, int start, int N, int n_dim, double** t, double** n
   for (int j = start; j < N-1; j++) {
   // printf("j = %d \n", j);
     t[j][0] = x[j+1][0] - x[j][0];
-   
     t[j][1] = x[j+1][1] - x[j][1];
     n[j][0] = -t[j][1];
     n[j][1] = t[j][0];
@@ -35,7 +36,6 @@ void interpolate(double** x, int start, int N, int n_dim, double** t, double** n
     //printf("d[%d] = %e\n", j, d[j]);
     //printf("------------------\n");
   }
-  
 
   // Special case j = N-1
   t[N-1][0] = x[start][0] - x[N-1][0];
@@ -110,6 +110,79 @@ void autder(double* f, double* c_coeff, double alpha, int order)
   }
   free(a_);
 
+  return;
+}
+
+void compute_fft(double* dxdt, double** x, int N, double alpha, int j)
+{
+  int N_points = 0.5*N;
+  double k[N];
+  double alpha_d_x;
+  
+  // Setup FFT
+  fftw_complex *in_x, *in_y, *out_x, *out_y;
+  fftw_plan plan_for_x, plan_for_y, plan_back_x, plan_back_y;
+  in_x = (fftw_complex*) fftw_malloc(N*sizeof(fftw_complex));
+  in_y = (fftw_complex*) fftw_malloc(N*sizeof(fftw_complex));
+  out_x = (fftw_complex*) fftw_malloc(N*sizeof(fftw_complex));
+  out_y = (fftw_complex*) fftw_malloc(N*sizeof(fftw_complex));
+  plan_for_x = fftw_plan_dft_1d(N, in_x, out_x, FFTW_FORWARD, FFTW_ESTIMATE);
+  plan_for_y = fftw_plan_dft_1d(N, in_y, out_y, FFTW_FORWARD, FFTW_ESTIMATE);
+  plan_back_x = fftw_plan_dft_1d(N, in_x, out_x, FFTW_BACKWARD, FFTW_ESTIMATE);
+  plan_back_y = fftw_plan_dft_1d(N, in_y, out_y, FFTW_BACKWARD, FFTW_ESTIMATE);
+  
+  // Frequency
+  for (int i = 0; i < N_points; i++)
+  {
+    k[i] = (double)i;
+    k[N_points+i] = (double)(i-N_points); 
+  }
+  k[N_points] = 0;
+
+  // Fourier transform x_i(p, t)
+  for (int i = 0; i < N; i++)
+  {
+    in_x[i] = x[i][0];
+    in_y[i] = x[i][1];
+  }
+  fftw_execute(plan_for_x); // Thread safe
+  fftw_execute(plan_for_y);
+  
+  // Differentiate in time and transform back
+  for (int i = 0; i < N; i++)
+  {
+    in_x[i] = I*k[i]*out_x[i];
+    in_y[i] = I*k[i]*out_y[i];
+  }
+  fftw_execute(plan_back_x);
+  fftw_execute(plan_back_y);
+  
+  // Estimate integral using Riemann sum 
+  for (int i = 0; i < N; i++)
+  {
+    if (i == j)
+      continue;
+	  alpha_d_x = pow(sqrt((x[i][0] - x[j][0])*(x[i][0] - x[j][0])\
+  	  + (x[i][1] - x[j][1])*(x[i][1] - x[j][1])), alpha);
+    dxdt[0] += out_x[i]/alpha_d_x;
+    dxdt[1] += out_y[i]/alpha_d_x;
+  }
+  
+  // Normalize
+  dxdt[0] = dxdt[0]*TWOPI/((double)(N*N));
+  dxdt[1] = dxdt[1]*TWOPI/((double)(N*N));
+  
+  // Free
+  fftw_destroy_plan(plan_for_x);
+  fftw_destroy_plan(plan_for_y);
+  fftw_destroy_plan(plan_back_x);
+  fftw_destroy_plan(plan_back_y);
+  fftw_free(in_x);
+  fftw_free(in_y);
+  fftw_free(out_x);
+  fftw_free(out_y);
+  fftw_cleanup();
+  
   return;
 }
 
@@ -831,7 +904,7 @@ double runge_kutta45(double** x, double** dxdt_k1, double** dxdt_k2, double** dx
     x_RK4[j][0] = x[j][0] + dxdt_RK4[j][0];
     x_RK4[j][1] = x[j][1] + dxdt_RK4[j][1];
     
-    x_RK5[j][0] = x[j][0] + dxdt_RK5[j][1];
+    x_RK5[j][0] = x[j][0] + dxdt_RK5[j][0];
     x_RK5[j][1] = x[j][1] + dxdt_RK5[j][1];
     }
     

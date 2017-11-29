@@ -50,6 +50,7 @@ void interpolate(double* x, int start, int N, int n_dim, double* t, double* n,\
   // Construct the cubic interpolation coefficients
   for (int j = start; j < N-1; j++) {
     mu[j] = -1./3.*d[j]*kappa[j] - 1./6.*d[j]*kappa[j+1];
+    //printf("mu[%d] = %e\n", j, mu[j]);
     beta[j] = 0.5*d[j]*kappa[j];
     gamma[j] = 1./6.*d[j]*(kappa[j+1] - kappa[j]);
   }
@@ -710,91 +711,41 @@ void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
   //printf("N = %d         N_tilde = %d\n", N, N_tilde);
   
   for (int i = 0; i < N; i++)
-  {
     sigmai_prim[i] = sigmai[i]*N_tilde/q;
-    //printf("sigmai_prim[%d] = %e\n", i, sigmai_prim[i]);
-  }
   
   // Copy x into temporary matrix
-  x_temp = (double*)malloc(N*N*sizeof(double));
-  memcpy(&x_temp, &x, sizeof(x));
+  x_temp = (double*)malloc(2*N*sizeof(double));
+  memcpy(x_temp, x, 2*N*sizeof(double));
   
   //Reallocate x
- 	x = (double*)realloc(x, N_tilde*N_tilde*sizeof(double));
-
+ 	x = (double*)realloc(x, 2*N_tilde*sizeof(double));
  	
  	//Set to zero to avoid garbage
- 	for (int i = 1; i < N_tilde*N_tilde; i++)
- 	{
+ 	for (int i = 1; i < 2*N_tilde; i++)
  		x[i] = 0.;
- 	}
 	
 	//Relocation of points
-  for (int j = 1; j < N_tilde; j++)
+  for (int j = 2; j <= N_tilde; j++)
   {
   	S = 0;
-  	for (int i = 1; i < N; i++)
+  	for (int i = 0; i < N-1; i++)
   	{
-  		S += sigmai_prim[i-1];
-  		p = (j - 1 - S)/sigmai_prim[i];
+  		S += sigmai_prim[i];
+  		p = (j - 1 - S)/sigmai_prim[i+1];
+  		
+      //printf("S = %e,  p = %e,  j = %d,  i = %d\n", S, p, j, i);
+      
   		if (p > 0 && p < 1)
   		{
-  			i_hat = i;
-  			x[2*j] = x_temp[2*i] + p*t[2*i] + (mu[i]*p + beta[i]*p*p + gamma[i]*p*p*p)*n[2*i];
-      	x[2*j + 1] = x_temp[2*i + 1] + p*t[2*i + 1] + (mu[i]*p + beta[i]*p*p + gamma[i]*p*p*p)*n[2*i + 1];
+  			x[2*(j-1)] = x_temp[2*i] + (t[2*i] + (mu[i] + beta[i]*p + gamma[i]*p*p)*n[2*i])*p;
+      	x[2*(j-1) + 1] = x_temp[2*i + 1] + (t[2*i + 1] + (mu[i] + beta[i]*p + gamma[i]*p*p)*n[2*i + 1])*p;
   		}
   	}
   }
- 
-  /*for (int j = 1; j < N_tilde; j++)
-  {
-  	// Assume minimum at i=0, p=0
-  	i_min = 0;
-  	p_min = 0.;
-    for (int i = 0; i < N; i++)
-    {
-      while (p < 1-dp)
-      {
-      	rest = 0.;
-      	rest_dp = 0.;
-      	for (int l = 1; l < i; l++)
-      	{
-          rest += (sigmai_prim[l] + sigmai_prim[i]*p);
-          rest_dp += (sigmai_prim[l] + sigmai_prim[i]*(p+dp));
-        }
-          
-        if (j-1 > rest && j-1 < rest_dp)   //j-1-summa(sigma[l])/sigma[i] = p
-				{
-				//printf("test\n");
-					i_min = i;
-					p_min = p;
-				}
-        p += dp;
-      }
-	    p = 0;
-    }
-    x[j][0] = x_temp[i_min][0] + p_min*t[i_min][0] + (mu[i_min]*p_min + \
-      					beta[i_min]*p_min*p_min + gamma[i_min]*p_min*p_min*p_min)*n[i_min][0];
-    if (j == 1) 
-    { 
-    	//printf("hej = %e\n", x_temp[i_min][0] + p_min*t[i_min][0] + (mu[i_min]*p_min + \
-      					beta[i_min]*p_min*p_min + gamma[i_min]*p_min*p_min*p_min)*n[i_min][0]);
-    }
-    					 
-	  x[j][1] = x_temp[i_min][1] + p_min*t[i_min][1] + (mu[i_min]*p_min + \
-      					beta[i_min]*p_min*p_min + gamma[i_min]*p_min*p_min*p_min)*n[i_min][1];
-    if (j == 1)
-    {
-    	//printf("tja = %e\n", x_temp[i_min][1] + p_min*t[i_min][1] + (mu[i_min]*p_min + \
-      					beta[i_min]*p_min*p_min + gamma[i_min]*p_min*p_min*p_min)*n[i_min][1]);
-    }
-  }
-  */
-  //printf("After relocation loop\n");
- /* for (int i = 0; i < N_tilde; i++)
-  {
-      printf("x[%d][0] =  %e, x[%d][1] =  %e \n", 2*i, x[2*i], 2*i+1, x[2*i+1]);
-  }*/
+
+  for (int j = 0; j < N_tilde; j++)
+    printf("x[%d] = %e,  x[%d] = %e,  r = %e\n", 2*j, x[2*j], 2*j+1, x[2*j+1], sqrt(x[2*j]*x[2*j] + x[2*j+1]*x[2*j+1]));
+  
   //printf("-------------------\n");
   // Free
   

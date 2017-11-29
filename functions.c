@@ -133,17 +133,16 @@ void compute_fft(double* dxdtx, double* dxdty, double* x, int N, double alpha, i
   // Differentiate in time and transform back
   for (int i = 0; i < N; i++)
     in_x[i] = I*k[i]*out_x[i];
-  for (int i = 1; i < N; i+=2)
+  for (int i = 0; i < N; i++)
     in_y[i] = I*k[i]*out_y[i];
   fftw_execute(plan_back_x);
   fftw_execute(plan_back_y);
   
-  /*
+  
   // Print to file  
   char str[80] = "../results/x";
   strcat(str, ".txt");
   FILE* fx = fopen(str, "wb");
-  printf("hej\n");
   for (int i = 0; i < N; i++) {
     fprintf(fx, "%lf\n", x[2*i]);
   }
@@ -152,25 +151,24 @@ void compute_fft(double* dxdtx, double* dxdty, double* x, int N, double alpha, i
   strcat(strdx, ".txt");
   FILE* fdx = fopen(strdx, "wb");
   for (int i = 0; i < N; i++) {
-    fprintf(fdx, "%lf\n", creal(out_x[i])/((double)N_coord));
+    fprintf(fdx, "%lf\n", creal(out_x[i])/((double)N));
   }
   fclose(fdx);
-  */
   
   // Estimate integral using Riemann sum 
   for (int i = 0; i < N; i++)
   {
-    if (i == j)
+    if (2*i == j)
       continue;
-	  alpha_d_x = pow(sqrt((x[i] - x[j])*(x[i] - x[j])\
-  	  + (x[i+1] - x[j+1])*(x[i+1] - x[j+1])), alpha);
+	  alpha_d_x = pow(sqrt((x[2*i] - x[2*j])*(x[2*i] - x[2*j])\
+				  + (x[2*i+1] - x[2*j+1])*(x[2*i+1]- x[2*j+1])), alpha);
     *dxdtx += out_x[i]/alpha_d_x;
     *dxdty += out_y[i]/alpha_d_x;
   }
   
-  // Normalize
-  *dxdtx = *dxdty*TWOPI/(0.25*(double)(N*N));
-  *dxdty = *dxdty*TWOPI/(0.25*(double)(N*N));
+  // Normalize FFT and Riemann sum
+  *dxdtx = *dxdty*TWOPI/((double)(N*N));
+  *dxdty = *dxdty*TWOPI/((double)(N*N));
   
   // Free
   fftw_destroy_plan(plan_for_x);
@@ -448,7 +446,7 @@ double evaluate_integral1_RK(double* x_i, double* x_j, double tol_rk45_space, do
 	double p = 0.;
 	double p_end = 1.; 
   double k1, k2, k3, k4, k5, k6;
-	double Y = 0., Y1, Y2, delta, p_temp;
+	double Y = 0., Y1, Y2, p_temp;
   long double R;
     while (p < p_end)
   {
@@ -527,8 +525,7 @@ double evaluate_integral2_RK(double* x_i, double* x_j, double tol_rk45_space, do
 	double p = 0.;
 	double p_end = 1.; 
   double k1, k2, k3, k4, k5, k6;
-	double Y = 0., Y1, Y2, R, delta, p_temp, h_new;
-  h_new = 0;
+	double Y = 0., Y1, Y2, R, p_temp;
   
   while (p < p_end)
   {
@@ -626,7 +623,7 @@ void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
   sigmai_tilde = (double*)malloc(N*sizeof(double));
   sigmai_prim = (double*)malloc(N*sizeof(double));
   h = (double*)malloc(N*N*sizeof(double));
- 
+    
   for (int i = 0; i < N; i++)
   {
     for (int j = 0; j < N; j++)
@@ -688,8 +685,8 @@ void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
   rho[N-1] = kappai_hat[N-1]/(1. + epsilon*kappai_hat[N-1]/SQRTTWO);
   sigmai[N-1] = rho[N-1]*d[N-1];
   
-  double q, rest, p, dp, p_min, rest_dp, S;
-  int i_hat = 1, N_tilde;
+  double q, p, S;
+  int N_tilde;
   q = 0.;
   p = 0.;
   
@@ -729,6 +726,7 @@ void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
 
   // Free
   free(kappa_bar);
+  printf("Before free points_reloc\n");
   free(d);
   free(kappai_breve);
   free(kappai_tilde);
@@ -748,13 +746,12 @@ void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
 
 double runge_kutta45(double* x, double* dxdt_k1, double* dxdt_k2, double* dxdt_k3, double* dxdt_k4, double* dxdt_k5, double* dxdt_k6, double* dxdt_RK4, double* dxdt_RK5, double tol_rk45_time, double dt, int M, int N, double* mu, double* beta, double* gamma, double* t, double* n, double alpha, double tol_rk45_space, double h, double* time)
 {
-  double F, delta, theta, tpi, dt_new, total_time;
+  double F, theta, tpi, dt_new, total_time;
   theta = -1.;
   F = dt*theta/(TWOPI);
   tpi = theta/(TWOPI);
   total_time = *time;
   double R[2];
-  double R_old[2];
   double R_max;
   R_max = 0.;
   double *x_temp, *x_RK4, *x_RK5;

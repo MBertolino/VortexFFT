@@ -45,22 +45,10 @@ int main() {
   px = &x;
   pN = &N;
   
- // memset(dxdt, 0, zeros);
-  //memset(dxdt_fft, 0, zeros);
-  /*memset(dxdt_k1, 0, zeros);
-  memset(dxdt_k2, 0, zeros);
-  memset(dxdt_k3, 0, zeros);
-  memset(dxdt_k4, 0, zeros);
-  memset(dxdt_k5, 0, zeros);
-  memset(dxdt_k6, 0, zeros);
-  memset(dxdt_RK4, 0, zeros);
-  memset(dxdt_RK5, 0, zeros);
-  */
-   
   // Generate circle
   for (int j = 0; j < M; j++) {
-    x[2*j] = 5*cos(TWOPI*j/(double)M)+0.2*cos(6*TWOPI*j/(double)M);// - 1.1;
-    x[2*j+1] = sin(TWOPI*j/(double)M)-0.2*sin(4*TWOPI*j/(double)M);
+    x[2*j] = cos(TWOPI*j/(double)M);// - 1.1;
+    x[2*j+1] = sin(TWOPI*j/(double)M);
     
     //x[2*j+2*M] = cos(TWOPI*j/(double)M) + 1.1;
     //x[2*j+1+2*M] = sin(TWOPI*j/(double)M);
@@ -150,6 +138,8 @@ int main() {
       strcat(str, ".txt");
       FILE* f = fopen(str, "wb");
       for (int i = 0; i < N; i++) {
+        if (i == M)
+          fprintf(f, "\n");
         fprintf(f, "%lf,%lf\n", x[2*i], x[2*i+1]);
       }
       fclose(f);

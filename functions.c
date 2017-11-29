@@ -94,8 +94,8 @@ void autder(double* f, double* c_coeff, double alpha, int order)
 
   return;
 }
-/*
-void compute_fft(double* dxdt, double** x, int N, double alpha, int j)
+
+void compute_fft(double* dxdtx, double* dxdty, double* x, int N, double alpha, int j)
 {
   int N_points = 0.5*N;
   double k[N];
@@ -123,36 +123,53 @@ void compute_fft(double* dxdt, double** x, int N, double alpha, int j)
 
   // Fourier transform x_i(p, t)
   for (int i = 0; i < N; i++)
-  {
-    in_x[i] = x[i][0];
-    in_y[i] = x[i][1];
-  }
+    in_x[i] = x[2*i];
+  for (int i = 0; i < N; i++)
+    in_y[i] = x[2*i+1];
   fftw_execute(plan_for_x); // Thread safe
   fftw_execute(plan_for_y);
   
   // Differentiate in time and transform back
   for (int i = 0; i < N; i++)
-  {
     in_x[i] = I*k[i]*out_x[i];
+  for (int i = 1; i < N; i+=2)
     in_y[i] = I*k[i]*out_y[i];
-  }
   fftw_execute(plan_back_x);
   fftw_execute(plan_back_y);
+  
+  /*
+  // Print to file  
+  char str[80] = "../results/x";
+  strcat(str, ".txt");
+  FILE* fx = fopen(str, "wb");
+  printf("hej\n");
+  for (int i = 0; i < N; i++) {
+    fprintf(fx, "%lf\n", x[2*i]);
+  }
+  fclose(fx);
+  char strdx[80] = "../results/dx";
+  strcat(strdx, ".txt");
+  FILE* fdx = fopen(strdx, "wb");
+  for (int i = 0; i < N; i++) {
+    fprintf(fdx, "%lf\n", creal(out_x[i])/((double)N_coord));
+  }
+  fclose(fdx);
+  */
   
   // Estimate integral using Riemann sum 
   for (int i = 0; i < N; i++)
   {
     if (i == j)
       continue;
-	  alpha_d_x = pow(sqrt((x[i][0] - x[j][0])*(x[i][0] - x[j][0])\
-  	  + (x[i][1] - x[j][1])*(x[i][1] - x[j][1])), alpha);
-    dxdt[0] += out_x[i]/alpha_d_x;
-    dxdt[1] += out_y[i]/alpha_d_x;
+	  alpha_d_x = pow(sqrt((x[i] - x[j])*(x[i] - x[j])\
+  	  + (x[i+1] - x[j+1])*(x[i+1] - x[j+1])), alpha);
+    *dxdtx += out_x[i]/alpha_d_x;
+    *dxdty += out_y[i]/alpha_d_x;
   }
   
   // Normalize
-  dxdt[0] = dxdt[0]*TWOPI/((double)(N*N));
-  dxdt[1] = dxdt[1]*TWOPI/((double)(N*N));
+  *dxdtx = *dxdty*TWOPI/(0.25*(double)(N*N));
+  *dxdty = *dxdty*TWOPI/(0.25*(double)(N*N));
   
   // Free
   fftw_destroy_plan(plan_for_x);
@@ -167,7 +184,6 @@ void compute_fft(double* dxdt, double** x, int N, double alpha, int j)
   
   return;
 }
-*/
 
 void compute_derivative(double* dxdtx, double* dxdty, double* x, double* mu, double* beta, double* gamma, double* t, double* n, int M, int N, double alpha, double h, double tol_rk45_space, int j)
 {

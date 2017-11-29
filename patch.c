@@ -31,6 +31,7 @@ int main() {
   // Allocate coordinates
   double* x = (double*)malloc(size*sizeof(double));
   double* dxdt = (double*)malloc(size*sizeof(double));
+  double** dxdt_fft = (double**)malloc(N*sizeof(double*));
   double* dxdt_k1 = (double*)malloc(size*sizeof(double));
   double* dxdt_k2 = (double*)malloc(size*sizeof(double));
   double* dxdt_k3 = (double*)malloc(size*sizeof(double));
@@ -45,6 +46,7 @@ int main() {
   pN = &N;
   zeros = size*sizeof(double);
   memset(dxdt, 0, zeros);
+  memset(dxdt_fft, 0, zeros);
   memset(dxdt_k1, 0, zeros);
   memset(dxdt_k2, 0, zeros);
   memset(dxdt_k3, 0, zeros);
@@ -91,6 +93,23 @@ int main() {
     // Interpolate
     interpolate(x, 0, M, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
     //interpolate(x, M, N, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
+    
+    // Compare FFT and Mancho
+    /*
+    for (int j = 0; j < N; j++)
+    {
+      compute_fft(dxdt_fft[j], x, N, alpha, j);
+      compute_derivative(dxdt[j], x, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j);
+    }
+    
+    for (int j = 0; j < 8; j++)
+    {
+      printf("dxdt_fft[%d] = %lf\n", j, 2*dxdt_fft[j]);
+      printf("dxdt_ama[%d] = %lf\n\n", j, dxdt[j]);
+    }
+    printf("Done\n");
+    sleep(5);
+    */
     
     // Compute area
     area1 = compute_area(x, 0, M, t, n, mu, beta, gamma);

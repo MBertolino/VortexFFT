@@ -143,7 +143,7 @@ int main() {
     //Print to file
     if (k%1 == 0) {
       // Print to file
-      char str[80] = "../circle_";
+      char str[80] = "../results/circle_";
       char str2[80] = "";
       sprintf(str2, "%d", k);
       strcat(str, str2);

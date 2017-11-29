@@ -29,6 +29,8 @@ patch.o: patch.c
 swap.o: swap.c
 	$(CC) $(CFLAGS) $(INCLUDES) -c swap.c -std=c99
 
+cleanres:
+	$(RM) ../results/*.txt
 
 clean:
 	$(RM) $(PATCH) $(FFT) *.o

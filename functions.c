@@ -615,7 +615,7 @@ void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
   // Either calculate all d[j]'s here or use input
   // Same goes with kappa and h
   double *d, *kappa_bar, *kappai_breve, *kappai_tilde, *sigmai_prim;
-  double  *kappai_hat, *rho, *sigmai, *sigmai_tilde, *h, *x_temp;
+  double *kappai_hat, *rho, *sigmai, *sigmai_tilde, *h, *x_temp;
   d = (double*)malloc(N*sizeof(double));
   kappa_bar = (double*)malloc(N*sizeof(double));
   kappai_breve = (double*)malloc(N*sizeof(double));
@@ -699,8 +699,7 @@ void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
   for (int i = 0; i < N; i++)
     sigmai_prim[i] = sigmai[i]*N_tilde/q;
   
-  // Copy x into temporary matrix
-  
+  // Copy x into temporary array
   x_temp = (double*)malloc(2*N*sizeof(double));
   memcpy(x_temp, x, 2*N*sizeof(double));
 

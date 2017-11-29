@@ -700,34 +700,39 @@ void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
   }
   
   // Copy x into temporary matrix
+  
   x_temp = (double*)malloc(2*N*sizeof(double));
   memcpy(x_temp, x, 2*N*sizeof(double));
   
+	
   //Reallocate x
  	x = (double*)realloc(x, 2*N_tilde*sizeof(double));
  	
  	//Set to zero to avoid garbage
- 	for (int i = 1; i < 2*N_tilde; i++)
+ 	for (int i = 2; i < 2*N_tilde; i++)
  		x[i] = 0.;
 	
 	//Relocation of points
   for (int j = 1; j <= N_tilde; j++)
   {
   	S = 0;
-  	for (int i = 0; i < N-1; i++)
+  	for (int i = 0; i < N; i++)
   	{
-  		S += sigmai_prim[i];
-  		p = (j - 1 - S)/sigmai_prim[i+1];
+  		S += sigmai_prim[i-1];
+  		p = (j - 1 - S)/sigmai_prim[i];
   		
   		if (p > 0 && p < 1)
   		{
   			i_hat = i;
   			x[2*(j-1)] = x_temp[2*i] + (t[2*i] + (mu[i] + beta[i]*p + gamma[i]*p*p)*n[2*i])*p;
       	x[2*(j-1) + 1] = x_temp[2*i + 1] + (t[2*i + 1] + (mu[i] + beta[i]*p + gamma[i]*p*p)*n[2*i + 1])*p;
+      	//printf("p = %e, S = %e, i = %d, j = %d\n", p, S, i, j);
   		}
   	}
   }
-
+  /*for (int i = 0; i < N_tilde; i++)
+ 		printf("x[%d] = %e, x[%d] = %e, r = %e\n", 2*i, x[2*i], 2*i+1, x[2*i+1],\
+ 		sqrt(x[2*i]*x[2*i] + x[2*i+1]*x[2*i+1]));*/
   //printf("-------------------\n");
   // Free
   
@@ -744,7 +749,7 @@ void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
 	free(x_temp);
 	
   *pN = N_tilde;
-  
+  *px = x;
  // printf("Exiting points_reloc\n");
   
   return;

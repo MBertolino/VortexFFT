@@ -597,22 +597,24 @@ double integrand2(double* x_i, double* x_j, double p, double* t_i, double* n_i,\
 }
 
 // Relocating nodes
-void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
+void points_reloc(double** px, double* t, double* n, int* pM, int* pN, double* kappa,\
 									double* mu, double* beta, double* gamma) {
   
   double *x;
   x = *px;
-  int N;
+  int N, M;
   N = *pN;
+  M = *pM;
   double epsilon, L, a, v;
   epsilon = 1.e-6;
   L = 3.0;
   a = 2.0/3.0;
   v = 0.05; // 0.01, 0.03, 0.05 (Smaller value => Larger densities of points on the curve)
   
-  double q, p, S, kappa_breve_temp;
-  int N_tilde;
-  q = 0.;
+  double q1, q2, p, S1, S2, kappa_breve_temp;
+  int N_tilde1, N_tilde2;
+  q1 = 0.;
+  q2 = 0.;
   p = 0.;
     
   // Either calculate all d[j]'s here or use input
@@ -634,12 +636,20 @@ void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
   {
     for (int j = 0; j < N; j++)
     {
-      if (j == N-1)
-	    {
-      h[i*N + j] = sqrt((x[2*i] - (x[0] + x[2*j])/2)\
+    
+    	if (j == M-1)
+    	{
+    		h[i*N + j] = sqrt((x[2*i] - (x[0] + x[2*j])/2)\
                   * (x[2*i] - (x[0] + x[2*j])/2)\
                   + (x[2*i + 1] - (x[1] + x[2*j + 1])/2)\
                   * (x[2*i + 1] - (x[1] + x[2*j + 1])/2));
+    	}
+      else if (j == N-1)
+	    {
+      h[i*N + j] = sqrt((x[2*i] - (x[M] + x[2*j])/2)\
+                  * (x[2*i] - (x[M] + x[2*j])/2)\
+                  + (x[2*i + 1] - (x[M+1] + x[2*j + 1])/2)\
+                  * (x[2*i + 1] - (x[M+1] + x[2*j + 1])/2));
       }
       else
       {
@@ -649,11 +659,18 @@ void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
                   * (x[2*i + 1] - (x[2*(j+1) + 1] + x[2*j + 1])/2));
       }
     }
-    if (i == N-1)
+    
+    if (i == M-1)
     {
-      kappa_bar[i] = 0.5*(kappa[i] + kappa[0]);
+    	kappa_bar[i] = 0.5*(kappa[i] + kappa[0]);
       d[i] = sqrt((x[0] - x[2*i])*(x[0] - x[2*i])\
           + (x[1] - x[2*i + 1])*(x[1] - x[2*i + 1]));
+    }
+    if (i == N-1)
+    {
+      kappa_bar[i] = 0.5*(kappa[i] + kappa[M]);
+      d[i] = sqrt((x[2*M] - x[2*i])*(x[2*M] - x[2*i])\
+          + (x[2*M+1] - x[2*i + 1])*(x[2*M+1] - x[2*i + 1]));
     }
     else
     {
@@ -685,43 +702,100 @@ void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
     kappai_hat[i] = 0.5*(kappai_tilde[i] + kappai_tilde[i+1]);
     rho[i] = kappai_hat[i]/(1. + epsilon*kappai_hat[i]/SQRTTWO);
     sigmai[i] = rho[i]*d[i];
-  } 
-  kappai_hat[N-1] = 0.5*(kappai_tilde[N-1] + kappai_tilde[0]);
+  }
+  
+  kappai_hat[M-1] = 0.5*(kappai_tilde[M-1] + kappai_tilde[0]);
+  rho[M-1] = kappai_hat[M-1]/(1. + epsilon*kappai_hat[M-1]/SQRTTWO);
+  sigmai[M-1] = rho[M-1]*d[M-1];
+   
+  kappai_hat[N-1] = 0.5*(kappai_tilde[N-1] + kappai_tilde[M]);
   rho[N-1] = kappai_hat[N-1]/(1. + epsilon*kappai_hat[N-1]/SQRTTWO);
   sigmai[N-1] = rho[N-1]*d[N-1];
   
-  for (int i = 0; i < N; i++)
-    q += sigmai[i];
-  N_tilde = round(q) + 2; 
-  for (int i = 0; i < N; i++)
-    sigmai_prim[i] = sigmai[i]*N_tilde/q;
+  for (int i = 0; i < M; i++)
+    q1 += sigmai[i];
+    
+  for (int i = M; i < N; i++)
+  {
+  	q2 += sigmai[i];
+  }
+  
+  N_tilde1 = round(q1) + 2;
+  N_tilde2 = round(q2) + 2;
+  for (int i = 0; i < M; i++)
+    sigmai_prim[i] = sigmai[i]*N_tilde1/q1;
+    
+ 	for (int i = M; i < N; i++)
+ 	{
+ 		sigmai_prim[i] = sigmai[i]*N_tilde2/q2;
+ 	}
+ 	
+ 	for (int i = 0; i < N; i++)
+ 	{
+ 		printf("sigmai_prim[%d] = %e\n", i, sigmai_prim[i]); 
+ 	}
   
   // Copy x into temporary array
   x_temp = (double*)malloc(2*N*sizeof(double));
   memcpy(x_temp, x, 2*N*sizeof(double));
-
+  
+	int size = 2*(N_tilde1+N_tilde2);
+	
   // Reallocate x
-  x = (double*)realloc(x, 2*N_tilde*sizeof(double));
+  x = (double*)realloc(x, size*sizeof(double));
  	
-  // Set to zero to avoid garbage
-  for (int i = 2; i < 2*N_tilde; i++)
+  // Set to zero to avoid garbage, fix first point in each patch
+  for (int i = 2; i < 2*N_tilde1; i++)
 	  x[i] = 0.;
+	  
+	for (int i = N_tilde1+2; i < size; i++)
+	{
+		x[i] = 0.;
+	}
 
   // Relocation of points
-  for (int j = 2; j <= N_tilde; j++)
+  for (int j = 2; j <= N_tilde1; j++)
   {
-  	S = 0;
-	  for (int i = 0; i < N; i++)
+  	S1 = 0;
+	  for (int i = 1; i < M; i++)
   	{
-		  S += sigmai_prim[i-1];
-	  	p = (j - 1 - S)/sigmai_prim[i];
-  		
+  		if (i > 0)
+  		{
+  			S1 += sigmai_prim[i-1];
+  		}
+	  	p = (j - 1 - S1)/sigmai_prim[i];
+  		printf("p = %f\n", p);
 		  if (p > 0 && p < 1)
 	  	{
   			x[2*(j-1)] = x_temp[2*i] + (t[2*i] + (mu[i] + beta[i]*p + gamma[i]*p*p)*n[2*i])*p;
     	  x[2*(j-1) + 1] = x_temp[2*i + 1] + (t[2*i + 1] + (mu[i] + beta[i]*p + gamma[i]*p*p)*n[2*i + 1])*p;
 		  }
 	  }
+  }
+  
+  for (int j = N_tilde1 + 2; j <= size; j++)
+  {
+  	S2 = 0;
+	  for (int i = M; i < N; i++)
+  	{
+  		if (i > M)
+  		{
+  			S2 += sigmai_prim[i-1];
+  		}
+	  	p = (j - 1 - S2)/sigmai_prim[i];
+  		
+		  if (p > 0 && p < 1)
+	  	{
+	  		printf("hej\n");
+  			x[2*(j-1)] = x_temp[2*i] + (t[2*i] + (mu[i] + beta[i]*p + gamma[i]*p*p)*n[2*i])*p;
+    	  x[2*(j-1) + 1] = x_temp[2*i + 1] + (t[2*i + 1] + (mu[i] + beta[i]*p + gamma[i]*p*p)*n[2*i + 1])*p;
+		  }
+	  }
+  }
+  
+  for (int i = 0; i < size; i++)
+  {
+  	printf("x[%d] = %e\n", i, x[i]);
   }
 
   // Free
@@ -738,7 +812,8 @@ void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
   free(h); 
 	free(x_temp);
 	
-  *pN = N_tilde;
+  *pN = N_tilde1 + N_tilde2;
+  *pM = N_tilde1;
   *px = x;
   
   return;

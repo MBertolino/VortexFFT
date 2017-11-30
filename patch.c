@@ -14,7 +14,7 @@ int main() {
   int N = M;
   int n_dim = 2;
   int size = N*n_dim;
-  int T = 2000;
+  int T = 5000;
   double tol_rk45_time = 1.e-8;
   long double tol_rk45_space = 1.e-8;
   long double h = 1.e-3;
@@ -47,7 +47,7 @@ int main() {
   
   // Generate circle
   for (int j = 0; j < M; j++) {
-    x[2*j] = cos(TWOPI*j/(double)M);// - 1.1;
+    x[2*j] = 8*cos(TWOPI*j/(double)M);// - 1.1;
     x[2*j+1] = sin(TWOPI*j/(double)M);
     
     //x[2*j+2*M] = cos(TWOPI*j/(double)M) + 1.1;
@@ -124,7 +124,7 @@ int main() {
     dt = runge_kutta45(x, dxdt_k1, dxdt_k2, dxdt_k3, dxdt_k4, dxdt_k5,\
                   dxdt_k6, dxdt_RK4, dxdt_RK5, tol_rk45_time, dt, M, N,\
                   mu, beta, gamma, t, n, alpha, tol_rk45_space, h, &time);
- 
+    printf("k = %d\n", k);
     printf("time = %1.15lf\n", time);    
     printf("--------------------------\n");
     

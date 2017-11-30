@@ -627,7 +627,7 @@ void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
   rho = (double*)malloc(N*sizeof(double));
   sigmai = (double*)malloc(N*sizeof(double));
   sigmai_tilde = (double*)malloc(N*sizeof(double));
-  sigmai_prim = (double*)malloc(N*sizeof(double));
+  sigmai_prim = (double*)malloc((N+1)*sizeof(double));
   h = (double*)malloc(N*N*sizeof(double));
     
   for (int i = 0; i < N; i++)
@@ -693,9 +693,9 @@ void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
   for (int i = 0; i < N; i++)
     q += sigmai[i];
   N_tilde = round(q) + 2; 
-  for (int i = 0; i < N; i++)
-    sigmai_prim[i] = sigmai[i]*N_tilde/q;
-  
+  for (int i = 1; i <= N; i++)
+    sigmai_prim[i] = sigmai[i-1]*N_tilde/q;
+  sigmai_prim[0] = 0;
   // Copy x into temporary array
   x_temp = (double*)malloc(2*N*sizeof(double));
   memcpy(x_temp, x, 2*N*sizeof(double));
@@ -713,8 +713,8 @@ void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
   	S = 0;
 	  for (int i = 0; i < N; i++)
   	{
-		  S += sigmai_prim[i-1];
-	  	p = (j - 1 - S)/sigmai_prim[i];
+		  S += sigmai_prim[i];
+	  	p = (j - 1 - S)/sigmai_prim[i+1];
   		
 		  if (p > 0 && p < 1)
 	  	{

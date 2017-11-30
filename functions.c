@@ -96,7 +96,7 @@ void autder(double* f, double* c_coeff, double alpha, int order)
   return;
 }
 
-void compute_fft(double* dxdtx, double* dxdty, double* x, int N, double alpha, int j)
+void compute_fft(double* dxdt, double* x, int N, double alpha, int j)
 {
   int N_points = 0.5*N;
   double k[N];
@@ -121,7 +121,7 @@ void compute_fft(double* dxdtx, double* dxdty, double* x, int N, double alpha, i
     k[N_points+i] = (double)(i-N_points); 
   }
   k[N_points] = 0;
-
+  
   // Fourier transform x_i(p, t)
   for (int i = 0; i < N; i++)
     in_x[i] = x[2*i];
@@ -130,7 +130,7 @@ void compute_fft(double* dxdtx, double* dxdty, double* x, int N, double alpha, i
   fftw_execute(plan_for_x); // Thread safe
   fftw_execute(plan_for_y);
   
-  // Differentiate in time and transform back
+  // Differentiate and transform back
   for (int i = 0; i < N; i++)
     in_x[i] = I*k[i]*out_x[i];
   for (int i = 0; i < N; i++)
@@ -138,37 +138,38 @@ void compute_fft(double* dxdtx, double* dxdty, double* x, int N, double alpha, i
   fftw_execute(plan_back_x);
   fftw_execute(plan_back_y);
   
-  
   // Print to file  
   char str[80] = "../results/x";
   strcat(str, ".txt");
   FILE* fx = fopen(str, "wb");
   for (int i = 0; i < N; i++) {
-    fprintf(fx, "%lf\n", x[2*i]);
+    fprintf(fx, "%lf %lf\n", x[2*i], x[2*i+1]);
   }
   fclose(fx);
+  
   char strdx[80] = "../results/dx";
   strcat(strdx, ".txt");
   FILE* fdx = fopen(strdx, "wb");
   for (int i = 0; i < N; i++) {
-    fprintf(fdx, "%lf\n", creal(out_x[i])/((double)N));
+    fprintf(fdx, "%lf %lf\n", creal(out_x[i])/((double)N), creal(out_y[i])/((double)N));
   }
   fclose(fdx);
   
   // Estimate integral using Riemann sum 
   for (int i = 0; i < N; i++)
   {
-    if (2*i == j)
+    if (i == j)
       continue;
-	  alpha_d_x = pow(sqrt((x[2*i] - x[2*j])*(x[2*i] - x[2*j])\
-				  + (x[2*i+1] - x[2*j+1])*(x[2*i+1]- x[2*j+1])), alpha);
-    *dxdtx += out_x[i]/alpha_d_x;
-    *dxdty += out_y[i]/alpha_d_x;
+    alpha_d_x = pow(sqrt((x[2*i] - x[2*j])*(x[2*i] - x[2*j])\
+                         + (x[2*i+1] - x[2*j+1])*(x[2*i+1] - x[2*j+1])), alpha);
+    dxdt[2*j] += creal(out_x[i])/alpha_d_x;
+    dxdt[2*j+1] += creal(out_y[i])/alpha_d_x;
+    //printf("out[%d] = %lf, \t %lf\n", i, creal(out_x[i])/((double)N*alpha_d_x), creal(out_y[i])/((double)N*alpha_d_x));
   }
   
   // Normalize FFT and Riemann sum
-  *dxdtx = *dxdty*TWOPI/((double)(N*N));
-  *dxdty = *dxdty*TWOPI/((double)(N*N));
+  dxdt[2*j] = dxdt[2*j]*TWOPI/((double)(N*N));
+  dxdt[2*j+1] = dxdt[2*j+1]*TWOPI/((double)(N*N));
   
   // Free
   fftw_destroy_plan(plan_for_x);

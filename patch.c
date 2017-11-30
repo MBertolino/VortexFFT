@@ -77,8 +77,8 @@ int main() {
     double* gamma = (double*)malloc(N*sizeof(double));
     double* t = (double*)malloc(size*sizeof(double)); 
     double* n = (double*)malloc(size*sizeof(double));
-    //double* dxdt = (double*)malloc(size*sizeof(double));
-    //double* dxdt_fft = (double*)malloc(N*sizeof(double));
+    double* dxdt = (double*)malloc(size*sizeof(double));
+    double* dxdt_fft = (double*)malloc(size*sizeof(double));
     double* dxdt_k1 = (double*)malloc(size*sizeof(double));
     double* dxdt_k2 = (double*)malloc(size*sizeof(double));
     double* dxdt_k3 = (double*)malloc(size*sizeof(double));
@@ -89,6 +89,8 @@ int main() {
     double* dxdt_RK5 = (double*)malloc(size*sizeof(double));
     
     zeros = size*sizeof(double);
+    memset(dxdt, 0, zeros);
+    memset(dxdt_fft, 0, zeros);
     memset(dxdt_k1, 0, zeros);
     memset(dxdt_k2, 0, zeros);
     memset(dxdt_k3, 0, zeros);
@@ -103,23 +105,35 @@ int main() {
     interpolate(x, 0, M, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
     //interpolate(x, M, N, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
     
-    /*
     // Compare FFT and Mancho
-    for (int j = 0; j < N; j+=2)
+    for (int j = 0; j < N; j++)
     {
-      compute_fft(&dxdt_fft[j], &dxdt_fft[j+1], x, N, alpha, j);
-      compute_derivative(&dxdt[j], &dxdt[j+1], x, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j);
+      compute_fft(dxdt_fft, x, N, alpha, j);
+      compute_derivative(&dxdt[2*j], &dxdt[2*j+1], x, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j);
     }
     
+    // Print to file
+    char strdx[80] = "../results/dx_fft";
+    char str[80] = "../results/dx_ama";
+    strcat(strdx, ".txt");
+    strcat(str, ".txt");
+    FILE* f_fft = fopen(strdx, "wb");
+    FILE* f_ama = fopen(str, "wb");
     for (int j = 0; j < 8; j++)
     {
-      printf("dxdt_fft[%d] = %lf\n", j, dxdt_fft[j]);
-      printf("dxdt_ama[%d] = %lf\n\n", j, dxdt[j]);
+      printf("fft_x[%d, %d] = %lf, \t %lf\n", 2*j, 2*j+1, dxdt_fft[2*j], dxdt_fft[2*j+1]);
+      printf("ama_x[%d, %d] = %lf, \t %lf\n\n", 2*j, 2*j+1, dxdt[2*j], dxdt[2*j+1]);
     }
+    for (int j = 0; j < N; j++)
+    {
+      fprintf(f_fft, "%lf %lf\n", dxdt_fft[2*j], dxdt_fft[2*j+1]);
+      fprintf(f_ama, "%lf %lf\n", dxdt[2*j], dxdt[2*j+1]);
+    } 
     printf("Done\n");
+    fclose(f_fft);
+    fclose(f_ama);
     sleep(5);
-    */
-      
+    
     // Evolve patches
     dt = runge_kutta45(x, dxdt_k1, dxdt_k2, dxdt_k3, dxdt_k4, dxdt_k5,\
                   dxdt_k6, dxdt_RK4, dxdt_RK5, tol_rk45_time, dt, M, N,\

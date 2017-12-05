@@ -34,9 +34,9 @@ void interpolate(double* x, int start, int N, int n_dim, double* t, double* n,\
   d[N-1] = sqrt(t[2*N-2]*t[2*N-2] + t[2*N-1]*t[2*N-1]);
 
   // kappa local curvature
-  kappa_den[0] = d[N-1]*d[N-1]*t[start] + d[start]*d[start]*t[2*N-2];
-  kappa_den[1] = d[N-1]*d[N-1]*t[start+1] + d[start]*d[start]*t[2*N-1];
-  kappa[start] = 2.*(t[2*N-4]*t[start+1] - t[2*N-3]*t[start])\
+  kappa_den[0] = d[N-1]*d[N-1]*t[2*start] + d[start]*d[start]*t[2*N-2];
+  kappa_den[1] = d[N-1]*d[N-1]*t[2*start+1] + d[start]*d[start]*t[2*N-1];
+  kappa[start] = 2.*(t[2*N-2]*t[2*start+1] - t[2*N-1]*t[2*start])\
     /sqrt(kappa_den[0]*kappa_den[0] + kappa_den[1]*kappa_den[1]);
     
   for (int j = start+1; j < N; j++) {
@@ -55,6 +55,7 @@ void interpolate(double* x, int start, int N, int n_dim, double* t, double* n,\
     gamma[j] = 1./6.*d[j]*(kappa[j+1] - kappa[j]);
   }
   mu[N-1] = -1./3.*d[N-1]*kappa[N-1] - 1./6.*d[N-1]*kappa[start];
+  //printf("mu[%d] = %e\n", N-1, mu[N-1]);
   beta[N-1] = 0.5*d[N-1]*kappa[N-1];
   gamma[N-1] = 1./6.*d[N-1]*(kappa[start] - kappa[N-1]);
   
@@ -585,170 +586,263 @@ double integrand2(double* x_i, double* x_j, double p, double* t_i, double* n_i,\
 
 // Relocating nodes
 void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
-									double* mu, double* beta, double* gamma) {
+									double* mu, double* beta, double* gamma, int* pM1, int* pM2, int patches) {
   
   double *x;
   x = *px;
-  int N;
+  int N, N_tilde, i_idx, j_idx;
   N = *pN;
-  double epsilon = 1.e-6;
-  double L = 3.0;
-  double a = 2.0/3.0;
-  double v = 0.05; // 0.01, 0.03, 0.05 (Smaller value => Larger densities of points on the curve)
-  
+  double epsilon, L, a, v;
+  epsilon = 1.e-6;
+  L = 3.0;
+  a = 2.0/3.0;
+  v = 0.05; // 0.01, 0.03, 0.05 (Smaller value => Larger densities of points on the curve)
+  int M[3], M_new[2];
+  M[0] = 0;
+  M[1] = *pM1;
+  M[2] = *pM2;
+  N_tilde = 0;
+  double q, rest, p, dp, p_min, rest_dp, S;
+  int i_hat = 1;
   // Either calculate all d[j]'s here or use input
   // Same goes with kappa and h
   double *d, *kappa_bar, *kappai_breve, *kappai_tilde, *sigmai_prim;
-  double  *kappai_hat, *rho, *sigmai, *sigmai_tilde, *h, *x_temp;
-  d = (double*)malloc(N*sizeof(double));
-  kappa_bar = (double*)malloc(N*sizeof(double));
-  kappai_breve = (double*)malloc(N*sizeof(double));
-  kappai_tilde = (double*)malloc(N*sizeof(double));  
-  kappai_hat = (double*)malloc(N*sizeof(double));
-  rho = (double*)malloc(N*sizeof(double));
-  sigmai = (double*)malloc(N*sizeof(double));
-  sigmai_tilde = (double*)malloc(N*sizeof(double));
-  sigmai_prim = (double*)malloc(N*sizeof(double));
-  h = (double*)malloc(N*N*sizeof(double));
- 
-  for (int i = 0; i < N; i++)
+  double  *kappai_hat, *rho, *sigmai, *sigmai_tilde, *h, **x_patch;
+  x_patch = (double**)malloc(patches*sizeof(double*));
+  
+  for (int k = 1; k <= patches; k++)
   {
-    for (int j = 0; j < N; j++)
+    //printf(" \n \n k = %d\n \n", k);
+    d = (double*)malloc(M[k]*sizeof(double));
+    kappa_bar = (double*)malloc(M[k]*sizeof(double));
+    kappai_breve = (double*)malloc(M[k]*sizeof(double));
+    kappai_tilde = (double*)malloc(M[k]*sizeof(double));  
+    kappai_hat = (double*)malloc(M[k]*sizeof(double));
+    rho = (double*)malloc(M[k]*sizeof(double));
+    sigmai = (double*)malloc(M[k]*sizeof(double));
+    sigmai_tilde = (double*)malloc(M[k]*sizeof(double));
+    sigmai_prim = (double*)malloc((M[k])*sizeof(double));
+    h = (double*)malloc(M[k]*M[k]*sizeof(double));
+    
+    for (int i = 0; i < M[k]; i++)
     {
-      if (j == N-1)
-	    {
-      h[i*N + j] = sqrt((x[2*i] - (x[0] + x[2*j])/2)\
-                  * (x[2*i] - (x[0] + x[2*j])/2)\
-                  + (x[2*i + 1] - (x[1] + x[2*j + 1])/2)\
-                  * (x[2*i + 1] - (x[1] + x[2*j + 1])/2));
+      for (int j = 0; j < M[k]; j++)
+      {
+      i_idx = i + M[k-1];
+      j_idx = j + M[k-1];
+      
+        if (j == M[k]-1)
+	      {
+        h[i*M[k] + j] = sqrt((x[2*i_idx] - (x[2*M[k-1]] + x[2*j_idx])/2)\
+                    * (x[2*i_idx] - (x[2*M[k-1]] + x[2*j_idx])/2)\
+                    + (x[2*i_idx + 1] - (x[2*M[k-1]+1] + x[2*j_idx + 1])/2)\
+                    * (x[2*i_idx + 1] - (x[2*M[k-1]+1] + x[2*j_idx + 1])/2));
+        }
+        else
+        {
+          h[i*M[k] + j] = sqrt((x[2*i_idx] - (x[2*(j_idx+1)] + x[2*j_idx])/2)\
+                    * (x[2*i_idx] - (x[2*(j_idx+1)] + x[2*j_idx])/2)\
+                    + (x[2*i_idx + 1] - (x[2*(j_idx+1) + 1] + x[2*j_idx + 1])/2)\
+                    * (x[2*i_idx + 1] - (x[2*(j_idx+1) + 1] + x[2*j_idx + 1])/2));
+        }
+      }
+      if (i == M[k]-1)
+      {
+        kappa_bar[i] = 0.5*(kappa[i_idx] + kappa[M[k-1]]);
+        d[i] = sqrt((x[2*M[k-1]] - x[2*i_idx])*(x[2*M[k-1]] - x[2*i_idx])\
+            + (x[2*M[k-1]+1] - x[2*i_idx + 1])*(x[2*M[k-1]+1] - x[2*i_idx + 1]));
       }
       else
       {
-        h[i*N + j] = sqrt((x[2*i] - (x[2*(j+1)] + x[2*j])/2)\
-                  * (x[2*i] - (x[2*(j+1)] + x[2*j])/2)\
-                  + (x[2*i + 1] - (x[2*(j+1) + 1] + x[2*j + 1])/2)\
-                  * (x[2*i + 1] - (x[2*(j+1) + 1] + x[2*j + 1])/2));
+        kappa_bar[i] = 0.5*(kappa[i_idx] + kappa[i_idx + 1]);
+        d[i] = sqrt((x[2*(i_idx+1)] - x[2*i_idx])*(x[2*(i_idx+1)] - x[2*i_idx])\
+             + (x[2*(i_idx+1) + 1] - x[2*i_idx + 1])*(x[2*(i_idx+1) + 1] - x[2*i_idx + 1]));
       }
     }
-    if (i == N-1)
+    
+    double kappa_breve_temp;
+    for (int i = 0; i < M[k]; i++)
+      kappai_breve[i] = 0.;
+
+    for (int i = 0; i < M[k]; i++)
     {
-      kappa_bar[i] = 0.5*(kappa[i] + kappa[0]);
-      d[i] = sqrt((x[0] - x[2*i])*(x[0] - x[2*i])\
-          + (x[1] - x[2*i + 1])*(x[1] - x[2*i + 1]));
+      kappa_breve_temp = 0.;
+
+      for (int j = 0; j < M[k]; j++)
+        kappa_breve_temp += d[j]/(h[i*M[k] + j]*h[i*M[k] + j]);
+
+      for (int j = 0; j < M[k]; j++)
+      {
+        kappai_breve[i] += (d[j]*fabs(kappa_bar[j])/(h[i*M[k] + j]*h[i*M[k] + j]))*(1./kappa_breve_temp);
+      }
+      kappai_tilde[i] = pow((kappai_breve[i]*L), a)/(v*L)\
+                      + SQRTTWO*kappai_breve[i];
+
+      kappa_breve_temp = 0;
     }
-    else
+
+    for (int i = 0; i < M[k]-1; i++)
     {
-      kappa_bar[i] = 0.5*(kappa[i] + kappa[i+1]);
-      d[i] = sqrt((x[2*(i+1)] - x[2*i])*(x[2*(i+1)] - x[2*i])\
-           + (x[2*(i+1) + 1] - x[2*i + 1])*(x[2*(i+1) + 1] - x[2*i + 1]));
-    }
-  }
-  
-  double kappa_breve_temp;
-  for (int i = 0; i < N; i++)
-  {
-    kappai_breve[i] = 0.;
-  }
-
-  for (int i = 0; i < N; i++)
-  {
-    kappa_breve_temp = 0.;
-
-    for (int j = 0; j < N; j++)
-      kappa_breve_temp += d[j]/(h[i*N + j]*h[i*N + j]);
-
-    for (int j = 0; j < N; j++)
+      kappai_hat[i] = 0.5*(kappai_tilde[i] + kappai_tilde[i+1]);
+      rho[i] = kappai_hat[i]/(1. + epsilon*kappai_hat[i]/SQRTTWO);
+      sigmai[i] = rho[i]*d[i];
+    } 
+    
+    kappai_hat[M[k]-1] = 0.5*(kappai_tilde[M[k]-1] + kappai_tilde[0]);
+    rho[M[k]-1] = kappai_hat[M[k]-1]/(1. + epsilon*kappai_hat[M[k]-1]/SQRTTWO);
+    sigmai[M[k]-1] = rho[M[k]-1]*d[M[k]-1];
+    
+    q = 0.;
+    p = 0.;
+    for (int i = 0; i < M[k]; i++)
     {
-      kappai_breve[i] += (d[j]*fabs(kappa_bar[j])/(h[i*N + j]*h[i*N + j]))*(1./kappa_breve_temp);
-
+      q += sigmai[i];
+	  }
+	  
+    N_tilde = round(q) + 2; 
+    // printf("N = %d  N_tilde = %d\n", N, N_tilde);
+    for (int i = 0; i < M[k]; i++)
+      sigmai_prim[i] = sigmai[i]*N_tilde/q;
+    
+    double* sum;
+    sum  = (double*)malloc(M[k]*sizeof(double));
+    sum[0] = 0.;
+    //sum[1] = 0.;
+    for (int i = 1; i < M[k]; i++)
+    {
+      sum[i] = sum[i-1] + sigmai_prim[i-1];
     }
-    kappai_tilde[i] = pow((kappai_breve[i]*L), a)/(v*L)\
-                    + SQRTTWO*kappai_breve[i];
 
-    kappa_breve_temp = 0;
-  }
+    //memcpy(x_temp, &x[2*M[k-1]], 2*M[k]*sizeof(double));
+    if (k == 2)
+    {
+      for (int i = 0; i < M[k]; i++)
+      {
+        //printf("x_temp[%d] = %e, x_temp[%d] = %e \n", 2*i, x_temp[2*i], 2*i+1, x_temp[2*i+1]);
+      }
+    }
+    // Reallocate x
+   	x_patch[k-1] = (double*)malloc(2*N_tilde*sizeof(double));
+   	x_patch[k-1][0] = x[0+2*M[k-1]];
+   	x_patch[k-1][1] = x[1+2*M[k-1]];
+   	
+   	// Set to zero to avoid garbage
+   	for (int i = 2; i < 2*N_tilde; i++)
+   		x_patch[k-1][i] = 0.;
+    
+   /* for (int i = 0; i < M[k]; i++)
+      printf("sigmai_prim[%d] = %e\n", i, sigmai_prim[i]);
+    */
+	  // Relocation of points
+	 // printf("N_tilde = %d\n", N_tilde);
+    for (int j = 2; j <= N_tilde; j++)
+    {
 
-  for (int i = 0; i < N-1; i++)
-  {
-    kappai_hat[i] = 0.5*(kappai_tilde[i] + kappai_tilde[i+1]);
 
-    rho[i] = kappai_hat[i]/(1. + epsilon*kappai_hat[i]/SQRTTWO);
-
-    sigmai[i] = rho[i]*d[i];
-  } 
-  
-  kappai_hat[N-1] = 0.5*(kappai_tilde[N-1] + kappai_tilde[0]);
-  rho[N-1] = kappai_hat[N-1]/(1. + epsilon*kappai_hat[N-1]/SQRTTWO);
-  sigmai[N-1] = rho[N-1]*d[N-1];
-  
-  double q, rest, p, dp, p_min, rest_dp, S;
-  int i_hat = 1, N_tilde;
-  q = 0.;
-  p = 0.;
-  
-  for (int i = 0; i < N; i++)
-  {
-    q += sigmai[i];
+    	S = 0.;
+    	for (int i = 0; i < M[k]; i++)
+    	{
+    	  i_idx = i + M[k-1];
+        /*if (i == 0)
+        {
+         	p = (j - 1)/sigmai_prim[0];
+    	    if (p > 0 && p < 1)
+    	    {
+    		  	x_patch[k-1][2*(j-1)] = x[2*i_idx] + (t[2*i_idx] + (mu[i_idx] + beta[i_idx]*p + gamma[i_idx]*p*p)*n[2*i_idx])*p;
+        	  x_patch[k-1][2*(j-1) + 1] = x[2*i_idx + 1] + (t[2*i_idx + 1] + (mu[i_idx] + beta[i_idx]*p + gamma[i_idx]*p*p)*n[2*i_idx + 1])*p;
+       	    printf("EDGE p = %e, i = %d S = %e, j = %d\n", p, i, S, j);
+    	    }
+        }
+    	  else if (i == 1)
+    	  {
+    	    p = (j - 1)/sigmai_prim[1];
+    	    if (p > 0 && p < 1)
+    		  {
+    			  i_hat = i;
+    		  	x_patch[k-1][2*(j-1)] = x[2*i_idx] + (t[2*i_idx] + (mu[i_idx] + beta[i_idx]*p + gamma[i_idx]*p*p)*n[2*i_idx])*p;
+        	  x_patch[k-1][2*(j-1) + 1] = x[2*i_idx + 1] + (t[2*i_idx + 1] + (mu[i_idx] + beta[i_idx]*p + gamma[i_idx]*p*p)*n[2*i_idx + 1])*p;
+        	  printf("p = %e, S = %e, i = %d, j = %d,   sum[%d] = %e\n", p, S, i, j, i, sum[i]);
+    		  }
+    	  }
+    	  else
+    	  {*/
+      		//S += sigmai_prim[i-2];
+      		p = (j - 1 - sum[i])/sigmai_prim[i];
+      	  //if (i == 1)
+      		//  printf("p = %e, j - 1 / sigma[1] = %e  \n", p, (j-1)/sigmai_prim[1]);
+      	  //if (i == 2)
+      		 // printf("i = %d, p = %e, j - 1 - sigma[1] / sigma[2] = %e  \n", i, p, (j-1-sigmai_prim[1])/sigmai_prim[2]);    		  
+      		
+      		if (p > 0 && p < 1)
+      		{
+      			i_hat = i;
+      			x_patch[k-1][2*(j-1)] = x[2*i_idx] + (t[2*i_idx] + (mu[i_idx] + beta[i_idx]*p + gamma[i_idx]*p*p)*n[2*i_idx])*p;
+          	x_patch[k-1][2*(j-1) + 1] = x[2*i_idx + 1] + (t[2*i_idx + 1] + (mu[i_idx] + beta[i_idx]*p + gamma[i_idx]*p*p)*n[2*i_idx + 1])*p;
+            //printf("p = %e, i = %d, j = %d,   sum[%d] = %e\n", p, i, j, i, sum[i]);
+      		}
+    		//}
+    		//printf("p = %e, Sum[%d] = %e, i = %d, j = %d\n", p, i, sum[i], i, j);
+    	}
+    }
+    //printf("patch = %d \n", k);
+   /* for (int i = 0; i < N_tilde; i++)
+   		printf("x_patch[%d] = %e, x_patch[%d] = %e \n", 2*i, x_patch[k-1][2*i], 2*i+1, x_patch[k-1][2*i+1]);*/
+    //printf("-------------------\n");
+    // Free
+    free(kappa_bar);
+    //free(d);
+    free(kappai_breve);
+    free(kappai_tilde);
+    free(kappai_hat);
+    free(rho);
+    free(sigmai);
+    free(sigmai_tilde);
+    free(sigmai_prim);
+    free(h);
+    free(sum); 
+	  M_new[k-1] = N_tilde;
 	}
-	
-  N_tilde = round(q) + 2; 
-  //printf("N = %d         N_tilde = %d\n", N, N_tilde);
-  
-  for (int i = 0; i < N; i++)
+	if (patches > 1)
+	{
+	  *pN = (M_new[0] + M_new[1]);
+	  x = (double*)realloc(x, 2*(*pN)*sizeof(double));
+    
+    for (int i = 0; i < M_new[0]; i++)
+    {
+      x[2*i] = x_patch[0][2*i];
+      x[2*i+1] = x_patch[0][2*i+1];
+    }
+    for (int i = 0; i < M_new[1]; i++)
+    {
+      x[2*(i + M_new[0])] = x_patch[1][2*i];
+      x[2*(i + M_new[0])+1] = x_patch[1][2*i+1];
+    }
+    
+    //memcpy(x_patch[0], x, 2*M_new[0]*sizeof(double));
+    //memcpy(x_patch[1], &x[2*M_new[0]], 2*M_new[1]*sizeof(double));
+  } else
   {
-    sigmai_prim[i] = sigmai[i]*N_tilde/q;
+    x = x_patch[0];
+    *pN = N_tilde;
   }
   
-  // Copy x into temporary matrix
-  
-  x_temp = (double*)malloc(2*N*sizeof(double));
-  memcpy(x_temp, x, 2*N*sizeof(double));
-  
-	
-  //Reallocate x
- 	x = (double*)realloc(x, 2*N_tilde*sizeof(double));
- 	
- 	//Set to zero to avoid garbage
- 	for (int i = 2; i < 2*N_tilde; i++)
- 		x[i] = 0.;
-	
-	//Relocation of points
-  for (int j = 1; j <= N_tilde; j++)
-  {
-  	S = 0;
-  	for (int i = 0; i < N; i++)
-  	{
-  		S += sigmai_prim[i-1];
-  		p = (j - 1 - S)/sigmai_prim[i];
-  		
-  		if (p > 0 && p < 1)
-  		{
-  			i_hat = i;
-  			x[2*(j-1)] = x_temp[2*i] + (t[2*i] + (mu[i] + beta[i]*p + gamma[i]*p*p)*n[2*i])*p;
-      	x[2*(j-1) + 1] = x_temp[2*i + 1] + (t[2*i + 1] + (mu[i] + beta[i]*p + gamma[i]*p*p)*n[2*i + 1])*p;
-      	//printf("p = %e, S = %e, i = %d, j = %d\n", p, S, i, j);
-  		}
-  	}
+  if (patches > 1)
+  { 
+  for (int i = 0; i < patches; i++)
+    free(x_patch[i]);
+   free(x_patch);
   }
-  /*for (int i = 0; i < N_tilde; i++)
- 		printf("x[%d] = %e, x[%d] = %e, r = %e\n", 2*i, x[2*i], 2*i+1, x[2*i+1],\
- 		sqrt(x[2*i]*x[2*i] + x[2*i+1]*x[2*i+1]));*/
-  //printf("-------------------\n");
-  // Free
+  else 
+  {
+    free(x_patch);
+  }
+  /*for (int i = 0; i < N; i++)
+    printf("x[%d] = %e, x[%d] = %e \n", 2*i, x[2*i], 2*i+1, x[2*i+1]);
+  */
+	*pM1 = M_new[0];
+	*pM2 = M_new[1];
+	//printf("Minside pts_reloc = %d\n", *pM2);
   
-  free(kappa_bar);
-  free(d);
-  free(kappai_breve);
-  free(kappai_tilde);
-  free(kappai_hat);
-  free(rho);
-  free(sigmai);
-  free(sigmai_tilde);
-  free(sigmai_prim);
-  free(h); 
-	free(x_temp);
-	
-  *pN = N_tilde;
   *px = x;
  // printf("Exiting points_reloc\n");
   

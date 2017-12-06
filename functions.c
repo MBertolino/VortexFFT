@@ -34,9 +34,9 @@ void interpolate(double* x, int start, int N, int n_dim, double* t, double* n,\
   d[N-1] = sqrt(t[2*N-2]*t[2*N-2] + t[2*N-1]*t[2*N-1]);
 
   // kappa local curvature
-  kappa_den[0] = d[N-1]*d[N-1]*t[start] + d[start]*d[start]*t[2*N-2];
-  kappa_den[1] = d[N-1]*d[N-1]*t[start+1] + d[start]*d[start]*t[2*N-1];
-  kappa[start] = 2.*(t[2*N-4]*t[start+1] - t[2*N-3]*t[start])\
+  kappa_den[0] = d[N-1]*d[N-1]*t[2*start] + d[start]*d[start]*t[2*N-2];
+  kappa_den[1] = d[N-1]*d[N-1]*t[2*start+1] + d[start]*d[start]*t[2*N-1];
+  kappa[start] = 2.*(t[2*N-2]*t[2*start+1] - t[2*N-1]*t[2*start])\
     /sqrt(kappa_den[0]*kappa_den[0] + kappa_den[1]*kappa_den[1]);
     
   for (int j = start+1; j < N; j++) {
@@ -55,6 +55,7 @@ void interpolate(double* x, int start, int N, int n_dim, double* t, double* n,\
     gamma[j] = 1./6.*d[j]*(kappa[j+1] - kappa[j]);
   }
   mu[N-1] = -1./3.*d[N-1]*kappa[N-1] - 1./6.*d[N-1]*kappa[start];
+  //printf("mu[%d] = %e\n", N-1, mu[N-1]);
   beta[N-1] = 0.5*d[N-1]*kappa[N-1];
   gamma[N-1] = 1./6.*d[N-1]*(kappa[start] - kappa[N-1]);
   
@@ -124,17 +125,19 @@ void compute_fft(double* dxdt, double* x, int N, double alpha, int j)
   
   // Fourier transform x_i(p, t)
   for (int i = 0; i < N; i++)
-    in_x[i] = x[2*i];
-  for (int i = 0; i < N; i++)
-    in_y[i] = x[2*i+1];
+  {
+    in_x[i] = x[i][0];
+    in_y[i] = x[i][1];
+  }
   fftw_execute(plan_for_x); // Thread safe
   fftw_execute(plan_for_y);
   
   // Differentiate and transform back
   for (int i = 0; i < N; i++)
+  {
     in_x[i] = I*k[i]*out_x[i];
-  for (int i = 0; i < N; i++)
     in_y[i] = I*k[i]*out_y[i];
+  }
   fftw_execute(plan_back_x);
   fftw_execute(plan_back_y);
   
@@ -154,7 +157,7 @@ void compute_fft(double* dxdt, double* x, int N, double alpha, int j)
     fprintf(fdx, "%lf %lf\n", creal(out_x[i])/((double)N), creal(out_y[i])/((double)N));
   }
   fclose(fdx);
-  
+
   // Estimate integral using Riemann sum 
   dxdt[2*j] = 0;
   dxdt[2*j+1] = 0;
@@ -187,6 +190,7 @@ void compute_fft(double* dxdt, double* x, int N, double alpha, int j)
   return;
 }
 
+
 void compute_derivative(double* dxdt, double* x, double* mu, double* beta, double* gamma, double* t, double* n, int M, int N, double alpha, double h, double tol_rk45_space, int j)
 {
   //printf("Entering compute derivative\n");
@@ -195,8 +199,8 @@ void compute_derivative(double* dxdt, double* x, double* mu, double* beta, doubl
   double Q = 0.01;
   double f = 1./sqrt(Q);
   double dxdt_j[2];
-  dxdt_j[0] = 0;
-  dxdt_j[1] = 0;
+  dxdt_j[0] = 0.;
+  dxdt_j[1] = 0.;
   double x_i[2];
   double x_j[2];
   
@@ -260,7 +264,7 @@ void compute_derivative(double* dxdt, double* x, double* mu, double* beta, doubl
       poly_coeff_c[3] = 2.*beta_2*gamma[i]/(1. + mu_2*mu_2);
       poly_coeff_c[4] = gamma[i]*gamma[i]/(1. + mu_2*mu_2);
       
-      autder(c, poly_coeff_c, alpha/2., order);
+      autder(c, poly_coeff_c, 0.5*alpha, order);
       
       // Look at inputs in these functions
       evaluate_integral(dxdt_j, mu_2, beta_2, gamma[i], t_i, n_i, c, alpha); 
@@ -276,7 +280,7 @@ void compute_derivative(double* dxdt, double* x, double* mu, double* beta, doubl
         poly_coeff_c[3] = 2.*beta[i]*gamma[i]/(1. + mu[i]*mu[i]);
         poly_coeff_c[4] = gamma[i]*gamma[i]/(1. + mu[i]*mu[i]);
 
-        autder(c, poly_coeff_c, alpha/2., order);
+        autder(c, poly_coeff_c, 0.5*alpha, order);
         
         evaluate_integral(dxdt_j, mu[i], beta[i], gamma[i], t_i, n_i, c, alpha);
       }
@@ -294,7 +298,7 @@ void compute_derivative(double* dxdt, double* x, double* mu, double* beta, doubl
         poly_coeff_c[3] = 2.*beta_2*gamma[i]/(1. + mu_2*mu_2);
         poly_coeff_c[4] = gamma[i]*gamma[i]/(1. + mu_2*mu_2);
       
-        autder(c, poly_coeff_c, alpha/2., order);
+        autder(c, poly_coeff_c, 0.5*alpha, order);
         
         evaluate_integral(dxdt_j, mu_2, beta_2, gamma[i], t_i, n_i, c, alpha); 
 
@@ -320,7 +324,7 @@ void compute_derivative(double* dxdt, double* x, double* mu, double* beta, doubl
         poly_coeff_g[6] = (gamma[i]*gamma[i]*(n[2*i]*n[2*i]\
                         + n[2*i+1]*n[2*i+1]))/(d_x*d_x);
         
-        autder(g, poly_coeff_g, alpha/2., order);
+        autder(g, poly_coeff_g, 0.5*alpha, order);
         
         evaluate_integral_g(dxdt_j, mu[i], beta[i], gamma[i], d_x, d_ni, d_ti, t_i, n_i, g, alpha);
 
@@ -344,7 +348,7 @@ void evaluate_integral(double* dxdt, double mu_i, double beta_i, double gamma_i,
   double first = 0.;
   double second = 0.;
   double p_coef, psq_coef;
-  double t_abs = pow((t_i[0]*t_i[0] + t_i[1]*t_i[1]), alpha);
+  double t_abs = pow((t_i[0]*t_i[0] + t_i[1]*t_i[1]), 0.5*alpha);
   
   double alpha_mu = pow((1 + mu_i*mu_i), 0.5*alpha);
   
@@ -408,7 +412,7 @@ double evaluate_integral1_RK(double* x_i, double* x_j, double tol_rk45_space, do
 	double p = 0.;
 	double p_end = 1.; 
   double k1, k2, k3, k4, k5, k6;
-	double Y = 0., Y1, Y2, p_temp;
+	double Y = 0., Y1, Y2, delta, p_temp;
   long double R;
 
   while (p < p_end)
@@ -417,8 +421,6 @@ double evaluate_integral1_RK(double* x_i, double* x_j, double tol_rk45_space, do
     {
       h = 1-p;
     }
-    do
-    { 
 		  k1 = h*integrand1(x_i, x_j, p, t_i, n_i, mu_i, beta_i, gamma_i, alpha); 
 		  p_temp = p + 0.25*h;
 
@@ -445,20 +447,23 @@ double evaluate_integral1_RK(double* x_i, double* x_j, double tol_rk45_space, do
       
       // Compute error
       R = fabs(Y2 - Y1);
-      
-      if (R > tol_rk45_space)
-        h = 0.5*h;
    
-    } while (R > tol_rk45_space);
-    p = p + h;
-    Y = Y2;
-       if (R < 1.e-10*tol_rk45_space)
+    if (R < tol_rk45_space)
     {
-      h = 1.5*h;
-    }
-    else 
+      p = p + h;
+      Y = Y2;
+
+      if (R < 1.e-10*tol_rk45_space)
+      {
+        h = 2*h;
+      }
+      else 
+      {
+        h = 0.9*h*sqrt(sqrt((h*tol_rk45_space)/R));
+      }
+    } else
     {
-      h = 0.9*h*sqrt(sqrt((h*tol_rk45_space)/R));
+      h = 0.5*h;
     }
   }  
   #if PRINT
@@ -488,7 +493,8 @@ double evaluate_integral2_RK(double* x_i, double* x_j, double tol_rk45_space, do
 	double p = 0.;
 	double p_end = 1.; 
   double k1, k2, k3, k4, k5, k6;
-	double Y = 0., Y1, Y2, R, p_temp;
+	double Y = 0., Y1, Y2, R, delta, p_temp, h_new;
+  h_new = 0;
   
   while (p < p_end)
   {
@@ -496,8 +502,6 @@ double evaluate_integral2_RK(double* x_i, double* x_j, double tol_rk45_space, do
     {
       h = 1-p;
     } 
-    do
-    {
 		  k1 = h*integrand2(x_i, x_j, p, t_i, n_i, mu_i, beta_i, gamma_i, alpha); 
 		  p_temp = p + 0.25*h;
 		  
@@ -524,21 +528,24 @@ double evaluate_integral2_RK(double* x_i, double* x_j, double tol_rk45_space, do
       
       // Compute error
       R = fabs(Y2 - Y1);
-      
-      if (R > tol_rk45_space)
-        h = 0.5*h;
-    } while (R > tol_rk45_space);
 
-    p = p + h;
-    Y = Y2;
-
-    if (R < 1.e-10*tol_rk45_space)
+    if (R < tol_rk45_space)
     {
-      h = 1.5*h;
+      p = p + h;
+      Y = Y2;
+
+      if (R < 1.e-10*tol_rk45_space)
+      {
+        h = 2*h;
+      }
+      else 
+      {
+        h = 0.9*h*sqrt(sqrt((h*tol_rk45_space)/R));
+      }
     }
-    else 
+    else
     {
-      h = 0.9*h*sqrt(sqrt((h*tol_rk45_space)/R));
+      h = 0.5*h;
     }
   }
 
@@ -561,171 +568,225 @@ double integrand2(double* x_i, double* x_j, double p, double* t_i, double* n_i,\
 
 // Relocating nodes
 void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
-									double* mu, double* beta, double* gamma) {
+									double* mu, double* beta, double* gamma, int* pM1, int* pM2, int patches) {
   
   double *x;
   x = *px;
-  int N;
+  int N, N_tilde, i_idx, j_idx;
   N = *pN;
   double epsilon, L, a, v;
   epsilon = 1.e-6;
   L = 3.0;
   a = 2.0/3.0;
   v = 0.05; // 0.01, 0.03, 0.05 (Smaller value => Larger densities of points on the curve)
-  
-  double q, p, S, kappa_breve_temp;
-  int N_tilde;
-  q = 0.;
-  p = 0.;
-    
+  int M[3], M_new[2];
+  M[0] = 0;
+  M[1] = *pM1;
+  M[2] = *pM2;
+  N_tilde = 0;
+  double q, rest, p, dp, p_min, rest_dp, S;
+  int i_hat = 1;
   // Either calculate all d[j]'s here or use input
   // Same goes with kappa and h
   double *d, *kappa_bar, *kappai_breve, *kappai_tilde, *sigmai_prim;
-  double *kappai_hat, *rho, *sigmai, *sigmai_tilde, *h, *x_temp;
-  d = (double*)malloc(N*sizeof(double));
-  kappa_bar = (double*)malloc(N*sizeof(double));
-  kappai_breve = (double*)malloc(N*sizeof(double));
-  kappai_tilde = (double*)malloc(N*sizeof(double));  
-  kappai_hat = (double*)malloc(N*sizeof(double));
-  rho = (double*)malloc(N*sizeof(double));
-  sigmai = (double*)malloc(N*sizeof(double));
-  sigmai_tilde = (double*)malloc(N*sizeof(double));
-  sigmai_prim = (double*)malloc(N*sizeof(double));
-  h = (double*)malloc(N*N*sizeof(double));
-    
-  for (int i = 0; i < N; i++)
+  double  *kappai_hat, *rho, *sigmai, *sigmai_tilde, *h, **x_patch;
+  x_patch = (double**)malloc(patches*sizeof(double*));
+  
+  for (int k = 1; k <= patches; k++)
   {
-    for (int j = 0; j < N; j++)
+    //printf(" \n \n k = %d\n \n", k);
+    d = (double*)malloc(M[k]*sizeof(double));
+    kappa_bar = (double*)malloc(M[k]*sizeof(double));
+    kappai_breve = (double*)malloc(M[k]*sizeof(double));
+    kappai_tilde = (double*)malloc(M[k]*sizeof(double));  
+    kappai_hat = (double*)malloc(M[k]*sizeof(double));
+    rho = (double*)malloc(M[k]*sizeof(double));
+    sigmai = (double*)malloc(M[k]*sizeof(double));
+    sigmai_tilde = (double*)malloc(M[k]*sizeof(double));
+    sigmai_prim = (double*)malloc((M[k])*sizeof(double));
+    h = (double*)malloc(M[k]*M[k]*sizeof(double));
+    
+    for (int i = 0; i < M[k]; i++)
     {
-      if (j == N-1)
-	    {
-      h[i*N + j] = sqrt((x[2*i] - (x[0] + x[2*j])/2)\
-                  * (x[2*i] - (x[0] + x[2*j])/2)\
-                  + (x[2*i + 1] - (x[1] + x[2*j + 1])/2)\
-                  * (x[2*i + 1] - (x[1] + x[2*j + 1])/2));
+      for (int j = 0; j < M[k]; j++)
+      {
+      i_idx = i + M[k-1];
+      j_idx = j + M[k-1];
+      
+        if (j == M[k]-1)
+	      {
+        h[i*M[k] + j] = sqrt((x[2*i_idx] - (x[2*M[k-1]] + x[2*j_idx])/2)\
+                    * (x[2*i_idx] - (x[2*M[k-1]] + x[2*j_idx])/2)\
+                    + (x[2*i_idx + 1] - (x[2*M[k-1]+1] + x[2*j_idx + 1])/2)\
+                    * (x[2*i_idx + 1] - (x[2*M[k-1]+1] + x[2*j_idx + 1])/2));
+        }
+        else
+        {
+          h[i*M[k] + j] = sqrt((x[2*i_idx] - (x[2*(j_idx+1)] + x[2*j_idx])/2)\
+                    * (x[2*i_idx] - (x[2*(j_idx+1)] + x[2*j_idx])/2)\
+                    + (x[2*i_idx + 1] - (x[2*(j_idx+1) + 1] + x[2*j_idx + 1])/2)\
+                    * (x[2*i_idx + 1] - (x[2*(j_idx+1) + 1] + x[2*j_idx + 1])/2));
+        }
+      }
+      if (i == M[k]-1)
+      {
+        kappa_bar[i] = 0.5*(kappa[i_idx] + kappa[M[k-1]]);
+        d[i] = sqrt((x[2*M[k-1]] - x[2*i_idx])*(x[2*M[k-1]] - x[2*i_idx])\
+            + (x[2*M[k-1]+1] - x[2*i_idx + 1])*(x[2*M[k-1]+1] - x[2*i_idx + 1]));
       }
       else
       {
-        h[i*N + j] = sqrt((x[2*i] - (x[2*(j+1)] + x[2*j])/2)\
-                  * (x[2*i] - (x[2*(j+1)] + x[2*j])/2)\
-                  + (x[2*i + 1] - (x[2*(j+1) + 1] + x[2*j + 1])/2)\
-                  * (x[2*i + 1] - (x[2*(j+1) + 1] + x[2*j + 1])/2));
+        kappa_bar[i] = 0.5*(kappa[i_idx] + kappa[i_idx + 1]);
+        d[i] = sqrt((x[2*(i_idx+1)] - x[2*i_idx])*(x[2*(i_idx+1)] - x[2*i_idx])\
+             + (x[2*(i_idx+1) + 1] - x[2*i_idx + 1])*(x[2*(i_idx+1) + 1] - x[2*i_idx + 1]));
       }
     }
-    if (i == N-1)
-    {
-      kappa_bar[i] = 0.5*(kappa[i] + kappa[0]);
-      d[i] = sqrt((x[0] - x[2*i])*(x[0] - x[2*i])\
-          + (x[1] - x[2*i + 1])*(x[1] - x[2*i + 1]));
-    }
-    else
-    {
-      kappa_bar[i] = 0.5*(kappa[i] + kappa[i+1]);
-      d[i] = sqrt((x[2*(i+1)] - x[2*i])*(x[2*(i+1)] - x[2*i])\
-           + (x[2*(i+1) + 1] - x[2*i + 1])*(x[2*(i+1) + 1] - x[2*i + 1]));
-    }
-  }
-  
-  for (int i = 0; i < N; i++)
-    kappai_breve[i] = 0.;
-
-  for (int i = 0; i < N; i++)
-  {
-    kappa_breve_temp = 0.;
-
-    for (int j = 0; j < N; j++)
-      kappa_breve_temp += d[j]/(h[i*N + j]*h[i*N + j]);
-
-    for (int j = 0; j < N; j++)
-      kappai_breve[i] += (d[j]*fabs(kappa_bar[j])/(h[i*N + j]*h[i*N + j]))*(1./kappa_breve_temp);
-    kappai_tilde[i] = pow((kappai_breve[i]*L), a)/(v*L)\
-                    + SQRTTWO*kappai_breve[i];
-    kappa_breve_temp = 0;
-  }
-
-  for (int i = 0; i < N-1; i++)
-  {
-    kappai_hat[i] = 0.5*(kappai_tilde[i] + kappai_tilde[i+1]);
-    rho[i] = kappai_hat[i]/(1. + epsilon*kappai_hat[i]/SQRTTWO);
-    sigmai[i] = rho[i]*d[i];
-  } 
-  kappai_hat[N-1] = 0.5*(kappai_tilde[N-1] + kappai_tilde[0]);
-  rho[N-1] = kappai_hat[N-1]/(1. + epsilon*kappai_hat[N-1]/SQRTTWO);
-  sigmai[N-1] = rho[N-1]*d[N-1];
-  
-  for (int i = 0; i < N; i++)
-    q += sigmai[i];
-  N_tilde = round(q) + 2; 
-  for (int i = 0; i < N; i++)
-    sigmai_prim[i] = sigmai[i]*N_tilde/q;
-  
-  // Copy x into temporary array
-  x_temp = (double*)malloc(2*N*sizeof(double));
-  memcpy(x_temp, x, 2*N*sizeof(double));
-
-  // Reallocate x
-  x = (double*)realloc(x, 2*N_tilde*sizeof(double));
- 	
-  // Set to zero to avoid garbage
-  for (int i = 2; i < 2*N_tilde; i++)
-	  x[i] = 0.;
-
-  // Relocation of points
-  for (int j = 2; j <= N_tilde; j++)
-  {
-    // Edge case
-    p = (j - 1)/sigmai_prim[0];
-    if (p > 0 && p < 1)
-	  {
-  		x[2*(j-1)] = x_temp[0] + (t[0] + (mu[0] + beta[0]*p + gamma[0]*p*p)*n[0])*p;
-      x[2*(j-1) + 1] = x_temp[1] + (t[1] + (mu[0] + beta[0]*p + gamma[0]*p*p)*n[1])*p;
-		}
     
-    // Standard case
-  	S = 0;
-	  for (int i = 1; i < N; i++)
-  	{
-		  S += sigmai_prim[i-1];
-	  	p = (j - 1 - S)/sigmai_prim[i];
-  		
-		  if (p > 0 && p < 1)
-	  	{
-  			x[2*(j-1)] = x_temp[2*i] + (t[2*i] + (mu[i] + beta[i]*p + gamma[i]*p*p)*n[2*i])*p;
-    	  x[2*(j-1) + 1] = x_temp[2*i + 1] + (t[2*i + 1] + (mu[i] + beta[i]*p + gamma[i]*p*p)*n[2*i + 1])*p;
-		  }
+    double kappa_breve_temp;
+    for (int i = 0; i < M[k]; i++)
+      kappai_breve[i] = 0.;
+
+    for (int i = 0; i < M[k]; i++)
+    {
+      kappa_breve_temp = 0.;
+
+      for (int j = 0; j < M[k]; j++)
+        kappa_breve_temp += d[j]/(h[i*M[k] + j]*h[i*M[k] + j]);
+
+      for (int j = 0; j < M[k]; j++)
+      {
+        kappai_breve[i] += (d[j]*fabs(kappa_bar[j])/(h[i*M[k] + j]*h[i*M[k] + j]))*(1./kappa_breve_temp);
+      }
+      kappai_tilde[i] = pow((kappai_breve[i]*L), a)/(v*L)\
+                      + SQRTTWO*kappai_breve[i];
+
+      kappa_breve_temp = 0;
+    }
+
+    for (int i = 0; i < M[k]-1; i++)
+    {
+      kappai_hat[i] = 0.5*(kappai_tilde[i] + kappai_tilde[i+1]);
+      rho[i] = kappai_hat[i]/(1. + epsilon*kappai_hat[i]/SQRTTWO);
+      sigmai[i] = rho[i]*d[i];
+    } 
+    
+    kappai_hat[M[k]-1] = 0.5*(kappai_tilde[M[k]-1] + kappai_tilde[0]);
+    rho[M[k]-1] = kappai_hat[M[k]-1]/(1. + epsilon*kappai_hat[M[k]-1]/SQRTTWO);
+    sigmai[M[k]-1] = rho[M[k]-1]*d[M[k]-1];
+    
+    q = 0.;
+    p = 0.;
+    for (int i = 0; i < M[k]; i++)
+    {
+      q += sigmai[i];
 	  }
+	  
+    N_tilde = round(q) + 2; 
+    for (int i = 0; i < M[k]; i++)
+      sigmai_prim[i] = sigmai[i]*N_tilde/q;
+    
+    double* sum;
+    sum  = (double*)malloc(M[k]*sizeof(double));
+    sum[0] = 0.;
+    for (int i = 1; i < M[k]; i++)
+    {
+      sum[i] = sum[i-1] + sigmai_prim[i-1];
+    }
+
+    // Reallocate x
+   	x_patch[k-1] = (double*)malloc(2*N_tilde*sizeof(double));
+   	x_patch[k-1][0] = x[0+2*M[k-1]];
+   	x_patch[k-1][1] = x[1+2*M[k-1]];
+   	
+   	// Set to zero to avoid garbage
+   	for (int i = 2; i < 2*N_tilde; i++)
+   		x_patch[k-1][i] = 0.;
+    
+	  // Relocation of points
+    for (int j = 2; j <= N_tilde; j++)
+    {
+
+
+    	S = 0.;
+    	for (int i = 0; i < M[k]; i++)
+    	{
+    	  i_idx = i + M[k-1];
+     		p = (j - 1 - sum[i])/sigmai_prim[i];
+     		if (p > 0 && p < 1)
+     		{
+    			i_hat = i;
+    			x_patch[k-1][2*(j-1)] = x[2*i_idx] + (t[2*i_idx] + (mu[i_idx] + beta[i_idx]*p + gamma[i_idx]*p*p)*n[2*i_idx])*p;
+        	x_patch[k-1][2*(j-1) + 1] = x[2*i_idx + 1] + (t[2*i_idx + 1] + (mu[i_idx] + beta[i_idx]*p + gamma[i_idx]*p*p)*n[2*i_idx + 1])*p;
+          //printf("p = %e, i = %d, j = %d,   sum[%d] = %e\n", p, i, j, i, sum[i]);
+      	}
+    	}
+    }
+
+    // Free
+    free(kappa_bar);
+    //free(d);
+    free(kappai_breve);
+    free(kappai_tilde);
+    free(kappai_hat);
+    free(rho);
+    free(sigmai);
+    free(sigmai_tilde);
+    free(sigmai_prim);
+    free(h);
+    free(sum); 
+	  M_new[k-1] = N_tilde;
+	}
+	if (patches > 1)
+	{
+	  *pN = (M_new[0] + M_new[1]);
+	  x = (double*)realloc(x, 2*(*pN)*sizeof(double));
+    
+    for (int i = 0; i < M_new[0]; i++)
+    {
+      x[2*i] = x_patch[0][2*i];
+      x[2*i+1] = x_patch[0][2*i+1];
+    }
+    for (int i = 0; i < M_new[1]; i++)
+    {
+      x[2*(i + M_new[0])] = x_patch[1][2*i];
+      x[2*(i + M_new[0])+1] = x_patch[1][2*i+1];
+    }
+    
+    //memcpy(x_patch[0], x, 2*M_new[0]*sizeof(double));
+    //memcpy(x_patch[1], &x[2*M_new[0]], 2*M_new[1]*sizeof(double));
+  } else
+  {
+    x = x_patch[0];
+    *pN = N_tilde;
   }
-  for (int i = 0; i < N_tilde; i++)
-    printf("x[%d, %d] = %e \t %e\n", 2*i, 2*i+1, x[2*i], x[2*i+1]);
   
-  // Free
-  free(kappa_bar);
-  printf("Before free points_reloc\n");
-  free(d);
-  free(kappai_breve);
-  free(kappai_tilde);
-  free(kappai_hat);
-  free(rho);
-  free(sigmai);
-  free(sigmai_tilde);
-  free(sigmai_prim);
-  free(h); 
-	free(x_temp);
-	
-  *pN = N_tilde;
+  if (patches > 1)
+  { 
+  for (int i = 0; i < patches; i++)
+    free(x_patch[i]);
+   free(x_patch);
+  }
+  else 
+  {
+    free(x_patch);
+  }
+	*pM1 = M_new[0];
+	*pM2 = M_new[1];
   *px = x;
   
   return;
 }
 
+
 double runge_kutta45(double* x, double* dxdt_k1, double* dxdt_k2, double* dxdt_k3, double* dxdt_k4, double* dxdt_k5, double* dxdt_k6, double* dxdt_RK4, double* dxdt_RK5, double tol_rk45_time, double dt, int M, int N, double* mu, double* beta, double* gamma, double* t, double* n, double alpha, double tol_rk45_space, double h, double* time)
 {
-  double F, theta, tpi, dt_new, total_time;
+  double F, delta, theta, tpi, dt_new, total_time;
   theta = -1.;
   F = dt*theta/(TWOPI);
   tpi = theta/(TWOPI);
   total_time = *time;
   double R[2];
+  double R_old[2];
   double R_max;
   R_max = 0.;
   double *x_temp, *x_RK4, *x_RK5;

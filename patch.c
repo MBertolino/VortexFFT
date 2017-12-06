@@ -15,7 +15,7 @@ int main() {
   int N = M;// + M2;
   int n_dim = 2;
   int size = N*n_dim;
-  int T = 2;
+  int T = 100;
   double tol_rk45_time = 1.e-8;
   long double tol_rk45_space = 1.e-8;
   long double h = 1.e-3;
@@ -94,6 +94,7 @@ int main() {
     interpolate(x, 0, M, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
     //interpolate(x, M, N, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
     
+    /*
     // Compare FFT and Mancho
     for (int j = 0; j < N; j++)
     {
@@ -120,7 +121,8 @@ int main() {
     fclose(f_fft);
     fclose(f_ama);
     sleep(5);
-
+    */
+    
     // Evolve patches
     dt = runge_kutta45(x, dxdt_k1, dxdt_k2, dxdt_k3, dxdt_k4, dxdt_k5,\
                   dxdt_k6, dxdt_RK4, dxdt_RK5, tol_rk45_time, dt, M, N,\

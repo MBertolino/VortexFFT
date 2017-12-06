@@ -126,8 +126,8 @@ void compute_fft(double* dxdt, double* x, int N, double alpha, int j)
   // Fourier transform x_i(p, t)
   for (int i = 0; i < N; i++)
   {
-    in_x[i] = x[i][0];
-    in_y[i] = x[i][1];
+    in_x[i] = x[2*i];
+    in_y[i] = x[2*i+1];
   }
   fftw_execute(plan_for_x); // Thread safe
   fftw_execute(plan_for_y);
@@ -149,7 +149,7 @@ void compute_fft(double* dxdt, double* x, int N, double alpha, int j)
     fprintf(fx, "%lf %lf\n", x[2*i], x[2*i+1]);
   }
   fclose(fx);
-  
+
   char strdx[80] = "../results/dx";
   strcat(strdx, ".txt");
   FILE* fdx = fopen(strdx, "wb");

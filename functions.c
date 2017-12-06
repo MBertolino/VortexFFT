@@ -156,6 +156,8 @@ void compute_fft(double* dxdt, double* x, int N, double alpha, int j)
   fclose(fdx);
   
   // Estimate integral using Riemann sum 
+  dxdt[2*j] = 0;
+  dxdt[2*j+1] = 0;
   for (int i = 0; i < N; i++)
   {
     if (i == j)
@@ -185,16 +187,16 @@ void compute_fft(double* dxdt, double* x, int N, double alpha, int j)
   return;
 }
 
-void compute_derivative(double* dxdtx, double* dxdty, double* x, double* mu, double* beta, double* gamma, double* t, double* n, int M, int N, double alpha, double h, double tol_rk45_space, int j)
+void compute_derivative(double* dxdt, double* x, double* mu, double* beta, double* gamma, double* t, double* n, int M, int N, double alpha, double h, double tol_rk45_space, int j)
 {
   //printf("Entering compute derivative\n");
   double d_x, d_ni, d_ti, d_xi;
   int order = 11;
   double Q = 0.01;
   double f = 1./sqrt(Q);
-  double dxdt[2];
-  dxdt[0] = *dxdtx;
-  dxdt[1] = *dxdty;
+  double dxdt_j[2];
+  dxdt_j[0] = 0;
+  dxdt_j[1] = 0;
   double x_i[2];
   double x_j[2];
   
@@ -208,15 +210,10 @@ void compute_derivative(double* dxdtx, double* dxdty, double* x, double* mu, dou
   double mu_2, beta_2;
  
   // Evolve the contour integrals
-  for (int i = 0; i < N; i++) { // i < ???
-    #if PRINT    
-      printf("i = %d,  ", i);
-      printf("j = %d,  ", j);
-      //printf("i = %d, j = %d, \n", i, j);
-    #endif
+  for (int i = 0; i < N; i++)
+  {
     t_i[0] = t[2*i];
     t_i[1] = t[2*i+1];
-    
     n_i[0] = n[2*i];
     n_i[1] = n[2*i+1];
     x_i[0] = x[2*i];
@@ -252,9 +249,6 @@ void compute_derivative(double* dxdtx, double* dxdty, double* x, double* mu, dou
     if ((i+1 == M && j == 0) || (i+1 == N && j == M)) {
       // Edge case
       // Case 2: Use formula (29) with shifted params
-      #if PRINT
-        printf("Edge Case 2\n"); 
-      #endif
 
       // Update parameters
       mu_2 = mu[i] + 2.*beta[i] + 3.*gamma[i];
@@ -269,18 +263,12 @@ void compute_derivative(double* dxdtx, double* dxdty, double* x, double* mu, dou
       autder(c, poly_coeff_c, alpha/2., order);
       
       // Look at inputs in these functions
-      evaluate_integral(dxdt, mu_2, beta_2, gamma[i], t_i, n_i, c, alpha); 
-        #if PRINT
-          printf("Exit edge case 2\n");
-        #endif
+      evaluate_integral(dxdt_j, mu_2, beta_2, gamma[i], t_i, n_i, c, alpha); 
     
       } else {
       
       if ((x[2*i] == x[2*j]) && (x[2*i+1] == x[2*j+1])) {
         // Case 1: Use formula (29)
-        #if PRINT
-          printf("Case 1\n");
-        #endif
         
         // Generate Taylor coefficients
         poly_coeff_c[1] = 2.*mu[i]*beta[i]/(1. + mu[i]*mu[i]);
@@ -290,17 +278,11 @@ void compute_derivative(double* dxdtx, double* dxdty, double* x, double* mu, dou
 
         autder(c, poly_coeff_c, alpha/2., order);
         
-        evaluate_integral(dxdt, mu[i], beta[i], gamma[i], t_i, n_i, c, alpha);
-        #if PRINT
-          printf("Exit case 1\n");
-        #endif
+        evaluate_integral(dxdt_j, mu[i], beta[i], gamma[i], t_i, n_i, c, alpha);
       }
       else if ((i == j-1) && (i != M-1))
       {
         // Case 2: Use formula (29) with shifted params
-        #if PRINT
-          printf("Case 2\n");      
-        #endif
         
 		    // Update parameters
         mu_2 = mu[i] + 2.*beta[i] + 3.*gamma[i];
@@ -314,15 +296,9 @@ void compute_derivative(double* dxdtx, double* dxdty, double* x, double* mu, dou
       
         autder(c, poly_coeff_c, alpha/2., order);
         
-        evaluate_integral(dxdt, mu_2, beta_2, gamma[i], t_i, n_i, c, alpha); 
-        #if PRINT
-          printf("Exit case 2\n");
-        #endif
+        evaluate_integral(dxdt_j, mu_2, beta_2, gamma[i], t_i, n_i, c, alpha); 
 
       } else if (d_x > f*d_xi) {
-        #if PRINT   
-          printf("Case 3\n");
-        #endif
         // Case 3: Use formula (31)
         
         // Generate Taylor coefficients
@@ -346,26 +322,19 @@ void compute_derivative(double* dxdtx, double* dxdty, double* x, double* mu, dou
         
         autder(g, poly_coeff_g, alpha/2., order);
         
-        evaluate_integral_g(dxdt, mu[i], beta[i], gamma[i], d_x, d_ni, d_ti, t_i, n_i, g, alpha);
-        #if PRINT
-          printf("Exit case 3\n");
-        #endif
+        evaluate_integral_g(dxdt_j, mu[i], beta[i], gamma[i], d_x, d_ni, d_ti, t_i, n_i, g, alpha);
 
       } else {
-        #if PRINT
-          printf("Case 4\n");
-        #endif
         // Case 4: Use Runge-Kutta 4-5       
-        evaluate_integral_RK(dxdt, x_i, x_j, mu[i], beta[i], gamma[i], tol_rk45_space, h, t_i, n_i, alpha);
-        #if PRINT
-          printf("Exit case 4\n");
-        #endif
+        evaluate_integral_RK(dxdt_j, x_i, x_j, mu[i], beta[i], gamma[i], tol_rk45_space, h, t_i, n_i, alpha);
       }
     }
   }
-
-  *dxdtx = dxdt[0];
-  *dxdty = dxdt[1];
+  
+  // Update globally
+  dxdt[2*j] = dxdt_j[0];
+  dxdt[2*j+1] = dxdt_j[1];
+  
   return;
 }
 
@@ -423,17 +392,11 @@ void evaluate_integral_g(double* dxdt, double mu_i, double beta_i, double gamma_
 void evaluate_integral_RK(double* dxdt, double* x_i, double* x_j, double mu_i, double beta_i, double gamma_i,\
                           double tol_rk45_space, double h, double* t_i, double* n_i, double alpha)
 {
-  #if PRINT
-    printf("Entering ev_integr_RK\n");
-  #endif  
   double first = evaluate_integral1_RK(x_i, x_j, tol_rk45_space, h, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
   double second = evaluate_integral2_RK(x_i, x_j, tol_rk45_space, h, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
 
   dxdt[0] += first*(t_i[0] + mu_i*n_i[0]) + second*n_i[0];
   dxdt[1] += first*(t_i[1] + mu_i*n_i[1]) + second*n_i[1];
-  #if PRINT
-    printf("Exiting ev_integr_RK\n");
-  #endif
   
   return;
 }
@@ -441,15 +404,14 @@ void evaluate_integral_RK(double* dxdt, double* x_i, double* x_j, double mu_i, d
 double evaluate_integral1_RK(double* x_i, double* x_j, double tol_rk45_space, double h, double* t_i,\
 									double* n_i, double mu_i, double beta_i, double gamma_i, double alpha)
 {
-  #if PRINT
-    printf("Entering ev_integr111111_RK\n");
-  #endif
+  
 	double p = 0.;
 	double p_end = 1.; 
   double k1, k2, k3, k4, k5, k6;
 	double Y = 0., Y1, Y2, p_temp;
   long double R;
-    while (p < p_end)
+
+  while (p < p_end)
   {
     if (p + h > 1)
     {
@@ -572,7 +534,7 @@ double evaluate_integral2_RK(double* x_i, double* x_j, double tol_rk45_space, do
 
     if (R < 1.e-10*tol_rk45_space)
     {
-      h = 2*h;
+      h = 1.5*h;
     }
     else 
     {
@@ -711,8 +673,17 @@ void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
   // Relocation of points
   for (int j = 2; j <= N_tilde; j++)
   {
+    // Edge case
+    p = (j - 1)/sigmai_prim[0];
+    if (p > 0 && p < 1)
+	  {
+  		x[2*(j-1)] = x_temp[0] + (t[0] + (mu[0] + beta[0]*p + gamma[0]*p*p)*n[0])*p;
+      x[2*(j-1) + 1] = x_temp[1] + (t[1] + (mu[0] + beta[0]*p + gamma[0]*p*p)*n[1])*p;
+		}
+    
+    // Standard case
   	S = 0;
-	  for (int i = 0; i < N; i++)
+	  for (int i = 1; i < N; i++)
   	{
 		  S += sigmai_prim[i-1];
 	  	p = (j - 1 - S)/sigmai_prim[i];
@@ -724,7 +695,9 @@ void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
 		  }
 	  }
   }
-
+  for (int i = 0; i < N_tilde; i++)
+    printf("x[%d, %d] = %e \t %e\n", 2*i, 2*i+1, x[2*i], x[2*i+1]);
+  
   // Free
   free(kappa_bar);
   printf("Before free points_reloc\n");
@@ -771,7 +744,8 @@ double runge_kutta45(double* x, double* dxdt_k1, double* dxdt_k2, double* dxdt_k
     // Step 1 in RK
     for (int j = 0; j < N; j++)
     {
-      compute_derivative(&dxdt_k1[2*j], &dxdt_k1[2*j+1], x, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j);
+      //compute_fft(dxdt_k1, x, N, alpha, j);
+      compute_derivative(dxdt_k1, x, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j);
       dxdt_k1[2*j] = F*dxdt_k1[2*j];
       dxdt_k1[2*j+1] = F*dxdt_k1[2*j+1];
           }
@@ -784,7 +758,8 @@ double runge_kutta45(double* x, double* dxdt_k1, double* dxdt_k2, double* dxdt_k
     // Step 2 in RK
     for (int j = 0; j < N; j++)
     {
-      compute_derivative(&dxdt_k2[2*j], &dxdt_k2[2*j+1], x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j);
+      //compute_fft(dxdt_k2, x, N, alpha, j);
+      compute_derivative(dxdt_k2, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j);
       dxdt_k2[2*j] = F*dxdt_k2[2*j];
       dxdt_k2[2*j+1] = F*dxdt_k2[2*j+1];
     }
@@ -797,7 +772,8 @@ double runge_kutta45(double* x, double* dxdt_k1, double* dxdt_k2, double* dxdt_k
     // Step 3 in RK
     for (int j = 0; j < N; j++)
     {
-      compute_derivative(&dxdt_k3[2*j], &dxdt_k3[2*j+1], x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j);
+      //compute_fft(dxdt_k3, x, N, alpha, j);
+      compute_derivative(dxdt_k3, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j);
       dxdt_k3[2*j] = F*dxdt_k3[2*j];
       dxdt_k3[2*j+1] = F*dxdt_k3[2*j+1];
     }
@@ -810,7 +786,7 @@ double runge_kutta45(double* x, double* dxdt_k1, double* dxdt_k2, double* dxdt_k
     // Step 4 in RK
     for (int j = 0; j < N; j++)
     {
-      compute_derivative(&dxdt_k4[2*j], &dxdt_k4[2*j+1], x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j);
+      compute_derivative(dxdt_k4, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j);
       dxdt_k4[2*j] = F*dxdt_k4[2*j];
       dxdt_k4[2*j+1] = F*dxdt_k4[2*j+1];
     }
@@ -823,7 +799,8 @@ double runge_kutta45(double* x, double* dxdt_k1, double* dxdt_k2, double* dxdt_k
     // Step 5 in RK
     for (int j = 0; j < N; j++)
     {
-      compute_derivative(&dxdt_k5[2*j], &dxdt_k5[2*j+1], x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j);
+      //compute_fft(dxdt_k5, x, N, alpha, j);
+      compute_derivative(dxdt_k5, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j);
       dxdt_k5[2*j] = F*dxdt_k5[2*j];
       dxdt_k5[2*j+1] = F*dxdt_k5[2*j+1];
     }
@@ -836,7 +813,8 @@ double runge_kutta45(double* x, double* dxdt_k1, double* dxdt_k2, double* dxdt_k
     // Step 6 in RK
     for (int j = 0; j < N; j++)
     {
-      compute_derivative(&dxdt_k6[2*j], &dxdt_k6[2*j+1], x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j);
+      //compute_fft(dxdt_k6, x, N, alpha, j);
+      compute_derivative(dxdt_k6, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j);
       dxdt_k6[2*j] = F*dxdt_k6[2*j];
       dxdt_k6[2*j+1] = F*dxdt_k6[2*j+1];
     }

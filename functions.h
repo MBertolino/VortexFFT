@@ -8,7 +8,7 @@ void autder(double* f, double* c_coeff, double alpha, int order);
 void compute_fft(double* dxdt, double* x, int N, double alpha, int j);
 
 // Return the derivative of x
-void compute_derivative(double* dxdtx, double* dxdty, double* x, double* mu, double* beta, double* gamma, double* t, double* n, int M, int N, double alpha, double h, double eps, int j);
+void compute_derivative(double* dxdt, double* x, double* mu, double* beta, double* gamma, double* t, double* n, int M, int N, double alpha, double h, double eps, int j);
 
 // Evaluate integral in case 1 and 2
 void evaluate_integral(double* dxdt, double mu_i, double beta_i, double gamma_i,\

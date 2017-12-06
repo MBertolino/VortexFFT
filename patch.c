@@ -10,7 +10,7 @@
 int main() {
   
   // Number of points
-  int M = 256; // Number of points in each circle
+  int M = 512; // Number of points in each circle
   int N = M;
   int n_dim = 2;
   int size = N*n_dim;
@@ -18,7 +18,7 @@ int main() {
   double tol_rk45_time = 1.e-8;
   long double tol_rk45_space = 1.e-8;
   long double h = 1.e-3;
-  double alpha = 0.2; // Interpolation between 2D Euler and Quasi-geostrophic
+  double alpha = 0.7; // Interpolation between 2D Euler and Quasi-geostrophic
   double theta = -1.0;
   double dt = 1.e-3;//1.*h;
   double F, tpi, time;
@@ -27,7 +27,7 @@ int main() {
   int zeros;
   int N_old;
   time = 0;
-    
+  
   // Allocate coordinates
   double* x = (double*)malloc(size*sizeof(double));
   double* dxdt = (double*)malloc(size*sizeof(double));
@@ -49,6 +49,8 @@ int main() {
   for (int j = 0; j < M; j++) {
     x[2*j] = cos(TWOPI*j/(double)M);// - 1.1;
     x[2*j+1] = sin(TWOPI*j/(double)M);
+    //x[2*j] = cos(TWOPI*j/(double)M) + 0.45*sin(TWOPI*5*j/(double)M);
+    //x[2*j+1] = sin(TWOPI*j/(double)M) + 0.3*cos(TWOPI*3*j/(double)M);
     
     //x[2*j+2*M] = cos(TWOPI*j/(double)M) + 1.1;
     //x[2*j+1+2*M] = sin(TWOPI*j/(double)M);
@@ -70,6 +72,8 @@ int main() {
   
   // Evolve
   for (int k = 0; k <= T; k++) {
+    printf("k = %d\n", k);
+    
     double* d = (double*)malloc(N*sizeof(double));
     double* kappa = (double*)malloc(N*sizeof(double));
     double* mu = (double*)malloc(N*sizeof(double));
@@ -109,7 +113,7 @@ int main() {
     for (int j = 0; j < N; j++)
     {
       compute_fft(dxdt_fft, x, N, alpha, j);
-      compute_derivative(&dxdt[2*j], &dxdt[2*j+1], x, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j);
+      compute_derivative(dxdt, x, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j);
     }
     
     // Print to file
@@ -121,13 +125,13 @@ int main() {
     FILE* f_ama = fopen(str, "wb");
     for (int j = 0; j < 8; j++)
     {
-      printf("fft_x[%d, %d] = %lf, \t %lf\n", 2*j, 2*j+1, dxdt_fft[2*j], dxdt_fft[2*j+1]);
-      printf("ama_x[%d, %d] = %lf, \t %lf\n\n", 2*j, 2*j+1, dxdt[2*j], dxdt[2*j+1]);
+      printf("fft_x[%d, %d] = %e, \t %e\n", 2*j, 2*j+1, -dxdt_fft[2*j]/TWOPI, -dxdt_fft[2*j+1]/TWOPI);
+      printf("ama_x[%d, %d] = %e, \t %e\n\n", 2*j, 2*j+1, -dxdt[2*j]/TWOPI, -dxdt[2*j+1]/TWOPI);
     }
     for (int j = 0; j < N; j++)
     {
-      fprintf(f_fft, "%lf %lf\n", dxdt_fft[2*j], dxdt_fft[2*j+1]);
-      fprintf(f_ama, "%lf %lf\n", dxdt[2*j], dxdt[2*j+1]);
+      fprintf(f_fft, "%lf %lf\n", -dxdt_fft[2*j]/TWOPI, -dxdt_fft[2*j+1]/TWOPI);
+      fprintf(f_ama, "%lf %lf\n", -dxdt[2*j]/TWOPI, -dxdt[2*j+1]/TWOPI);
     } 
     printf("Done\n");
     fclose(f_fft);
@@ -176,7 +180,7 @@ int main() {
     printf(" \n");
     size = N*n_dim;
     M = N;
-   	
+    
     // Free memory
     free(t);
     free(n);

@@ -5,7 +5,7 @@ void interpolate(double* x, int start, int N, int n_dim, double* t, double* n,\
 void autder(double* f, double* c_coeff, double alpha, int order);
 
 // Return the derivative of x using fft
-void compute_fft(double* dxdt, double* x, int N, double alpha, int j);
+void compute_fft(double* dxdt, double* x, int N, double alpha);
 
 // Return the derivative of x
 void compute_derivative(double* dxdt, double* x, double* mu, double* beta, double* gamma, double* t, double* n, int M, int N, double alpha, double h, double eps, int j);

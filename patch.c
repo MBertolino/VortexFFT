@@ -5,20 +5,23 @@
 #include "functions.h"
 #include <unistd.h>
 
+
 #define TWOPI 6.2831853071795864769
 
-int main() {
+
+
+int main(int argc, char **argv) {
   
   // Number of points
-  int M = 256; // Number of points in each circle
+  int M = atoi(argv[1]); // Number of points in each circle
   int M2 = 256;
   int N = M;// + M2;
   int n_dim = 2;
   int size = N*n_dim;
   int T = 100;
-  double tol_rk45_time = 1.e-8;
-  long double tol_rk45_space = 1.e-8;
-  long double h = 1.e-3;
+  double tol_rk45_time = 1.e-10;
+  long double tol_rk45_space = 1.e-10;
+  long double h = 1.e-4;
   double alpha = 0.7; // Interpolation between 2D Euler and Quasi-geostrophic
   double theta = -1.0;
   double dt = 1.e-3;//1.*h;
@@ -40,8 +43,8 @@ int main() {
   
   // Generate circle
   for (int j = 0; j < M; j++) {
-    x[2*j] = cos(TWOPI*j/(double)M);// - 1.1;
-    x[2*j+1] = sin(TWOPI*j/(double)M);
+    x[2*j] =cos(TWOPI*j/(double)M) + 0.45*sin(TWOPI*5*j/(double)M); // cos(TWOPI*j/(double)M);// - 1.1;
+    x[2*j+1] = sin(TWOPI*j/(double)M) + 0.3*cos(TWOPI*3*j/(double)M);//sin(TWOPI*j/(double)M);
     
     //x[2*j+2*M] =  cos(TWOPI*j/(double)M) + 1.1;
     //x[2*j+1+2*M] = sin(TWOPI*j/(double)M);
@@ -94,13 +97,15 @@ int main() {
     interpolate(x, 0, M, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
     //interpolate(x, M, N, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
     
-    /*
+    compute_fft(dxdt_fft, x, N, alpha);
+
+
     // Compare FFT and Mancho
-    for (int j = 0; j < N; j++)
+   /* for (int j = 0; j < N; j++)
     {
-      compute_fft(dxdt_fft, x, N, alpha, j);
+      
       compute_derivative(dxdt, x, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j);
-    }
+    }*/
     
     // Print to file
     char strdx_fft[80] = "../results/dx_fft.txt";
@@ -121,7 +126,7 @@ int main() {
     fclose(f_fft);
     fclose(f_ama);
     sleep(5);
-    */
+    
     
     // Evolve patches
     dt = runge_kutta45(x, dxdt_k1, dxdt_k2, dxdt_k3, dxdt_k4, dxdt_k5,\

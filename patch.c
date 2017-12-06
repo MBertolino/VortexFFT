@@ -10,16 +10,16 @@
 int main() {
   
   // Number of points
-  int M = 64; // Number of points in each circle
+  int M = 8192; // Number of points in each circle
   int M2 = 64;
-  int N = M + M2;
+  int N = M;// + M2;
   int n_dim = 2;
   int size = N*n_dim;
-  int T = 2000;
+  int T = 2;
   double tol_rk45_time = 1.e-8;
   long double tol_rk45_space = 1.e-8;
   long double h = 1.e-3;
-  double alpha = 0.2; // Interpolation between 2D Euler and Quasi-geostrophic
+  double alpha = 0.7; // Interpolation between 2D Euler and Quasi-geostrophic
   double theta = -1.0;
   double dt = 1.e-3;//1.*h;
   double F, tpi, time;
@@ -61,11 +61,11 @@ int main() {
    
   // Generate circle
   for (int j = 0; j < M; j++) {
-    x[2*j] = 5*cos(TWOPI*j/(double)M)+0.2*cos(6*TWOPI*j/(double)M) -6; //cos(TWOPI*j/(double)M) - 1.5;
-    x[2*j+1] = sin(TWOPI*j/(double)M)-0.2*sin(4*TWOPI*j/(double)M);//sin(TWOPI*j/(double)M);
+    x[2*j] = cos(TWOPI*j/(double)M); // 5*cos(TWOPI*j/(double)M)+0.2*cos(6*TWOPI*j/(double)M) -6;
+    x[2*j+1] = sin(TWOPI*j/(double)M); //sin(TWOPI*j/(double)M)-0.2*sin(4*TWOPI*j/(double)M);
     
-    x[2*j+2*M] =  5*cos(TWOPI*j/(double)M)+0.2*cos(6*TWOPI*j/(double)M) + 6; // cos(TWOPI*j/(double)M) + 1.5;
-    x[2*j+1+2*M] = sin(TWOPI*j/(double)M)-0.2*sin(4*TWOPI*j/(double)M); // sin(TWOPI*j/(double)M);
+    //x[2*j+2*M] =  5*cos(TWOPI*j/(double)M)+0.2*cos(6*TWOPI*j/(double)M) + 6; // cos(TWOPI*j/(double)M) + 1.5;
+    //x[2*j+1+2*M] = sin(TWOPI*j/(double)M)-0.2*sin(4*TWOPI*j/(double)M); // sin(TWOPI*j/(double)M);
     // printf("x[%d] = %e, x[%d] = %e, \n", 2*j, x[2*j], 2*j+2*M, x[2*j+2*M] );
   }
   double area1, area2;
@@ -91,7 +91,7 @@ int main() {
     double* gamma = (double*)malloc(N*sizeof(double));
     double* t = (double*)malloc(size*sizeof(double)); 
     double* n = (double*)malloc(size*sizeof(double));
-    //double* dxdt = (double*)malloc(size*sizeof(double));
+    double* dxdt = (double*)malloc(size*sizeof(double));
     //double** dxdt_fft = (double**)malloc(N*sizeof(double*));
     double* dxdt_k1 = (double*)malloc(size*sizeof(double));
     double* dxdt_k2 = (double*)malloc(size*sizeof(double));
@@ -103,6 +103,7 @@ int main() {
     double* dxdt_RK5 = (double*)malloc(size*sizeof(double));
     
     zeros = size*sizeof(double);
+    memset(dxdt, 0, zeros);
     memset(dxdt_k1, 0, zeros);
     memset(dxdt_k2, 0, zeros);
     memset(dxdt_k3, 0, zeros);
@@ -116,14 +117,18 @@ int main() {
     // Interpolate
     interpolate(x, 0, M, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
     //printf("between interpolate 1 and 2\n");
-    interpolate(x, M, N, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
+    //interpolate(x, M, N, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
     // Compute area
     area1 = compute_area(x, 0, M, t, n, mu, beta, gamma);
-    area2 = compute_area(x, M, N, t, n, mu, beta, gamma);
+    //area2 = compute_area(x, M, N, t, n, mu, beta, gamma);
     printf("area1 = %lf\n", area1);
-    printf("area2 = %lf\n\n", area2);
+    //printf("area2 = %lf\n\n", area2);
     // Compare FFT and Mancho
+    for (int i = 0; i < N; i++)
+    compute_derivative(&dxdt[2*i], &dxdt[2*i+1], x, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, i);
+    printf("dxdt_ama[%d] = %e, dxdt_ama[%d] = %e\n\n", 0, dxdt[0]/TWOPI, 1, dxdt[1]/TWOPI);
     /*
+    
     for (int j = 0; j < N; j++)
     {
       compute_fft(dxdt_fft[j], x, N, alpha, j);
@@ -148,12 +153,12 @@ int main() {
     N_old  = N;
     px = &x;
     interpolate(x, 0, M, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
-    interpolate(x, M, N, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
+    //interpolate(x, M, N, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
     
     /*for (int i = 0; i < N; i++)
       printf("kappa[%d] = %e\n", i, kappa[i]);
     */
-    points_reloc(px, t, n, pN, kappa, mu, beta, gamma, pM1, pM2, 2);
+    points_reloc(px, t, n, pN, kappa, mu, beta, gamma, pM1, pM2, 1);
     
    // printf("M1 = %d\n", M);
     //printf("M2 = %d\n", M2);

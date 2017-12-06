@@ -179,8 +179,8 @@ void compute_derivative(double* dxdtx, double* dxdty, double* x, double* mu, dou
   double Q = 0.01;
   double f = 1./sqrt(Q);
   double dxdt[2];
-  dxdt[0] = *dxdtx;
-  dxdt[1] = *dxdty;
+  dxdt[0] = 0.;//*dxdtx;
+  dxdt[1] = 0.;//*dxdty;
   double x_i[2];
   double x_j[2];
   
@@ -252,7 +252,7 @@ void compute_derivative(double* dxdtx, double* dxdty, double* x, double* mu, dou
       poly_coeff_c[3] = 2.*beta_2*gamma[i]/(1. + mu_2*mu_2);
       poly_coeff_c[4] = gamma[i]*gamma[i]/(1. + mu_2*mu_2);
       
-      autder(c, poly_coeff_c, alpha/2., order);
+      autder(c, poly_coeff_c, 0.5*alpha, order);
       
       // Look at inputs in these functions
       evaluate_integral(dxdt, mu_2, beta_2, gamma[i], t_i, n_i, c, alpha); 
@@ -274,7 +274,7 @@ void compute_derivative(double* dxdtx, double* dxdty, double* x, double* mu, dou
         poly_coeff_c[3] = 2.*beta[i]*gamma[i]/(1. + mu[i]*mu[i]);
         poly_coeff_c[4] = gamma[i]*gamma[i]/(1. + mu[i]*mu[i]);
 
-        autder(c, poly_coeff_c, alpha/2., order);
+        autder(c, poly_coeff_c, 0.5*alpha, order);
         
         evaluate_integral(dxdt, mu[i], beta[i], gamma[i], t_i, n_i, c, alpha);
         #if PRINT
@@ -298,7 +298,7 @@ void compute_derivative(double* dxdtx, double* dxdty, double* x, double* mu, dou
         poly_coeff_c[3] = 2.*beta_2*gamma[i]/(1. + mu_2*mu_2);
         poly_coeff_c[4] = gamma[i]*gamma[i]/(1. + mu_2*mu_2);
       
-        autder(c, poly_coeff_c, alpha/2., order);
+        autder(c, poly_coeff_c, 0.5*alpha, order);
         
         evaluate_integral(dxdt, mu_2, beta_2, gamma[i], t_i, n_i, c, alpha); 
         #if PRINT
@@ -330,7 +330,7 @@ void compute_derivative(double* dxdtx, double* dxdty, double* x, double* mu, dou
         poly_coeff_g[6] = (gamma[i]*gamma[i]*(n[2*i]*n[2*i]\
                         + n[2*i+1]*n[2*i+1]))/(d_x*d_x);
         
-        autder(g, poly_coeff_g, alpha/2., order);
+        autder(g, poly_coeff_g, 0.5*alpha, order);
         
         evaluate_integral_g(dxdt, mu[i], beta[i], gamma[i], d_x, d_ni, d_ti, t_i, n_i, g, alpha);
         #if PRINT
@@ -361,7 +361,7 @@ void evaluate_integral(double* dxdt, double mu_i, double beta_i, double gamma_i,
   double first = 0.;
   double second = 0.;
   double p_coef, psq_coef;
-  double t_abs = pow((t_i[0]*t_i[0] + t_i[1]*t_i[1]), alpha);
+  double t_abs = pow((t_i[0]*t_i[0] + t_i[1]*t_i[1]), 0.5*alpha);
   
   double alpha_mu = pow((1 + mu_i*mu_i), 0.5*alpha);
   
@@ -441,8 +441,6 @@ double evaluate_integral1_RK(double* x_i, double* x_j, double tol_rk45_space, do
     {
       h = 1-p;
     }
-    do
-    { 
 		  k1 = h*integrand1(x_i, x_j, p, t_i, n_i, mu_i, beta_i, gamma_i, alpha); 
 		  p_temp = p + 0.25*h;
 
@@ -469,20 +467,23 @@ double evaluate_integral1_RK(double* x_i, double* x_j, double tol_rk45_space, do
       
       // Compute error
       R = fabs(Y2 - Y1);
-      
-      if (R > tol_rk45_space)
-        h = 0.5*h;
    
-    } while (R > tol_rk45_space);
-    p = p + h;
-    Y = Y2;
-       if (R < 1.e-10*tol_rk45_space)
+    if (R < tol_rk45_space)
     {
-      h = 1.5*h;
-    }
-    else 
+      p = p + h;
+      Y = Y2;
+
+      if (R < 1.e-10*tol_rk45_space)
+      {
+        h = 2*h;
+      }
+      else 
+      {
+        h = 0.9*h*sqrt(sqrt((h*tol_rk45_space)/R));
+      }
+    } else
     {
-      h = 0.9*h*sqrt(sqrt((h*tol_rk45_space)/R));
+      h = 0.5*h;
     }
   }  
   #if PRINT
@@ -521,8 +522,6 @@ double evaluate_integral2_RK(double* x_i, double* x_j, double tol_rk45_space, do
     {
       h = 1-p;
     } 
-    do
-    {
 		  k1 = h*integrand2(x_i, x_j, p, t_i, n_i, mu_i, beta_i, gamma_i, alpha); 
 		  p_temp = p + 0.25*h;
 		  
@@ -549,21 +548,23 @@ double evaluate_integral2_RK(double* x_i, double* x_j, double tol_rk45_space, do
       
       // Compute error
       R = fabs(Y2 - Y1);
-      
-      if (R > tol_rk45_space)
-        h = 0.5*h;
-    } while (R > tol_rk45_space);
 
-    p = p + h;
-    Y = Y2;
+    if (R < tol_rk45_space)
+    {
+      p = p + h;
+      Y = Y2;
 
-    if (R < 1.e-10*tol_rk45_space)
+      if (R < 1.e-10*tol_rk45_space)
+      {
+        h = 2*h;
+      }
+      else 
+      {
+        h = 0.9*h*sqrt(sqrt((h*tol_rk45_space)/R));
+      }
+    } else
     {
-      h = 2*h;
-    }
-    else 
-    {
-      h = 0.9*h*sqrt(sqrt((h*tol_rk45_space)/R));
+      h = 0.5*h;
     }
   }
 
@@ -700,27 +701,17 @@ void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
 	  }
 	  
     N_tilde = round(q) + 2; 
-    // printf("N = %d  N_tilde = %d\n", N, N_tilde);
     for (int i = 0; i < M[k]; i++)
       sigmai_prim[i] = sigmai[i]*N_tilde/q;
     
     double* sum;
     sum  = (double*)malloc(M[k]*sizeof(double));
     sum[0] = 0.;
-    //sum[1] = 0.;
     for (int i = 1; i < M[k]; i++)
     {
       sum[i] = sum[i-1] + sigmai_prim[i-1];
     }
 
-    //memcpy(x_temp, &x[2*M[k-1]], 2*M[k]*sizeof(double));
-    if (k == 2)
-    {
-      for (int i = 0; i < M[k]; i++)
-      {
-        //printf("x_temp[%d] = %e, x_temp[%d] = %e \n", 2*i, x_temp[2*i], 2*i+1, x_temp[2*i+1]);
-      }
-    }
     // Reallocate x
    	x_patch[k-1] = (double*)malloc(2*N_tilde*sizeof(double));
    	x_patch[k-1][0] = x[0+2*M[k-1]];
@@ -730,11 +721,7 @@ void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
    	for (int i = 2; i < 2*N_tilde; i++)
    		x_patch[k-1][i] = 0.;
     
-   /* for (int i = 0; i < M[k]; i++)
-      printf("sigmai_prim[%d] = %e\n", i, sigmai_prim[i]);
-    */
 	  // Relocation of points
-	 // printf("N_tilde = %d\n", N_tilde);
     for (int j = 2; j <= N_tilde; j++)
     {
 
@@ -743,51 +730,17 @@ void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
     	for (int i = 0; i < M[k]; i++)
     	{
     	  i_idx = i + M[k-1];
-        /*if (i == 0)
-        {
-         	p = (j - 1)/sigmai_prim[0];
-    	    if (p > 0 && p < 1)
-    	    {
-    		  	x_patch[k-1][2*(j-1)] = x[2*i_idx] + (t[2*i_idx] + (mu[i_idx] + beta[i_idx]*p + gamma[i_idx]*p*p)*n[2*i_idx])*p;
-        	  x_patch[k-1][2*(j-1) + 1] = x[2*i_idx + 1] + (t[2*i_idx + 1] + (mu[i_idx] + beta[i_idx]*p + gamma[i_idx]*p*p)*n[2*i_idx + 1])*p;
-       	    printf("EDGE p = %e, i = %d S = %e, j = %d\n", p, i, S, j);
-    	    }
-        }
-    	  else if (i == 1)
-    	  {
-    	    p = (j - 1)/sigmai_prim[1];
-    	    if (p > 0 && p < 1)
-    		  {
-    			  i_hat = i;
-    		  	x_patch[k-1][2*(j-1)] = x[2*i_idx] + (t[2*i_idx] + (mu[i_idx] + beta[i_idx]*p + gamma[i_idx]*p*p)*n[2*i_idx])*p;
-        	  x_patch[k-1][2*(j-1) + 1] = x[2*i_idx + 1] + (t[2*i_idx + 1] + (mu[i_idx] + beta[i_idx]*p + gamma[i_idx]*p*p)*n[2*i_idx + 1])*p;
-        	  printf("p = %e, S = %e, i = %d, j = %d,   sum[%d] = %e\n", p, S, i, j, i, sum[i]);
-    		  }
-    	  }
-    	  else
-    	  {*/
-      		//S += sigmai_prim[i-2];
-      		p = (j - 1 - sum[i])/sigmai_prim[i];
-      	  //if (i == 1)
-      		//  printf("p = %e, j - 1 / sigma[1] = %e  \n", p, (j-1)/sigmai_prim[1]);
-      	  //if (i == 2)
-      		 // printf("i = %d, p = %e, j - 1 - sigma[1] / sigma[2] = %e  \n", i, p, (j-1-sigmai_prim[1])/sigmai_prim[2]);    		  
-      		
-      		if (p > 0 && p < 1)
-      		{
-      			i_hat = i;
-      			x_patch[k-1][2*(j-1)] = x[2*i_idx] + (t[2*i_idx] + (mu[i_idx] + beta[i_idx]*p + gamma[i_idx]*p*p)*n[2*i_idx])*p;
-          	x_patch[k-1][2*(j-1) + 1] = x[2*i_idx + 1] + (t[2*i_idx + 1] + (mu[i_idx] + beta[i_idx]*p + gamma[i_idx]*p*p)*n[2*i_idx + 1])*p;
-            //printf("p = %e, i = %d, j = %d,   sum[%d] = %e\n", p, i, j, i, sum[i]);
-      		}
-    		//}
-    		//printf("p = %e, Sum[%d] = %e, i = %d, j = %d\n", p, i, sum[i], i, j);
+     		p = (j - 1 - sum[i])/sigmai_prim[i];
+     		if (p > 0 && p < 1)
+     		{
+    			i_hat = i;
+    			x_patch[k-1][2*(j-1)] = x[2*i_idx] + (t[2*i_idx] + (mu[i_idx] + beta[i_idx]*p + gamma[i_idx]*p*p)*n[2*i_idx])*p;
+        	x_patch[k-1][2*(j-1) + 1] = x[2*i_idx + 1] + (t[2*i_idx + 1] + (mu[i_idx] + beta[i_idx]*p + gamma[i_idx]*p*p)*n[2*i_idx + 1])*p;
+          //printf("p = %e, i = %d, j = %d,   sum[%d] = %e\n", p, i, j, i, sum[i]);
+      	}
     	}
     }
-    //printf("patch = %d \n", k);
-   /* for (int i = 0; i < N_tilde; i++)
-   		printf("x_patch[%d] = %e, x_patch[%d] = %e \n", 2*i, x_patch[k-1][2*i], 2*i+1, x_patch[k-1][2*i+1]);*/
-    //printf("-------------------\n");
+
     // Free
     free(kappa_bar);
     //free(d);

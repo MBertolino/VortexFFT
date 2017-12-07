@@ -574,13 +574,13 @@ void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
   epsilon = 1.e-6;
   L = 3.0;
   a = 2.0/3.0;
-  v = 0.05; // 0.01, 0.03, 0.05 (Smaller value => Larger densities of points on the curve)
+  v = 0.005; // 0.01, 0.03, 0.05 (Smaller value => Larger densities of points on the curve)
   int M[3], M_new[2];
   M[0] = 0;
   M[1] = *pM1;
   M[2] = *pM2;
   N_tilde = 0;
-  double q, p, S;
+  double q, rest, p, dp, p_min, rest_dp, S;
   int i_hat = 1;
   // Either calculate all d[j]'s here or use input
   // Same goes with kappa and h
@@ -701,8 +701,10 @@ void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
 	  // Relocation of points
     for (int j = 2; j <= N_tilde; j++)
     {
+
+
     	S = 0.;
-    	for (int i = i_hat; i < M[k]; i++)
+    	for (int i = 0; i < M[k]; i++)
     	{
     	  i_idx = i + M[k-1];
      		p = (j - 1 - sum[i])/sigmai_prim[i];
@@ -718,7 +720,7 @@ void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
 
     // Free
     free(kappa_bar);
-    //free(d);
+    free(d);
     free(kappai_breve);
     free(kappai_tilde);
     free(kappai_hat);
@@ -745,8 +747,10 @@ void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
       x[2*(i + M_new[0])] = x_patch[1][2*i];
       x[2*(i + M_new[0])+1] = x_patch[1][2*i+1];
     }
-  }
-  else
+    
+    //memcpy(x_patch[0], x, 2*M_new[0]*sizeof(double));
+    //memcpy(x_patch[1], &x[2*M_new[0]], 2*M_new[1]*sizeof(double));
+  } else
   {
     x = x_patch[0];
     *pN = N_tilde;
@@ -762,12 +766,19 @@ void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
   {
     free(x_patch);
   }
+  /*for (int i = 0; i < N; i++)
+    printf("x[%d] = %e, x[%d] = %e \n", 2*i, x[2*i], 2*i+1, x[2*i+1]);
+  */
 	*pM1 = M_new[0];
 	*pM2 = M_new[1];
+	//printf("Minside pts_reloc = %d\n", *pM2);
+  
   *px = x;
+ // printf("Exiting points_reloc\n");
   
   return;
 }
+
 
 
 double runge_kutta45(double* x, double* dxdt_k1, double* dxdt_k2, double* dxdt_k3, double* dxdt_k4, double* dxdt_k5, double* dxdt_k6, double* dxdt_RK4, double* dxdt_RK5, double tol_rk45_time, double dt, int M, int N, double* mu, double* beta, double* gamma, double* t, double* n, double alpha, double tol_rk45_space, double h, double* time)
@@ -791,8 +802,8 @@ double runge_kutta45(double* x, double* dxdt_k1, double* dxdt_k2, double* dxdt_k
   // Runge-Kutta 45
   do
   {
-    if (dt > 1.e-3)
-      dt = 1.e-3;
+    if (dt > 2.5e-3)
+      dt = 2.5e-3;
     // Step 1 in RK
     for (int j = 0; j < N; j++)
     {
@@ -807,11 +818,11 @@ double runge_kutta45(double* x, double* dxdt_k1, double* dxdt_k2, double* dxdt_k
     }
     
     // Step 2 in RK
-      compute_fft(dxdt_k2, x, N, alpha);
+    //compute_fft(dxdt_k2, x, N, alpha);
     for (int j = 0; j < N; j++)
     {
 
-      //compute_derivative(dxdt_k2, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j);
+      compute_derivative(dxdt_k2, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j);
       dxdt_k2[2*j] = F*dxdt_k2[2*j];
       dxdt_k2[2*j+1] = F*dxdt_k2[2*j+1];
     }
@@ -911,7 +922,7 @@ double runge_kutta45(double* x, double* dxdt_k1, double* dxdt_k2, double* dxdt_k
   } while (R_max > tol_rk45_time);
   dt_new = 0.9*dt*sqrt(sqrt(tol_rk45_time/R_max));
   total_time += dt;
-  
+  printf("dt_new = %e\n", dt_new);
   // Update
   for (int j = 0; j < N; j++)
   {

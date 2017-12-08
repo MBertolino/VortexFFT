@@ -5,10 +5,10 @@ void interpolate(double* x, int start, int N, int n_dim, double* t, double* n,\
 void autder(double* f, double* c_coeff, double alpha, int order);
 
 // Return the derivative of x using fft
-void compute_fft(double* dxdt, double* x, int N, double alpha, double* norm, double theta);
+void compute_fft(double* dxdt, double* x, int N, double alpha, double theta, double* norm);
 
 // Return the derivative of x
-void compute_derivative(double* dxdt, double* x, double* mu, double* beta, double* gamma, double* t, double* n, int M, int N, double alpha, double h, double eps, int j, double* norm, double theta);
+void compute_derivative(double* dxdt, double* x, double* mu, double* beta, double* gamma, double* t, double* n, int M, int N, double alpha, double h, double eps, int j, double theta, double* norm);
 
 // Evaluate integral in case 1 and 2
 void evaluate_integral(double* dxdt, double mu_i, double beta_i, double gamma_i,\
@@ -36,9 +36,9 @@ double integrand2(double* x_i, double* x_j, double p, double* t_i, double* n_i,\
 void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
 									double* mu, double* beta, double* gamma, int* pM1, int* pM2, int patches);
 
-double runge_kutta45(double* x, double* dxdt_k1, double* dxdt_k2, double* dxdt_k3, double* dxdt_k4, double* dxdt_k5, double* dxdt_k6, double* dxdt_RK4, double* dxdt_RK5, double tol, double dt, int M, int N, double* mu, double* beta, double* gamma, double* t, double* n, double alpha, double eps, double h, double* time, double* norm, double theta);
+double runge_kutta45(double* x, double* dxdt_k1, double* dxdt_k2, double* dxdt_k3, double* dxdt_k4, double* dxdt_k5, double* dxdt_k6, double* dxdt_RK4, double* dxdt_RK5, double tol, double dt, int M, int N, double* mu, double* beta, double* gamma, double* t, double* n, double alpha, double eps, double h, double* time, double theta, double* norm);
 
 double compute_area(double* x, int start, int stop, double* t, double* n,\
                     double* mu, double* beta, double* gamma);
-                    
+
 void normalize(double* n, double* norm, int N);

@@ -20,7 +20,6 @@ void interpolate(double* x, int start, int N, int n_dim, double* t, double* n,\
   for (int j = start; j < N-1; j++)
   {
     t[2*j] = x[2*j+2] - x[2*j];
-   
     t[2*j+1] = x[2*j+3] - x[2*j+1];
     n[2*j] = -t[2*j+1];
     n[2*j+1] = t[2*j];
@@ -72,7 +71,7 @@ void autder(double* f, double* c_coeff, double alpha, int order)
     a_[n] = 0.;
     f[n] = 0.;
   }
-    a_[0] = 1.;
+  a_[0] = 1.;
 
   // Calculate temporary coefficients
   for (int n = 1; n < order; n++)
@@ -98,9 +97,10 @@ void autder(double* f, double* c_coeff, double alpha, int order)
   return;
 }
 
-void compute_fft(double* dxdt, double* x, int N, double alpha)
+void compute_fft(double* dxdt, double* x, int N, double alpha, double* norm, double theta)
 {
   unsigned int N_pad = N;
+  /*
   N_pad--;
   N_pad |= N_pad >> 1;
   N_pad |= N_pad >> 2;
@@ -108,7 +108,9 @@ void compute_fft(double* dxdt, double* x, int N, double alpha)
   N_pad |= N_pad >> 8;
   N_pad |= N_pad >> 16;
   N_pad++;
+  */
   
+ 
   int N_points = N_pad/2;
   double k[N_pad];
   double alpha_d_x;
@@ -182,19 +184,20 @@ void compute_fft(double* dxdt, double* x, int N, double alpha)
     dxdt[2*j+1] = 0;
     for (int i = 0; i < N; i++)
     {
-      if (i == j)
+     if (i == j)
         continue;
       alpha_d_x = pow(sqrt((x[2*i] - x[2*j])*(x[2*i] - x[2*j])\
                            + (x[2*i+1] - x[2*j+1])*(x[2*i+1] - x[2*j+1])), alpha);
-      dxdt[2*j] += creal(out_x[i])/alpha_d_x;
-      dxdt[2*j+1] += creal(out_y[i])/alpha_d_x;
+      dxdt[2*j] += creal(out_x[i])*norm[2*i]/alpha_d_x;
+      dxdt[2*j+1] += creal(out_y[i])*norm[2*i + 1]/alpha_d_x;
       //printf("out[%d] = %lf, \t %lf\n", i, creal(out_x[i])/((double)N*alpha_d_x), creal(out_y[i])/((double)N*alpha_d_x));
     }
   
     // Normalize FFT and Riemann sum
-    dxdt[2*j] = dxdt[2*j]*TWOPI/((double)(N*N));
-    dxdt[2*j+1] = dxdt[2*j+1]*TWOPI/((double)(N*N));
-  }  
+    dxdt[2*j] = theta*dxdt[2*j]/((double)(N*N));
+    dxdt[2*j+1] = theta*dxdt[2*j+1]/((double)(N*N));
+  } 
+   
   // Free
   fftw_destroy_plan(plan_for_x);
   fftw_destroy_plan(plan_for_y);
@@ -210,7 +213,7 @@ void compute_fft(double* dxdt, double* x, int N, double alpha)
 }
 
 
-void compute_derivative(double* dxdt, double* x, double* mu, double* beta, double* gamma, double* t, double* n, int M, int N, double alpha, double h, double tol_rk45_space, int j)
+void compute_derivative(double* dxdt, double* x, double* mu, double* beta, double* gamma, double* t, double* n, int M, int N, double alpha, double h, double tol_rk45_space, int j, double* norm, double theta)
 {
   //printf("Entering compute derivative\n");
   double d_x, d_ni, d_ti, d_xi, Q, f;
@@ -229,6 +232,7 @@ void compute_derivative(double* dxdt, double* x, double* mu, double* beta, doubl
   double mu_2, beta_2;
   x_j[0] = x[2*j];
   x_j[1] = x[2*j+1];
+  
   // Evolve the contour integrals
   for (int i = 0; i < N; i++)
   {
@@ -239,7 +243,6 @@ void compute_derivative(double* dxdt, double* x, double* mu, double* beta, doubl
     x_i[0] = x[2*i];
     x_i[1] = x[2*i+1];
 
-      
 	  d_x = sqrt((x[2*i] - x[2*j])*(x[2*i] - x[2*j])\
 				  + (x[2*i+1] - x[2*j+1])*(x[2*i+1]- x[2*j+1]));
     d_ti = -((x[2*j] - x[2*i])*t[2*i] + (x[2*j+1] - x[2*i+1])*t[2*i+1]);
@@ -256,13 +259,15 @@ void compute_derivative(double* dxdt, double* x, double* mu, double* beta, doubl
       d_xi = sqrt((x[2*M] - x[2*i])*(x[2*M] - x[2*i])\
            + (x[2*M+1] - x[2*i+1])*(x[2*M+1] - x[2*i+1]));
     }
-    else {
+    else 
+    {
         d_xi = sqrt((x[2*i+2] - x[2*i])*(x[2*i+2] - x[2*i])\
              + (x[2*i+3] - x[2*i+1])*(x[2*i+3] - x[2*i+1])); 
     }
     
     // Initialize Taylor coefficients
-    for (int n = 0; n < order; n++) {
+    for (int n = 0; n < order; n++) 
+    {
       c[n] = 0.;
       g[n] = 0.;
       poly_coeff_c[n] = 0.;
@@ -364,8 +369,8 @@ void compute_derivative(double* dxdt, double* x, double* mu, double* beta, doubl
   }
   
   // Update globally
-  dxdt[2*j] = dxdt_j[0];
-  dxdt[2*j+1] = dxdt_j[1];
+  dxdt[2*j] = theta*dxdt_j[0]*norm[2*j]/TWOPI;
+  dxdt[2*j+1] = theta*dxdt_j[1]*norm[2*j + 1]/TWOPI;
   
   return;
 }
@@ -807,10 +812,9 @@ void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
   return;
 }
 
-double runge_kutta45(double* x, double* dxdt_k1, double* dxdt_k2, double* dxdt_k3, double* dxdt_k4, double* dxdt_k5, double* dxdt_k6, double* dxdt_RK4, double* dxdt_RK5, double tol_rk45_time, double dt, int M, int N, double* mu, double* beta, double* gamma, double* t, double* n, double alpha, double tol_rk45_space, double h, double* time)
+double runge_kutta45(double* x, double* dxdt_k1, double* dxdt_k2, double* dxdt_k3, double* dxdt_k4, double* dxdt_k5, double* dxdt_k6, double* dxdt_RK4, double* dxdt_RK5, double tol_rk45_time, double dt, int M, int N, double* mu, double* beta, double* gamma, double* t, double* n, double alpha, double tol_rk45_space, double h, double* time, double* norm, double theta)
 {
-  double F, theta, tpi, dt_new, total_time;
-  theta = -1.;
+  double F, tpi, dt_new, total_time;
   F = dt*theta/(TWOPI);
   tpi = theta/(TWOPI);
   total_time = *time;
@@ -835,7 +839,7 @@ double runge_kutta45(double* x, double* dxdt_k1, double* dxdt_k2, double* dxdt_k
     //compute_fft(dxdt_k1, x, N, alpha);
     for (int j = 0; j < N; j++)
     {
-      compute_derivative(dxdt_k1, x, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j);
+      compute_derivative(dxdt_k1, x, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j, norm, theta);
       dxdt_k1[2*j] = F*dxdt_k1[2*j];
       dxdt_k1[2*j+1] = F*dxdt_k1[2*j+1];
     }
@@ -849,7 +853,7 @@ double runge_kutta45(double* x, double* dxdt_k1, double* dxdt_k2, double* dxdt_k
     //compute_fft(dxdt_k2, x, N, alpha);
     for (int j = 0; j < N; j++)
     {
-      compute_derivative(dxdt_k2, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j);
+      compute_derivative(dxdt_k2, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j, norm, theta);
       dxdt_k2[2*j] = F*dxdt_k2[2*j];
       dxdt_k2[2*j+1] = F*dxdt_k2[2*j+1];
     }
@@ -863,7 +867,7 @@ double runge_kutta45(double* x, double* dxdt_k1, double* dxdt_k2, double* dxdt_k
     //compute_fft(dxdt_k3, x, N, alpha);
     for (int j = 0; j < N; j++)
     {
-      compute_derivative(dxdt_k3, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j);
+      compute_derivative(dxdt_k3, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j, norm, theta);
       dxdt_k3[2*j] = F*dxdt_k3[2*j];
       dxdt_k3[2*j+1] = F*dxdt_k3[2*j+1];
     }
@@ -877,7 +881,7 @@ double runge_kutta45(double* x, double* dxdt_k1, double* dxdt_k2, double* dxdt_k
     //compute_fft(dxdt_k4, x, N, alpha);
     for (int j = 0; j < N; j++)
     {
-      compute_derivative(dxdt_k4, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j);
+      compute_derivative(dxdt_k4, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j, norm, theta);
       dxdt_k4[2*j] = F*dxdt_k4[2*j];
       dxdt_k4[2*j+1] = F*dxdt_k4[2*j+1];
     }
@@ -891,7 +895,7 @@ double runge_kutta45(double* x, double* dxdt_k1, double* dxdt_k2, double* dxdt_k
     //compute_fft(dxdt_k5, x, N, alpha);
     for (int j = 0; j < N; j++)
     {
-      compute_derivative(dxdt_k5, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j);
+      compute_derivative(dxdt_k5, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j, norm, theta);
       dxdt_k5[2*j] = F*dxdt_k5[2*j];
       dxdt_k5[2*j+1] = F*dxdt_k5[2*j+1];
     }
@@ -905,7 +909,7 @@ double runge_kutta45(double* x, double* dxdt_k1, double* dxdt_k2, double* dxdt_k
     //compute_fft(dxdt_k6, x, N, alpha);
     for (int j = 0; j < N; j++)
     {
-      compute_derivative(dxdt_k6, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j);
+      compute_derivative(dxdt_k6, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j, norm, theta);
       dxdt_k6[2*j] = F*dxdt_k6[2*j];
       dxdt_k6[2*j+1] = F*dxdt_k6[2*j+1];
     }
@@ -980,3 +984,16 @@ double compute_area(double* x, int start, int stop, double* t, double* n,\
   
   return area;
 }
+
+//Funtion to normalize the normal
+void normalize(double* n, double* norm, int N)
+{
+  double denom;
+  for (int i = 0; i < N; i++)
+  {
+    denom = sqrt(n[2*i]*n[2*i] + n[2*i + 1]*n[2*i + 1]);
+    norm[2*i] = n[2*i]/denom;
+    norm[2*i + 1] = n[2*i + 1]/denom; 
+  } 
+}
+

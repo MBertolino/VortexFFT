@@ -5,16 +5,14 @@
 #include "functions.h"
 #include <unistd.h>
 
-
 #define TWOPI 6.2831853071795864769
-
 
 
 int main(int argc, char **argv) {
   
   // Number of points
   int M = atoi(argv[1]); // Number of points in each circle
-  int M2 = 128;
+  int M2 = 128; 
   int N = M + M2;
   int n_dim = 2;
   int size = N*n_dim;
@@ -50,12 +48,14 @@ int main(int argc, char **argv) {
     x[2*j+1+2*M] = sin(TWOPI*j/(double)M);
   }
   double area1, area2;
- 
+  
   // Print to file  
   char str_start[80] = "../results/circle_start.txt";
   FILE* f = fopen(str_start, "wb");
   for (int i = 0; i < N; i++) {
-    fprintf(f, "%lf,%lf\n", x[2*i], x[2*i+1]);
+    if (i == M)
+      fprintf(f, "\n");
+    fprintf(f, "%lf %lf\n", x[2*i], x[2*i+1]);
   }
   fclose(f);
   
@@ -94,23 +94,20 @@ int main(int argc, char **argv) {
     memset(dxdt_k6, 0, zeros);
     memset(dxdt_RK4, 0, zeros);
     memset(dxdt_RK5, 0, zeros);
+    memset(t, 0, zeros);
+    memset(n, 0, zeros);
     
     // Interpolate
     interpolate(x, 0, M, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
     interpolate(x, M, N, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
     
-  //  compute_fft(dxdt_fft, x, N, alpha);
-
-
     // Compare FFT and Mancho
-   /* for (int j = 0; j < N; j++)
-    {
-      
+    compute_fft(dxdt_fft, x, N, alpha);
+    for (int j = 0; j < N; j++)
       compute_derivative(dxdt, x, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j);
-    }*/
     
     // Print to file
-  /*  char strdx_fft[80] = "../results/dx_fft.txt";
+    char strdx_fft[80] = "../results/dx_fft.txt";
     char strdx_ama[80] = "../results/dx_ama.txt";
     FILE* f_fft = fopen(strdx_fft, "wb");
     FILE* f_ama = fopen(strdx_ama, "wb");
@@ -129,7 +126,6 @@ int main(int argc, char **argv) {
     fclose(f_ama);
     sleep(5);
     
-    */
     // Evolve patches
     dt = runge_kutta45(x, dxdt_k1, dxdt_k2, dxdt_k3, dxdt_k4, dxdt_k5,\
                   dxdt_k6, dxdt_RK4, dxdt_RK5, tol_rk45_time, dt, M, N,\
@@ -153,7 +149,9 @@ int main(int argc, char **argv) {
     strcat(str, ".txt");
     FILE* f = fopen(str, "wb");
     for (int i = 0; i < N; i++) {
-      fprintf(f, "%lf,%lf\n", x[2*i], x[2*i+1]);
+      if (i == M)
+        fprintf(f, "\n");
+      fprintf(f, "%lf %lf\n", x[2*i], x[2*i+1]);
     }
     fclose(f);
 

@@ -96,6 +96,7 @@ void autder(double* f, double* c_coeff, double alpha, int order)
   return;
 }
 
+
 void compute_fft(double* dxdt, double* x, int N, double alpha, double theta, double* norm)
 {
   int N_points = N/2;
@@ -177,6 +178,7 @@ void compute_fft(double* dxdt, double* x, int N, double alpha, double theta, dou
   return;
 }
 
+
 void compute_derivative(double* dxdt, double* x, double* mu, double* beta, double* gamma, double* t, double* n, int M, int N, double alpha, double h, double tol_rk45_space, int j, double theta, double* norm)
 {
   //printf("Entering compute derivative\n");
@@ -197,6 +199,7 @@ void compute_derivative(double* dxdt, double* x, double* mu, double* beta, doubl
   double mu_2, beta_2;
   x_j[0] = x[2*j];
   x_j[1] = x[2*j+1];
+  
   // Evolve the contour integrals
   for (int i = 0; i < N; i++)
   {
@@ -207,7 +210,6 @@ void compute_derivative(double* dxdt, double* x, double* mu, double* beta, doubl
     x_i[0] = x[2*i];
     x_i[1] = x[2*i+1];
 
-      
 	  d_x = sqrt((x[2*i] - x[2*j])*(x[2*i] - x[2*j])\
 				  + (x[2*i+1] - x[2*j+1])*(x[2*i+1]- x[2*j+1]));
     d_ti = -((x[2*j] - x[2*i])*t[2*i] + (x[2*j+1] - x[2*i+1])*t[2*i+1]);
@@ -346,6 +348,7 @@ void compute_derivative(double* dxdt, double* x, double* mu, double* beta, doubl
   return;
 }
 
+
 void evaluate_integral(double* dxdt, double mu_i, double beta_i, double gamma_i, double* t_i, double* n_i, double* c, double alpha)
 {
   
@@ -399,6 +402,7 @@ void evaluate_integral_g(double* dxdt, double mu_i, double beta_i, double gamma_
   return;
 }
 
+
 void evaluate_integral_RK(double* dxdt, double* x_i, double* x_j, double mu_i, double beta_i, double gamma_i,\
                           double tol_rk45_space, double h, double* t_i, double* n_i, double alpha)
 {
@@ -410,6 +414,7 @@ void evaluate_integral_RK(double* dxdt, double* x_i, double* x_j, double mu_i, d
   
   return;
 }
+
 
 double evaluate_integral1_RK(double* x_i, double* x_j, double tol_rk45_space, double h, double* t_i,\
 									double* n_i, double mu_i, double beta_i, double gamma_i, double alpha)
@@ -476,6 +481,7 @@ double evaluate_integral1_RK(double* x_i, double* x_j, double tol_rk45_space, do
   return Y;
 }
 
+
 double integrand1(double* x_i, double* x_j, double p, double* t_i, double* n_i, double mu_i,\
                   double beta_i, double gamma_i, double alpha)
 {
@@ -488,6 +494,7 @@ double integrand1(double* x_i, double* x_j, double p, double* t_i, double* n_i, 
   
   return w;
 }
+
 
 double evaluate_integral2_RK(double* x_i, double* x_j, double tol_rk45_space, double h,\
             double* t_i, double* n_i, double mu_i, double beta_i, double gamma_i, double alpha) 
@@ -552,6 +559,7 @@ double evaluate_integral2_RK(double* x_i, double* x_j, double tol_rk45_space, do
   return Y;
 }
 
+
 double integrand2(double* x_i, double* x_j, double p, double* t_i, double* n_i,\
                   double mu_i, double beta_i, double gamma_i, double alpha)
 {
@@ -565,6 +573,7 @@ double integrand2(double* x_i, double* x_j, double p, double* t_i, double* n_i,\
   
 	return w;
 }
+
 
 // Relocating nodes
 void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
@@ -584,7 +593,7 @@ void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
   M[1] = *pM1;
   M[2] = *pM2;
   N_tilde = 0;
-  double q, rest, p, S;
+  double q, p, S;
   int i_hat = 1;
   // Either calculate all d[j]'s here or use input
   // Same goes with kappa and h
@@ -800,95 +809,71 @@ double runge_kutta45(double* x, double* dxdt_k1, double* dxdt_k2, double* dxdt_k
       dt = 2.5e-3;
     
     // Step 1 in RK
-    compute_fft(dxdt_k1, x, N, alpha, theta, norm);
+    //compute_fft(dxdt_k1, x, N, alpha, theta, norm);
+    for (int j = 0; j < N; j++)
+      compute_derivative(dxdt_k1, x, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j, theta, norm);
     for (int j = 0; j < N; j++)
     {
-      //compute_derivative(dxdt_k1, x, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j, theta, norm);
-      dxdt_k1[2*j] = dt*dxdt_k1[2*j];
-      dxdt_k1[2*j+1] = dt*dxdt_k1[2*j+1];
-    }
-    for (int j = 0; j < N; j++)
-    {
-      x_temp[2*j] = x[2*j] + 0.25*dxdt_k1[2*j];
-      x_temp[2*j+1] = x[2*j+1] + 0.25*dxdt_k1[2*j+1];
+      x_temp[2*j] = x[2*j] + 0.25*dxdt_k1[2*j]*dt;
+      x_temp[2*j+1] = x[2*j+1] + 0.25*dxdt_k1[2*j+1]*dt;
     }
     
     // Step 2 in RK
-    compute_fft(dxdt_k2, x, N, alpha, theta, norm);
+    //compute_fft(dxdt_k2, x, N, alpha, theta, norm);
+    for (int j = 0; j < N; j++)
+      compute_derivative(dxdt_k2, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j, theta, norm);
     for (int j = 0; j < N; j++)
     {
-      //compute_derivative(dxdt_k2, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j, theta, norm);
-      dxdt_k2[2*j] = dt*dxdt_k2[2*j];
-      dxdt_k2[2*j+1] = dt*dxdt_k2[2*j+1];
-    }
-    for (int j = 0; j < N; j++)
-    {
-      x_temp[2*j] = x[2*j] + 3.0/32.0*dxdt_k1[2*j] + 9.0/32.0*dxdt_k2[2*j];
-      x_temp[2*j+1] = x[2*j+1] + 3.0/32.0*dxdt_k1[2*j+1] + 9.0/32.0*dxdt_k2[2*j+1];
+      x_temp[2*j] = x[2*j] + (3.0/32.0*dxdt_k1[2*j] + 9.0/32.0*dxdt_k2[2*j])*dt;
+      x_temp[2*j+1] = x[2*j+1] + (3.0/32.0*dxdt_k1[2*j+1] + 9.0/32.0*dxdt_k2[2*j+1])*dt;
     }
 		
     // Step 3 in RK
-    compute_fft(dxdt_k3, x, N, alpha, theta, norm);
+    //compute_fft(dxdt_k3, x, N, alpha, theta, norm);
+    for (int j = 0; j < N; j++)
+      compute_derivative(dxdt_k3, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j, theta, norm);
     for (int j = 0; j < N; j++)
     {
-      //compute_derivative(dxdt_k3, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j, theta, norm);
-      dxdt_k3[2*j] = dt*dxdt_k3[2*j];
-      dxdt_k3[2*j+1] = dt*dxdt_k3[2*j+1];
-    }
-    for (int j = 0; j < N; j++)
-    {
-      x_temp[2*j] = x[2*j] + 1932.0/2197.0*dxdt_k1[2*j] - 7200.0/2197.0*dxdt_k2[2*j] + 7296.0/2197.0*dxdt_k3[2*j];
-      x_temp[2*j+1] = x[2*j+1] + 1932.0/2197.0*dxdt_k1[2*j+1] - 7200.0/2197.0*dxdt_k2[2*j+1] + 7296.0/2197.0*dxdt_k3[2*j+1];
+      x_temp[2*j] = x[2*j] + (1932.0/2197.0*dxdt_k1[2*j] - 7200.0/2197.0*dxdt_k2[2*j] + 7296.0/2197.0*dxdt_k3[2*j])*dt;
+      x_temp[2*j+1] = x[2*j+1] + (1932.0/2197.0*dxdt_k1[2*j+1] - 7200.0/2197.0*dxdt_k2[2*j+1] + 7296.0/2197.0*dxdt_k3[2*j+1])*dt;
     }
     
     // Step 4 in RK
-    compute_fft(dxdt_k4, x, N, alpha, theta, norm);
+    //compute_fft(dxdt_k4, x, N, alpha, theta, norm);
+    for (int j = 0; j < N; j++)
+      compute_derivative(dxdt_k4, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j, theta, norm);
     for (int j = 0; j < N; j++)
     {
-      //compute_derivative(dxdt_k4, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j, theta, norm);
-      dxdt_k4[2*j] = dt*dxdt_k4[2*j];
-      dxdt_k4[2*j+1] = dt*dxdt_k4[2*j+1];
-    }
-    for (int j = 0; j < N; j++)
-    {
-      x_temp[2*j] = x[2*j] + 439.0/216.0*dxdt_k1[2*j] - 8.0*dxdt_k2[2*j] + 3680.0/513.0*dxdt_k3[2*j] - 845.0/4104.0*dxdt_k4[2*j];
-      x_temp[2*j+1] = x[2*j+1] + 439.0/216.0*dxdt_k1[2*j+1] - 8.0*dxdt_k2[2*j+1] + 3680.0/513.0*dxdt_k3[2*j+1] - 845.0/4104.0*dxdt_k4[2*j+1];
+      x_temp[2*j] = x[2*j] + (439.0/216.0*dxdt_k1[2*j] - 8.0*dxdt_k2[2*j] + 3680.0/513.0*dxdt_k3[2*j] - 845.0/4104.0*dxdt_k4[2*j])*dt;
+      x_temp[2*j+1] = x[2*j+1] + (439.0/216.0*dxdt_k1[2*j+1] - 8.0*dxdt_k2[2*j+1] + 3680.0/513.0*dxdt_k3[2*j+1] - 845.0/4104.0*dxdt_k4[2*j+1])*dt;
     }
     
     // Step 5 in RK
-    compute_fft(dxdt_k5, x, N, alpha, theta, norm);
+    //compute_fft(dxdt_k5, x, N, alpha, theta, norm);
+    for (int j = 0; j < N; j++)
+      compute_derivative(dxdt_k5, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j, theta, norm);
     for (int j = 0; j < N; j++)
     {
-      //compute_derivative(dxdt_k5, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j, theta, norm);
-      dxdt_k5[2*j] = dt*dxdt_k5[2*j];
-      dxdt_k5[2*j+1] = dt*dxdt_k5[2*j+1];
-    }
-    for (int j = 0; j < N; j++)
-    {
-      x_temp[2*j] = x[2*j] - 8.0/27.0*dxdt_k1[2*j] + 2.0*dxdt_k2[2*j] - 3544.0/2565.0*dxdt_k3[2*j] + 1859.0/4104*dxdt_k4[2*j] - 11.0/40.0*dxdt_k5[2*j];
-      x_temp[2*j+1] = x[2*j+1] - 8.0/27.0*dxdt_k1[2*j+1] + 2.0*dxdt_k2[2*j+1] - 3544.0/2565.0*dxdt_k3[2*j+1] + 1859.0/4104*dxdt_k4[2*j+1] - 11.0/40.0*dxdt_k5[2*j+1];
+      x_temp[2*j] = x[2*j] + (-8.0/27.0*dxdt_k1[2*j] + 2.0*dxdt_k2[2*j] - 3544.0/2565.0*dxdt_k3[2*j] + 1859.0/4104*dxdt_k4[2*j] - 11.0/40.0*dxdt_k5[2*j])*dt;
+      x_temp[2*j+1] = x[2*j+1] + (-8.0/27.0*dxdt_k1[2*j+1] + 2.0*dxdt_k2[2*j+1] - 3544.0/2565.0*dxdt_k3[2*j+1] + 1859.0/4104*dxdt_k4[2*j+1] - 11.0/40.0*dxdt_k5[2*j+1])*dt;
     }
     
     // Step 6 in RK
-    compute_fft(dxdt_k6, x, N, alpha, theta, norm);
+    //compute_fft(dxdt_k6, x, N, alpha, theta, norm);
     for (int j = 0; j < N; j++)
-    {
-      //compute_derivative(dxdt_k6, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j, theta, norm);
-      dxdt_k6[2*j] = dt*dxdt_k6[2*j];
-      dxdt_k6[2*j+1] = dt*dxdt_k6[2*j+1];
-    }
+      compute_derivative(dxdt_k6, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j, theta, norm);
     
     for (int j = 0; j < N; j++)
     {
 		// RK4 approx
-  	dxdt_RK4[2*j] = 25.0*dxdt_k1[2*j]/216.0 + 1408.0*dxdt_k3[2*j]/2565.0 + 2197.0*dxdt_k4[2*j]/4104.0 - 0.2*dxdt_k5[2*j];
-  	dxdt_RK4[2*j+1] = 25.0*dxdt_k1[2*j+1]/216.0 + 1408.0*dxdt_k3[2*j+1]/2565.0 + 2197.0*dxdt_k4[2*j+1]/4104.0 - 0.2*dxdt_k5[2*j+1];
+  	dxdt_RK4[2*j] = (25.0*dxdt_k1[2*j]/216.0 + 1408.0*dxdt_k3[2*j]/2565.0 + 2197.0*dxdt_k4[2*j]/4104.0 - 0.2*dxdt_k5[2*j])*dt;
+  	dxdt_RK4[2*j+1] = (25.0*dxdt_k1[2*j+1]/216.0 + 1408.0*dxdt_k3[2*j+1]/2565.0 + 2197.0*dxdt_k4[2*j+1]/4104.0 - 0.2*dxdt_k5[2*j+1])*dt;
     
     // RK5 approx
-		dxdt_RK5[2*j] = 16.0*dxdt_k1[2*j]/135.0 + 6656.0*dxdt_k3[2*j]/12825.0 + 28561.0*dxdt_k4[2*j]/56430.0\
-		 	-9.0*dxdt_k5[2*j]/50.0 + 2.0*dxdt_k6[2*j]/55.0;
-		dxdt_RK5[2*j+1] = 16.0*dxdt_k1[2*j+1]/135.0 + 6656.0*dxdt_k3[2*j+1]/12825.0 + 28561.0*dxdt_k4[2*j+1]/56430.0\
-		 	-9.0*dxdt_k5[2*j+1]/50.0 + 2.0*dxdt_k6[2*j+1]/55.0;
+		dxdt_RK5[2*j] = (16.0*dxdt_k1[2*j]/135.0 + 6656.0*dxdt_k3[2*j]/12825.0 + 28561.0*dxdt_k4[2*j]/56430.0\
+		 	-9.0*dxdt_k5[2*j]/50.0 + 2.0*dxdt_k6[2*j]/55.0)*dt;
+		dxdt_RK5[2*j+1] = (16.0*dxdt_k1[2*j+1]/135.0 + 6656.0*dxdt_k3[2*j+1]/12825.0 + 28561.0*dxdt_k4[2*j+1]/56430.0\
+		 	-9.0*dxdt_k5[2*j+1]/50.0 + 2.0*dxdt_k6[2*j+1]/55.0)*dt;
 
     // RK x approximations
     x_RK4[2*j] = x[2*j] + dxdt_RK4[2*j];
@@ -933,6 +918,7 @@ double runge_kutta45(double* x, double* dxdt_k1, double* dxdt_k2, double* dxdt_k
   return dt_new;
 }
 
+
 double compute_area(double* x, int start, int stop, double* t, double* n,\
                     double* mu, double* beta, double* gamma)
 {
@@ -944,6 +930,7 @@ double compute_area(double* x, int start, int stop, double* t, double* n,\
   
   return area;
 }
+
 
 // Function to normalize the normal
 void normalize(double* n, double* norm, int N)

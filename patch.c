@@ -145,10 +145,10 @@ int main(int argc, char **argv) {
     printf("area1 = %e, area2 = %e \n", area1, area2); 
     
     N_old  = N;
-    //interpolate(x, 0, M, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
-    //interpolate(x, M, N, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
+    interpolate(x, 0, M, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
+    interpolate(x, M, N, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
     
-    //points_reloc(&x, t, n, pN, kappa, mu, beta, gamma, pM1, pM2, 2);
+    points_reloc(&x, t, n, pN, kappa, mu, beta, gamma, pM1, pM2, 2);
     
     //Print to file
     char str[80] = "../results/circle_";

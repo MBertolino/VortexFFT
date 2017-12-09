@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
   N = M + M2;
   n_dim = 2;
   size = N*n_dim;
-  T = 5000;
+  T = 50;
   long double tol_rk45_time, tol_rk45_space, h;
   tol_rk45_time = 1.e-10;
   tol_rk45_space = 1.e-10;

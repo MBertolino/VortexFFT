@@ -789,11 +789,11 @@ void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
 
 double runge_kutta45(double* x, double* dxdt_k1, double* dxdt_k2, double* dxdt_k3, double* dxdt_k4, double* dxdt_k5, double* dxdt_k6, double* dxdt_RK4, double* dxdt_RK5, double tol_rk45_time, double dt, int M, int N, double* mu, double* beta, double* gamma, double* t, double* n, double alpha, double tol_rk45_space, double h, double* time, double theta, double* norm)
 {
-  double dt_new, total_time;
+  double dt_new, total_time, R_max, R[2];
   total_time = *time;
-  double R[2];
-  double R_max;
   R_max = 0.;
+  
+  // Allocate temporary postions
   double *x_temp, *x_RK4, *x_RK5;
   x_temp = (double*)malloc(N*2*sizeof(double));
   x_RK4 = (double*)malloc(N*2*sizeof(double));
@@ -866,21 +866,21 @@ double runge_kutta45(double* x, double* dxdt_k1, double* dxdt_k2, double* dxdt_k
     for (int j = 0; j < N; j++)
     {
 		// RK4 approx
-  	dxdt_RK4[2*j] = (25.0*dxdt_k1[2*j]/216.0 + 1408.0*dxdt_k3[2*j]/2565.0 + 2197.0*dxdt_k4[2*j]/4104.0 - 0.2*dxdt_k5[2*j])*dt;
-  	dxdt_RK4[2*j+1] = (25.0*dxdt_k1[2*j+1]/216.0 + 1408.0*dxdt_k3[2*j+1]/2565.0 + 2197.0*dxdt_k4[2*j+1]/4104.0 - 0.2*dxdt_k5[2*j+1])*dt;
+  	dxdt_RK4[2*j] = (25.0*dxdt_k1[2*j]/216.0 + 1408.0*dxdt_k3[2*j]/2565.0 + 2197.0*dxdt_k4[2*j]/4104.0 - 0.2*dxdt_k5[2*j]);
+  	dxdt_RK4[2*j+1] = (25.0*dxdt_k1[2*j+1]/216.0 + 1408.0*dxdt_k3[2*j+1]/2565.0 + 2197.0*dxdt_k4[2*j+1]/4104.0 - 0.2*dxdt_k5[2*j+1]);
     
     // RK5 approx
 		dxdt_RK5[2*j] = (16.0*dxdt_k1[2*j]/135.0 + 6656.0*dxdt_k3[2*j]/12825.0 + 28561.0*dxdt_k4[2*j]/56430.0\
-		 	-9.0*dxdt_k5[2*j]/50.0 + 2.0*dxdt_k6[2*j]/55.0)*dt;
+		 	-9.0*dxdt_k5[2*j]/50.0 + 2.0*dxdt_k6[2*j]/55.0);
 		dxdt_RK5[2*j+1] = (16.0*dxdt_k1[2*j+1]/135.0 + 6656.0*dxdt_k3[2*j+1]/12825.0 + 28561.0*dxdt_k4[2*j+1]/56430.0\
-		 	-9.0*dxdt_k5[2*j+1]/50.0 + 2.0*dxdt_k6[2*j+1]/55.0)*dt;
+		 	-9.0*dxdt_k5[2*j+1]/50.0 + 2.0*dxdt_k6[2*j+1]/55.0);
 
     // RK x approximations
-    x_RK4[2*j] = x[2*j] + dxdt_RK4[2*j];
-    x_RK4[2*j+1] = x[2*j+1] + dxdt_RK4[2*j+1];
+    x_RK4[2*j] = x[2*j] + dxdt_RK4[2*j]*dt;
+    x_RK4[2*j+1] = x[2*j+1] + dxdt_RK4[2*j+1]*dt;
     
-    x_RK5[2*j] = x[2*j] + dxdt_RK5[2*j];
-    x_RK5[2*j+1] = x[2*j+1] + dxdt_RK5[2*j+1];
+    x_RK5[2*j] = x[2*j] + dxdt_RK5[2*j]*dt;
+    x_RK5[2*j+1] = x[2*j+1] + dxdt_RK5[2*j+1]*dt;
     }
 
     // Compute average error
@@ -902,13 +902,15 @@ double runge_kutta45(double* x, double* dxdt_k1, double* dxdt_k2, double* dxdt_k
   dt_new = 0.9*dt*sqrt(sqrt(tol_rk45_time/R_max));
   total_time += dt;
   printf("dt_new = %e\n", dt_new);
+  
   // Update
   for (int j = 0; j < N; j++)
   {
-    x[2*j] = x[2*j] + dxdt_RK5[2*j];
-    x[2*j+1] = x[2*j+1] + dxdt_RK5[2*j+1];
+    x[2*j] = x_RK5[2*j];
+    x[2*j+1] = x_RK5[2*j+1];
   }
 
+  // Free temporary positions
   free(x_temp);
   free(x_RK4);
   free(x_RK5);

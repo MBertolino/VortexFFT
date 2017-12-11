@@ -4,7 +4,7 @@ CFLAGS = -Wall -O3 -march=native #-Werror
 LDFLAGS = -lfftw3 -lm 
 INCLUDES =
 RM = /bin/rm -f
-OBJS = functions.o
+OBJS = orig_functions.o fft_functions.o misc.o
 PATCH = patch
 FFT = swap
 
@@ -20,14 +20,18 @@ $(PATCH): patch.o $(OBJS)
 $(FFT): swap.o $(OBJS)
 	$(LD) -o $(STATS) swap.o $(OBJS) $(LDFLAGS)
 
-functions.o: functions.c functions.h
-	$(CC) $(CFLAGS) $(INCLUDES) -c functions.c -std=c99
+orig_functions.o: orig_functions.c orig_functions.h
+	$(CC) $(CFLAGS) $(INCLUDES) -c orig_functions.c -std=c99
+
+fft_functions.o: fft_functions.c fft_functions.h
+	$(CC) $(CFLAGS) $(INCLUDES) -c fft_functions.c -std=c99
+
+misc.o: misc.c misc.h
+	$(CC) $(CFLAGS) $(INCLUDES) -c misc.c -std=c99
 
 patch.o: patch.c
 	$(CC) $(CFLAGS) $(INCLUDES) -c patch.c -std=c99
 
-swap.o: swap.c
-	$(CC) $(CFLAGS) $(INCLUDES) -c swap.c -std=c99
 
 cleanres:
 	$(RM) ../results/*.txt

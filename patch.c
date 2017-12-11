@@ -2,7 +2,9 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
-#include "functions.h"
+#include "orig_functions.h"
+#include "fft_functions.h"
+#include "misc.h"
 #include <unistd.h>
 
 #define TWOPI 6.2831853071795864769
@@ -10,186 +12,91 @@
 
 int main(int argc, char **argv) {
   
-  // Number of points
-  int M, M2, N, n_dim, size, T;
+  // Patch parameters
+  int M, M2, N;
+  double alpha, theta, area1, area2;
   M = atoi(argv[1]); // Number of points in each circle
   M2 = atoi(argv[1]);
   N = M + M2;
-  n_dim = 2;
-  size = N*n_dim;
-  T = 50;
-  long double tol_rk45_time, tol_rk45_space, h;
-  tol_rk45_time = 1.e-10;
-  tol_rk45_space = 1.e-10;
-  h = 1.e-4;
-  double alpha, theta, dt, time;
   alpha = 0.7; // Interpolation between 2D Euler and Quasi-geostrophic
   theta = -1.0;
-  dt = 1.e-3;//1.*h;
-  time;
+  
+  // Runge-kutta parameters
+  long double tol_rk45_time, tol_rk45_space, h;
+  tol_rk45_time = 1.e-8;
+  tol_rk45_space = 1.e-10;
+  h = 1.e-4;
+  
+  // Time parameters
+  int T;
+  double dt, time;
+  T = 20000;
+  dt = 1.e-3;
+  time = 0.0;
+  
+  // Interpolation and vector field pointers
+  double *d, *kappa, *mu, *beta, *gamma, *t, *n, *norm;
+  double *k1, *k2, *k3, *k4, *k5, *k6;
   int *pN, *pM1, *pM2;
-  double** px;
-  int zeros;
-  int N_old;
-  time = 0;
   pM1 = &M;
   pM2 = &M2;
-
-  // Allocate points
-  double* x = (double*)malloc(size*sizeof(double));
-  double kappa_den[2];  
-
-  px = &x;
   pN = &N;
-  
-  // Generate circle
+
+  // Generate patch
+  double* x = (double*)malloc(2*N*sizeof(double));
   for (int j = 0; j < M; j++) {
-    x[2*j] =cos(TWOPI*j/(double)M) - 1.1;//cos(TWOPI*j/(double)M) + 0.45*sin(TWOPI*5*j/(double)M); // 
-    x[2*j+1] = sin(TWOPI*j/(double)M);//sin(TWOPI*j/(double)M) + 0.3*cos(TWOPI*3*j/(double)M);
+    x[2*j] = cos(TWOPI*j/(double)M) + 1.1; //cos(TWOPI*j/(double)M) + 0.45*sin(TWOPI*5*j/(double)M); // 
+    x[2*j+1] = sin(TWOPI*j/(double)M); //sin(TWOPI*j/(double)M) + 0.3*cos(TWOPI*3*j/(double)M);
     
-    x[2*j+2*M] =  cos(TWOPI*j/(double)M) + 1.1;
+    x[2*j+2*M] =  cos(TWOPI*j/(double)M) - 1.1;
     x[2*j+1+2*M] = sin(TWOPI*j/(double)M);
   }
-  double area1, area2;
- 
-  // Print to file  
-  char str_start[80] = "../results/circle_start.txt";
-  FILE* f = fopen(str_start, "wb");
-  for (int i = 0; i < N; i++)
-  {
-    if (i == M)
-      fprintf(f, "\n");
-    fprintf(f, "%lf %lf\n", x[2*i], x[2*i+1]);
-  }
-  fclose(f);
   
-  // Evolve
+  // Evolve the patch
   for (int k = 0; k <= T; k++)
   {
-  printf(" \n \n--------------------------\n \n");
+    printf(" \n \n--------------------------\n \n");
     printf("k = %d\n", k);
     
-    // Allocate
-    double* d = (double*)malloc(N*sizeof(double));
-    double* kappa = (double*)malloc(N*sizeof(double));
-    double* mu = (double*)malloc(N*sizeof(double));
-    double* beta = (double*)malloc(N*sizeof(double));
-    double* gamma = (double*)malloc(N*sizeof(double));
-    double* t = (double*)malloc(size*sizeof(double)); 
-    double* n = (double*)malloc(size*sizeof(double));
-    double* norm = (double*)malloc(size*sizeof(double));
-    //double* dxdt = (double*)malloc(size*sizeof(double));
-    //double* dxdt_fft = (double*)malloc(size*sizeof(double));
-    double* dxdt_k1 = (double*)malloc(size*sizeof(double));
-    double* dxdt_k2 = (double*)malloc(size*sizeof(double));
-    double* dxdt_k3 = (double*)malloc(size*sizeof(double));
-    double* dxdt_k4 = (double*)malloc(size*sizeof(double));
-    double* dxdt_k5 = (double*)malloc(size*sizeof(double));
-    double* dxdt_k6 = (double*)malloc(size*sizeof(double));
-    double* dxdt_RK4 = (double*)malloc(size*sizeof(double));
-    double* dxdt_RK5 = (double*)malloc(size*sizeof(double));
+    // Print to file
+    print_to_file(x, M, N, k);
     
-    zeros = size*sizeof(double);
-    //memset(dxdt, 0, zeros);
-    //memset(dxdt_fft, 0, zeros);
-    memset(dxdt_k1, 0, zeros);
-    memset(dxdt_k2, 0, zeros);
-    memset(dxdt_k3, 0, zeros);
-    memset(dxdt_k4, 0, zeros);
-    memset(dxdt_k5, 0, zeros);
-    memset(dxdt_k6, 0, zeros);
-    memset(dxdt_RK4, 0, zeros);
-    memset(dxdt_RK5, 0, zeros);
+    // Allocate
+    allocate(&d, &kappa, &mu, &beta, &gamma, &t, &n, &norm, &k1, &k2, &k3, &k4, &k5, &k6, N);
     
     // Interpolate
-    interpolate(x, 0, M, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
-    interpolate(x, M, N, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
+    //interpolate(x, 0, M, 2, t, n, d, kappa, mu, beta, gamma);
+    //interpolate(x, M, N, 2, t, n, d, kappa, mu, beta, gamma);
      
     // Normalize normal
-    normalize(n, norm, N);
+    //normalize(n, norm, N);
     
-    // Compare FFT and Mancho
-    //  compute_fft(dxdt_fft, x, N, alpha, theta);
-    /* for (int j = 0; j < N; j++)
-      compute_derivative(dxdt, x, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j, theta);
-    */
-    
-    // Print to file
-  /*  char strdx_fft[80] = "../results/dx_fft.txt";
-    char strdx_ama[80] = "../results/dx_ama.txt";
-    FILE* f_fft = fopen(strdx_fft, "wb");
-    FILE* f_ama = fopen(strdx_ama, "wb");
-    for (int j = 0; j < 8; j++)
-    {
-      printf("fft_x[%d, %d] = %e, \t %e\n", 2*j, 2*j+1, -dxdt_fft[2*j]/TWOPI, -dxdt_fft[2*j+1]/TWOPI);
-      printf("ama_x[%d, %d] = %e, \t %e\n\n", 2*j, 2*j+1, -dxdt[2*j]/TWOPI, -dxdt[2*j+1]/TWOPI);
-    }
-    for (int j = 0; j < N; j++)
-    {
-      fprintf(f_fft, "%lf %lf\n", -dxdt_fft[2*j]/TWOPI, -dxdt_fft[2*j+1]/TWOPI);
-      fprintf(f_ama, "%lf %lf\n", -dxdt[2*j]/TWOPI, -dxdt[2*j+1]/TWOPI);
-    } 
-    printf("Done\n");
-    fclose(f_fft);
-    fclose(f_ama);
-    sleep(5);
-    
-    */
     // Evolve patches
-    dt = runge_kutta45(x, dxdt_k1, dxdt_k2, dxdt_k3, dxdt_k4, dxdt_k5,\
-                  dxdt_k6, dxdt_RK4, dxdt_RK5, tol_rk45_time, dt, M, N,\
-                  mu, beta, gamma, t, n, alpha, tol_rk45_space, h, &time, theta, norm);
+    dt = runge_kutta45(x, k1, k2, k3, k4, k5, k6,\
+                       tol_rk45_time, dt, M, N,\
+                  mu, beta, gamma, t, n, alpha, tol_rk45_space, h, theta, norm);
+    time += dt;
     printf("time = %1.15lf\n", time);
-    area1 = compute_area(x, 0, M, t, n, mu, beta, gamma);
-    area2 = compute_area(x, M, N, t, n, mu, beta, gamma);
+    
+    // Compute area
+    //area1 = compute_area(x, 0, M, t, n, mu, beta, gamma);
+    //area2 = compute_area(x, M, N, t, n, mu, beta, gamma);
+    area1 = area_fft(x, 0, M);
+    //area2 = area_fft(x, M, N);
     printf("area1 = %e, area2 = %e \n", area1, area2); 
     
-    N_old  = N;
-    interpolate(x, 0, M, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
-    interpolate(x, M, N, n_dim, t, n, d, kappa, kappa_den, mu, beta, gamma);
-    
-    points_reloc(&x, t, n, pN, kappa, mu, beta, gamma, pM1, pM2, 2);
-    
-    //Print to file
-    char str[80] = "../results/circle_";
-    char str2[80] = "";
-    sprintf(str2, "%d", k);
-    strcat(str, str2);
-    strcat(str, ".txt");
-    FILE* f = fopen(str, "wb");
-    for (int i = 0; i < N; i++)
-    {
-      if (i == M)
-        fprintf(f, "\n");
-      fprintf(f, "%lf %lf\n", x[2*i], x[2*i+1]);
-    }
-    fclose(f);
+    // Reallocate the points
+    //interpolate(x, 0, M, t, n, d, kappa, mu, beta, gamma);
+    //interpolate(x, M, N, t, n, d, kappa, mu, beta, gamma);
+    //points_reloc(&x, t, n, pN, kappa, mu, beta, gamma, pM1, pM2, 2);
+    printf("N = %d\n", N);
 
-    // Redistribute the nodes
-    printf("N = %d, N_old = %d \n", N, N_old);
-    size = N*n_dim;
     
     // Free memory
-    free(d);
-    free(kappa);
-    free(mu);
-    free(beta);
-    free(gamma); 
-    free(t);
-    free(n);
-    free(norm);
-    //free(dxdt);
-    //free(dxdt_fft);
-    free(dxdt_k1);
-    free(dxdt_k2);
-    free(dxdt_k3);
-    free(dxdt_k4);
-    free(dxdt_k5);
-    free(dxdt_k6);
-    free(dxdt_RK4);
-    free(dxdt_RK5);
+    free_step(d, kappa, mu, beta, gamma, t, n, norm, k1, k2, k3, k4, k5, k6);
   }
   free(x);
 
   return 0;
 }
+

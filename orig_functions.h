@@ -4,7 +4,7 @@ void interpolate(double* x, int start, int N, double* t, double* n,\
 void autder(double* f, double* c_coeff, double alpha, int order);
 
 // Return the derivative of x
-void compute_derivative(double* dxdt, double* x, double* mu, double* beta, double* gamma, double* t, double* n, int M, int N, double alpha, double h, double eps, int j, double theta, double* norm);
+void vfield_orig(double* dxdt, double* x, double* mu, double* beta, double* gamma, double* t, double* n, int M, int N, double alpha, double h, double eps, double theta, double* norm);
 
 // Evaluate integral in case 1 and 2
 void evaluate_integral(double* dxdt, double mu_i, double beta_i, double gamma_i,\

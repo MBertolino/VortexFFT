@@ -25,6 +25,7 @@ void print_to_file(double* x, int M, int N, int k)
   fclose(f);
 }
 
+
 void allocate(double** d, double** kappa, double** mu, double** beta, double** gamma, double** t, double** n, double** norm, double** k1, double** k2, double** k3, double** k4, double** k5, double** k6, int N)
 {
   int size, zeros;
@@ -84,9 +85,15 @@ void free_step(double* d, double* kappa, double* mu, double* beta, double* gamma
 }
 
 
-double distance(double x_i, double x_j, double y_i, double y_j)
+double distance(double a_x, double a_y, double b_x, double b_y)
 {
-  return sqrt((x_i - x_j)*(x_i - x_j) + (y_i - y_j)*(y_i - y_j));
+  return sqrt((a_x - b_x)*(a_x - b_x) + (a_y - b_y)*(a_y - b_y));
+}
+
+
+double scalar_prod(double a_x, double a_y, double b_x, double b_y)
+{
+  return a_x*b_x + a_y*b_y;
 }
 
 
@@ -107,39 +114,43 @@ double runge_kutta45(double* x, double* k1, double* k2, double* k3, double* k4, 
   do
   {
     // Step 1 in RK
-    vfield_fft(k1, x, N, alpha, theta);
+    vfield_fft(k1, x, M, N, alpha, theta);
+    //vfield_orig(k1, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, theta, norm);
     for (int j = 0; j < 2*N; j++)
       x_temp[j] = x[j] + dt*0.25*k1[j];
     
     // Step 2 in RK
-    vfield_fft(k2, x, N, alpha, theta);
+    vfield_fft(k2, x, M, N, alpha, theta);
+    //vfield_orig(k2, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, theta, norm);
     for (int j = 0; j < 2*N; j++)
       x_temp[j] = x[j] + dt*(3.0*k1[j] + 9.0*k2[j])/32.0;
 
     // Step 3 in RK
-    vfield_fft(k3, x, N, alpha, theta);
+    vfield_fft(k3, x, M, N, alpha, theta);
+    //vfield_orig(k3, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, theta, norm);
     for (int j = 0; j < 2*N; j++)
       x_temp[j] = x[j] + dt*(1932.*k1[j] - 7200.*k2[j] + 7296.*k3[j])/2197.;
       
     // Step 4 in RK
-    vfield_fft(k4, x, N, alpha, theta);
+    vfield_fft(k4, x, M, N, alpha, theta);
+    //vfield_orig(k4, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, theta, norm);
     for (int j = 0; j < 2*N; j++)
       x_temp[j] = x[j] + dt*(439./216.*k1[j] - 8.*k2[j] + 3680./513.*k3[j] - 845./4104.*k4[j]);
     
     // Step 5 in RK
-    vfield_fft(k5, x, N, alpha, theta);
+    vfield_fft(k5, x, M, N, alpha, theta);
+    //vfield_orig(k5, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, theta, norm);
     for (int j = 0; j < 2*N; j++)
       x_temp[j] = x[j] + dt*(-8./27.*k1[j] + 2.*k2[j] - 3544./2565.*k3[j]\
                           + 1859./4104.*k4[j] - 11./40.*k5[j]);
       
     // Step 6 in RK
-    vfield_fft(k6, x, N, alpha, theta);
-    //for (int j = 0; j < N; j++)
-      //compute_derivative(k6, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j, theta, norm);
+    vfield_fft(k6, x, M, N, alpha, theta);
+    //vfield_orig(k6, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, theta, norm);
     
+    // RK4 and RK5 approx
     for (int j = 0; j < 2*N; j++)
     {
-		  // RK4 and RK5 approx
     	x_RK4[j] = x[j] + dt*(25./216.*k1[j] + 1408./2565.*k3[j] + 2197./4104.*k4[j] - 0.2*k5[j]);
 	  	x_RK5[j] = x[j] + dt*(16./135.*k1[j] + 6656./12825.*k3[j] + 28561./56430.*k4[j] - 9./50.*k5[j]+2./55.*k6[j]);
     }
@@ -161,16 +172,14 @@ double runge_kutta45(double* x, double* k1, double* k2, double* k3, double* k4, 
     }
     
     // Predict next time step
-    //dt_new = 0.9*dt*sqrt(sqrt(tol_rk45_time/R));
-    dt_new = sqrt(sqrt((1.e-12*dt/(2.*R))))*dt;
+    dt_new = 0.9*dt*sqrt(sqrt(tol_rk45_time/R));
+    //dt_new = sqrt(sqrt((1.e-12*dt/(2.*R))))*dt;
     printf("dt_new = %e\n", dt_new);
     if (dt_new > 2.5e-4)
       dt_new = 2.5e-4;
     
     printf("dt = %e\n\n", dt);
   } while (R > tol_rk45_time);
-  
-
   
   // Update position
   for (int j = 0; j < 2*N; j++)

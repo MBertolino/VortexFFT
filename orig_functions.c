@@ -1,4 +1,5 @@
 #include "orig_functions.h"
+#include "misc.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -34,15 +35,15 @@ void interpolate(double* x, int start, int N, double* t, double* n,\
   d[N-1] = sqrt(t[2*N-2]*t[2*N-2] + t[2*N-1]*t[2*N-1]);
 
   // kappa local curvature
-  kappa_den[0] = d[N-1]*d[N-1]*t[2*start] + d[start]*d[start]*t[2*N-2];
-  kappa_den[1] = d[N-1]*d[N-1]*t[2*start+1] + d[start]*d[start]*t[2*N-1];
+  kappa_den[0] = scalar_prod(d[N-1]*d[N-1], d[start]*d[start], t[2*start], t[2*N-2]);
+  kappa_den[1] = scalar_prod(d[N-1]*d[N-1], d[start]*d[start], t[2*start+1], t[2*N-1]);
   kappa[start] = 2.*(t[2*N-2]*t[2*start+1] - t[2*N-1]*t[2*start])\
     /sqrt(kappa_den[0]*kappa_den[0] + kappa_den[1]*kappa_den[1]);
     
   for (int j = start+1; j < N; j++) {
     // kappa local curvature
-    kappa_den[0] = (d[j-1]*d[j-1]*t[2*j] + d[j]*d[j]*t[2*j-2]);
-    kappa_den[1] = (d[j-1]*d[j-1]*t[2*j+1] + d[j]*d[j]*t[2*j-1]);
+    kappa_den[0] = scalar_prod(d[j-1]*d[j-1], d[j]*d[j], t[2*j], t[2*j-2]);
+    kappa_den[1] = scalar_prod(d[j-1]*d[j-1], d[j]*d[j], t[2*j+1], t[2*j-1]);
     kappa[j] = 2.*(t[2*j-2]*t[2*j+1] - t[2*j-1]*t[2*j])\
       /sqrt(kappa_den[0]*kappa_den[0] + kappa_den[1]*kappa_den[1]);
   }
@@ -97,171 +98,154 @@ void autder(double* f, double* c_coeff, double alpha, int order)
 }
 
 
-void compute_derivative(double* dxdt, double* x, double* mu, double* beta, double* gamma, double* t, double* n, int M, int N, double alpha, double h, double tol_rk45_space, int j, double theta, double* norm)
+void vfield_orig(double* dxdt, double* x, double* mu, double* beta, double* gamma, double* t, double* n, int M, int N, double alpha, double h, double tol_rk45_space, double theta, double* norm)
 {
-  //printf("Entering compute derivative\n");
+  // Setup parameters
   double d_x, d_ni, d_ti, d_xi, Q, f, dxdt_norm;
-  dxdt_norm = 0.;
   int order = 11;
   Q = 0.0001;
   f = 1./sqrt(Q);
-  double dxdt_j[2];
-  dxdt_j[0] = 0.;
-  dxdt_j[1] = 0.;
-  double x_i[2], x_j[2];
+  double dxdt_j[2], x_i[2], x_j[2];
   
   // Generate coefficients
   double n_i[2], t_i[2]; 
   double c[order], g[order];
   double poly_coeff_c[order], poly_coeff_g[order];
   double mu_2, beta_2;
-  x_j[0] = x[2*j];
-  x_j[1] = x[2*j+1];
   
-  // Evolve the contour integrals
-  for (int i = 0; i < N; i++)
+  for (int j = 0; j < N; j++)
   {
-    t_i[0] = t[2*i];
-    t_i[1] = t[2*i+1];
-    n_i[0] = n[2*i];
-    n_i[1] = n[2*i+1];
-    x_i[0] = x[2*i];
-    x_i[1] = x[2*i+1];
-
-	  d_x = sqrt((x[2*i] - x[2*j])*(x[2*i] - x[2*j])\
-				  + (x[2*i+1] - x[2*j+1])*(x[2*i+1]- x[2*j+1]));
-    d_ti = -((x[2*j] - x[2*i])*t[2*i] + (x[2*j+1] - x[2*i+1])*t[2*i+1]);
-    d_ni = -((x[2*j] - x[2*i])*n[2*i] + (x[2*j+1] - x[2*i+1])*n[2*i+1]);
-   
-    // Distance between x_i and x_{i+1}
-    if (i+1 == M)
+    dxdt_j[0] = 0.;
+    dxdt_j[1] = 0.;
+    x_j[0] = x[2*j];
+    x_j[1] = x[2*j+1];
+  
+    // Evolve the contour integrals
+    for (int i = 0; i < N; i++)
     {
-      d_xi = sqrt((x[0] - x[2*i])*(x[0] - x[2*i])\
-           + (x[1] - x[2*i+1])*(x[1] - x[2*i+1]));
-    }
-    else if (i+1 == N)
-    {
-      d_xi = sqrt((x[2*M] - x[2*i])*(x[2*M] - x[2*i])\
-           + (x[2*M+1] - x[2*i+1])*(x[2*M+1] - x[2*i+1]));
-    }
-    else
-    {
-        d_xi = sqrt((x[2*i+2] - x[2*i])*(x[2*i+2] - x[2*i])\
-             + (x[2*i+3] - x[2*i+1])*(x[2*i+3] - x[2*i+1])); 
-    }
-    
-    // Initialize Taylor coefficients
-    for (int n = 0; n < order; n++)
-    {
-      c[n] = 0.;
-      g[n] = 0.;
-      poly_coeff_c[n] = 0.;
-      poly_coeff_g[n] = 0.;
-    }
-    poly_coeff_c[0] = 1.;
-    poly_coeff_g[0] = 1.;
-    
-    // Evaluate integrals
-    if ((i+1 == M && j == 0) || (i+1 == N && j == M))
-    {
-      // Edge case
-      // Case 2: Use formula (29) with shifted params
-
-      // Update parameters
-      mu_2 = mu[i] + 2.*beta[i] + 3.*gamma[i];
-      beta_2 = -beta[i] - 3.*gamma[i];
+      t_i[0] = t[2*i];
+      t_i[1] = t[2*i+1];
+      n_i[0] = n[2*i];
+      n_i[1] = n[2*i+1];
+      x_i[0] = x[2*i];
+      x_i[1] = x[2*i+1];
       
-      // Generate Taylor coefficients
-      poly_coeff_c[1] = 2.*mu_2*beta_2/(1. + mu_2*mu_2);
-      poly_coeff_c[2] = (beta_2*beta_2 + 2.*mu_2*gamma[i])/(1. + mu_2*mu_2);
-      poly_coeff_c[3] = 2.*beta_2*gamma[i]/(1. + mu_2*mu_2);
-      poly_coeff_c[4] = gamma[i]*gamma[i]/(1. + mu_2*mu_2);
-      
-      autder(c, poly_coeff_c, 0.5*alpha, order);
-      
-      // Look at inputs in these functions
-      evaluate_integral(dxdt_j, mu_2, beta_2, gamma[i], t_i, n_i, c, alpha); 
-    
-    }
-    else
-    {
-      
-      if ((x[2*i] == x[2*j]) && (x[2*i+1] == x[2*j+1]))
+	    d_x = distance(x[2*i], x[2*j], x[2*i+1], x[2*j+1]);
+      d_ti = -scalar_prod(x[2*j] - x[2*i], x[2*j+1] - x[2*i+1], t[2*i], t[2*i+1]);
+      d_ni = -scalar_prod(x[2*j] - x[2*i], x[2*j+1] - x[2*i+1], n[2*i], n[2*i+1]);
+      d_ni = -scalar_prod(x[2*j] - x[2*i], x[2*j+1] - x[2*i+1], n[2*i], n[2*i+1]);
+       
+      // Distance between x_i and x_{i+1}
+      if (i+1 == M)
       {
-        // Case 1: Use formula (29)
-        
-        // Generate Taylor coefficients
-        poly_coeff_c[1] = 2.*mu[i]*beta[i]/(1. + mu[i]*mu[i]);
-        poly_coeff_c[2] = (beta[i]*beta[i] + 2.*mu[i]*gamma[i])/(1. + mu[i]*mu[i]);
-        poly_coeff_c[3] = 2.*beta[i]*gamma[i]/(1. + mu[i]*mu[i]);
-        poly_coeff_c[4] = gamma[i]*gamma[i]/(1. + mu[i]*mu[i]);
-
-        autder(c, poly_coeff_c, 0.5*alpha, order);
-        
-        evaluate_integral(dxdt_j, mu[i], beta[i], gamma[i], t_i, n_i, c, alpha);
+        d_xi = distance(x[0], x[2*i], x[1], x[2*i+1]);
       }
-      else if ((i == j-1) && (i != M-1))
+      else if (i+1 == N)
       {
+        d_xi = distance(x[2*M], x[2*i], x[2*M+1], x[2*i+1]);
+      }
+      else
+      {
+        d_xi = distance(x[2*i+2], x[2*i], x[2*i+3], x[2*i+1]);
+      }
+      
+      // Initialize Taylor coefficients
+      for (int n = 0; n < order; n++)
+      {
+        c[n] = 0.;
+        g[n] = 0.;
+        poly_coeff_c[n] = 0.;
+        poly_coeff_g[n] = 0.;
+      }
+      poly_coeff_c[0] = 1.;
+      poly_coeff_g[0] = 1.;
+          
+      // Evaluate integrals
+      if ((i+1 == M && j == 0) || (i+1 == N && j == M))
+      {
+        // Edge case
         // Case 2: Use formula (29) with shifted params
-        
-		    // Update parameters
+      
+        // Update parameters
         mu_2 = mu[i] + 2.*beta[i] + 3.*gamma[i];
         beta_2 = -beta[i] - 3.*gamma[i];
-      
+          
         // Generate Taylor coefficients
         poly_coeff_c[1] = 2.*mu_2*beta_2/(1. + mu_2*mu_2);
         poly_coeff_c[2] = (beta_2*beta_2 + 2.*mu_2*gamma[i])/(1. + mu_2*mu_2);
         poly_coeff_c[3] = 2.*beta_2*gamma[i]/(1. + mu_2*mu_2);
         poly_coeff_c[4] = gamma[i]*gamma[i]/(1. + mu_2*mu_2);
-      
         autder(c, poly_coeff_c, 0.5*alpha, order);
         
         evaluate_integral(dxdt_j, mu_2, beta_2, gamma[i], t_i, n_i, c, alpha); 
-
-      }
-      else if (d_x > f*d_xi)
-      {
-        // Case 3: Use formula (31)
-        
-        // Generate Taylor coefficients
-        poly_coeff_g[1] = (d_ti + d_ni*mu[i])/(d_x*d_x);
-        
-        poly_coeff_g[2] = ((t[2*i]*t[2*i] + t[2*i+1]*t[2*i+1])\
-                        + mu[i]*mu[i]*(n[2*i]*n[2*i] + n[2*i+1]*n[2*i+1])\
-                        + d_ni*beta[i])/(d_x*d_x);
-        
-        poly_coeff_g[3] = (2.*mu[i]*beta[i]*(n[2*i]*n[2*i]\
-                        + n[2*i+1]*n[2*i+1]) + d_ni*gamma[i])/(d_x*d_x);
-        
-        poly_coeff_g[4] = ((beta[i]*beta[i] + 2.*mu[i]*gamma[i])\
-                        *(n[2*i]*n[2*i] + n[2*i+1]*n[2*i+1]))/(d_x*d_x);
-        
-        poly_coeff_g[5] = 2.*beta[i]*gamma[i]*(n[2*i]*n[2*i]\
-                        + n[2*i+1]*n[2*i+1])/(d_x*d_x);
-        
-        poly_coeff_g[6] = (gamma[i]*gamma[i]*(n[2*i]*n[2*i]\
-                        + n[2*i+1]*n[2*i+1]))/(d_x*d_x);
-        
-        autder(g, poly_coeff_g, 0.5*alpha, order);
-        
-        evaluate_integral_g(dxdt_j, mu[i], beta[i], gamma[i], d_x, d_ni, d_ti, t_i, n_i, g, alpha);
-
       }
       else
       {
-        // Case 4: Use Runge-Kutta 4-5       
-        evaluate_integral_RK(dxdt_j, x_i, x_j, mu[i], beta[i], gamma[i], tol_rk45_space, h, t_i, n_i, alpha);
+        if ((x[2*i] == x[2*j]) && (x[2*i+1] == x[2*j+1]))
+        {
+          // Case 1: Use formula (29)
+         
+          // Generate Taylor coefficients
+          poly_coeff_c[1] = 2.*mu[i]*beta[i]/(1. + mu[i]*mu[i]);
+          poly_coeff_c[2] = (beta[i]*beta[i] + 2.*mu[i]*gamma[i])/(1. + mu[i]*mu[i]);
+          poly_coeff_c[3] = 2.*beta[i]*gamma[i]/(1. + mu[i]*mu[i]);
+          poly_coeff_c[4] = gamma[i]*gamma[i]/(1. + mu[i]*mu[i]);
+          autder(c, poly_coeff_c, 0.5*alpha, order);
+
+          evaluate_integral(dxdt_j, mu[i], beta[i], gamma[i], t_i, n_i, c, alpha);
+        }
+        else if ((i == j-1) && (i != M-1))
+        {
+          // Case 2: Use formula (29) with shifted params
+          
+		      // Update parameters
+          mu_2 = mu[i] + 2.*beta[i] + 3.*gamma[i];
+          beta_2 = -beta[i] - 3.*gamma[i];
+          
+          // Generate Taylor coefficients
+          poly_coeff_c[1] = 2.*mu_2*beta_2/(1. + mu_2*mu_2);
+          poly_coeff_c[2] = (beta_2*beta_2 + 2.*mu_2*gamma[i])/(1. + mu_2*mu_2);
+          poly_coeff_c[3] = 2.*beta_2*gamma[i]/(1. + mu_2*mu_2);
+          poly_coeff_c[4] = gamma[i]*gamma[i]/(1. + mu_2*mu_2);
+          autder(c, poly_coeff_c, 0.5*alpha, order);
+          
+          evaluate_integral(dxdt_j, mu_2, beta_2, gamma[i], t_i, n_i, c, alpha); 
+        }
+        else if (d_x > f*d_xi)
+        {
+          // Case 3: Use formula (31)
+          
+          // Generate Taylor coefficients
+          poly_coeff_g[1] = (d_ti + d_ni*mu[i])/(d_x*d_x);
+          poly_coeff_g[2] = ((t[2*i]*t[2*i] + t[2*i+1]*t[2*i+1])\
+                          + mu[i]*mu[i]*(n[2*i]*n[2*i] + n[2*i+1]*n[2*i+1])\
+                          + d_ni*beta[i])/(d_x*d_x);
+          poly_coeff_g[3] = (2.*mu[i]*beta[i]*(n[2*i]*n[2*i]\
+                          + n[2*i+1]*n[2*i+1]) + d_ni*gamma[i])/(d_x*d_x);
+          poly_coeff_g[4] = ((beta[i]*beta[i] + 2.*mu[i]*gamma[i])\
+                          *(n[2*i]*n[2*i] + n[2*i+1]*n[2*i+1]))/(d_x*d_x);
+          poly_coeff_g[5] = 2.*beta[i]*gamma[i]*(n[2*i]*n[2*i] + n[2*i+1]*n[2*i+1])/(d_x*d_x);
+          poly_coeff_g[6] = (gamma[i]*gamma[i]*(n[2*i]*n[2*i] + n[2*i+1]*n[2*i+1]))/(d_x*d_x);
+          autder(g, poly_coeff_g, 0.5*alpha, order);
+          
+          evaluate_integral_g(dxdt_j, mu[i], beta[i], gamma[i], d_x, d_ni, d_ti, t_i, n_i, g, alpha);
+        }
+        else
+        {
+          // Case 4: Use Runge-Kutta 4-5       
+          evaluate_integral_RK(dxdt_j, x_i, x_j, mu[i], beta[i], gamma[i], tol_rk45_space, h, t_i, n_i, alpha);
+        }
       }
     }
+  
+    // Update globally
+    dxdt_norm = scalar_prod(dxdt_j[0], dxdt_j[1], norm[2*j], norm[2*j+1])*theta/TWOPI;
+    dxdt[2*j] = norm[2*j]*dxdt_norm;
+    dxdt[2*j+1] = norm[2*j+1]*dxdt_norm;
+    
+    //dxdt[2*j] = dxdt_j[0]*theta/TWOPI;
+    //dxdt[2*j+1] = dxdt_j[1]*theta/TWOPI;
   }
-  
-  // Update globally
-  //dxdt_norm = (dxdt_j[0]*norm[2*j] + dxdt_j[1]*norm[2*j+1])*theta/TWOPI;
-  //dxdt[2*j] = norm[2*j]*dxdt_norm;
-  //dxdt[2*j+1] = norm[2*j+1]*dxdt_norm;
-  
-  dxdt[2*j] = dxdt_j[0]*theta/TWOPI;
-  dxdt[2*j+1] = dxdt_j[1]*theta/TWOPI;
   
   return;
 }
@@ -732,6 +716,8 @@ void normalize(double* n, double* norm, int N)
     norm[2*i] = n[2*i]/denom;
     norm[2*i + 1] = n[2*i + 1]/denom; 
   } 
+  
+  return;
 }
 
 
@@ -739,7 +725,7 @@ void normalize(double* n, double* norm, int N)
     // Compare FFT and Mancho
      vfield_fft(dxdt_fft, x, N, alpha, theta);
      for (int j = 0; j < N; j++)
-      compute_derivative(dxdt, x, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j, theta, norm);
+      vfield_orig(dxdt, x, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j, theta, norm);
 
     // Print to file
     char strdx_fft[80] = "../results/dx_fft.txt";

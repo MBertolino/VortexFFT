@@ -1,12 +1,14 @@
 #include "fft_functions.h"
+#include "misc.h"
 #include <stdlib.h>
 #include <math.h>
 #include <complex.h>
 #include <fftw3.h>
 
 
-void derivative_fft(double* x, double* dx, int N)
-{
+void derivative_fft(double* x, double* dx, int start, int stop)
+{ 
+  int N = stop - start;
   int N_points = N/2;
   double k[N];
   
@@ -33,8 +35,8 @@ void derivative_fft(double* x, double* dx, int N)
   // Fourier transform x_i(p, t)
   for (int i = 0; i < N; i++)
   {
-    in_x[i] = x[2*i];
-    in_y[i] = x[2*i+1];
+    in_x[i] = x[2*(start + i)];
+    in_y[i] = x[2*(start + i)+1];
   }
   fftw_execute(plan_for_x); // Thread safe
   fftw_execute(plan_for_y);
@@ -50,8 +52,8 @@ void derivative_fft(double* x, double* dx, int N)
   
   for (int i = 0; i < N; i++)
   {
-    dx[2*i] = creal(out_x[i])/((double)N);
-    dx[2*i+1] = creal(out_y[i])/((double)N);
+    dx[2*(start + i)] = creal(out_x[i])/((double)N);
+    dx[2*(start + i)+1] = creal(out_y[i])/((double)N);
   }
   
   // Free
@@ -69,14 +71,15 @@ void derivative_fft(double* x, double* dx, int N)
 }
 
 
-void vfield_fft(double* dxdt, double* x, int N, double alpha, double theta)
+void vfield_fft(double* dxdt, double* x, int M, int N, double alpha, double theta)
 {
 
   double alpha_d_x;
   double* dx = (double*)malloc(2*N*sizeof(double));
   
   // Compute derivative in nominator
-  derivative_fft(x, dx, N);
+  derivative_fft(x, dx, 0, M);
+  derivative_fft(x, dx, M, N);
   
   // Estimate integral using Riemann sum 
   for (int j = 0; j < N; j++)
@@ -87,8 +90,7 @@ void vfield_fft(double* dxdt, double* x, int N, double alpha, double theta)
         continue;
 
       // Denominator
-      alpha_d_x = pow(sqrt((x[2*i] - x[2*j])*(x[2*i] - x[2*j])\
-                           + (x[2*i+1] - x[2*j+1])*(x[2*i+1] - x[2*j+1])), alpha);
+      alpha_d_x = pow(distance(x[2*i], x[2*i+1], x[2*j], x[2*j+1]), alpha);
       
       // Minus tangent
       dxdt[2*j] += (dx[2*i] - dx[2*j])/alpha_d_x;

@@ -75,16 +75,16 @@ int main(int argc, char **argv) {
     printf("time = %1.15lf\n", time);
     
     // Compute area
-    area1 = compute_area(x, 0, M, t, n, mu, beta, gamma);
-    area2 = compute_area(x, M, N, t, n, mu, beta, gamma);
-    //area1 = area_fft(x, 0, M);
-    //area2 = area_fft(x, M, N);
+    //area1 = compute_area(x, 0, M, t, n, mu, beta, gamma);
+    //area2 = compute_area(x, M, N, t, n, mu, beta, gamma);
+    area1 = area_fft(x, 0, M);
+    area2 = area_fft(x, M, N);
     printf("area1 = %e, area2 = %e \n", area1, area2); 
     
     // Reallocate the points
-    //interpolate(x, 0, M, t, n, d, kappa, mu, beta, gamma);
-    //interpolate(x, M, N, t, n, d, kappa, mu, beta, gamma);
-    //points_reloc(&x, t, n, &N, kappa, mu, beta, gamma, &M, &M2, 2);
+    interpolate(x, 0, M, t, n, d, kappa, mu, beta, gamma);
+    interpolate(x, M, N, t, n, d, kappa, mu, beta, gamma);
+    points_reloc(&x, t, n, &N, kappa, mu, beta, gamma, &M, &M2, 2);
     printf("N = %d\n", N);
     
     // Free memory

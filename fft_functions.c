@@ -119,13 +119,12 @@ void vfield_fft(double* dxdt, double* x, int M, int N, double alpha, double thet
   }  
   aux_0 = 0.;
   aux_1 = 0.;
+  
   // Estimate integral using Riemann sum 
   for (int j = M; j < N; j++)
   {
     for (int i = 0; i < M; i++)
     {
-   
-
       // Denominator
       alpha_d_x = pow(distance(x[2*i], x[2*i+1], x[2*j], x[2*j+1]), alpha);
       
@@ -153,9 +152,7 @@ void vfield_fft(double* dxdt, double* x, int M, int N, double alpha, double thet
     }
     dxdt[2*j] = aux_0 + dxdt[2*j]*theta/((double)(N-M));
     dxdt[2*j+1] = aux_1 + dxdt[2*j+1]*theta/((double)(N-M));
-  
   }  
-  
   
   free(dx);
   

@@ -105,7 +105,7 @@ void vfield_orig(double* dxdt, double* x, double* mu, double* beta, double* gamm
   int order = 11;
   Q = 0.0001;
   f = 1./sqrt(Q);
-  double dxdt_j[2], x_i[2], x_j[2];
+  double dxdt_j[2], x_i[2], x_j[2], tangent[2];
   
   // Generate coefficients
   double n_i[2], t_i[2]; 
@@ -239,12 +239,16 @@ void vfield_orig(double* dxdt, double* x, double* mu, double* beta, double* gamm
     }
   
     // Update globally
-    dxdt_norm = scalar_prod(dxdt_j[0], dxdt_j[1], norm[2*j], norm[2*j+1])*theta/TWOPI;
-    dxdt[2*j] = norm[2*j]*dxdt_norm;
-    dxdt[2*j+1] = norm[2*j+1]*dxdt_norm;
+    //dxdt_norm = scalar_prod(dxdt_j[0], dxdt_j[1], norm[2*j], norm[2*j+1])*theta/TWOPI;
+    //dxdt[2*j] = norm[2*j]*dxdt_norm;
+    //dxdt[2*j+1] = norm[2*j+1]*dxdt_norm;
     
-    //dxdt[2*j] = dxdt_j[0]*theta/TWOPI;
-    //dxdt[2*j+1] = dxdt_j[1]*theta/TWOPI;
+    tangent[0] = t[2*j] - mu[j]*n[2*j];
+    tangent[1] = t[2*j+1] - mu[j]*n[2*j+1];
+    normalize(tangent, 2);
+    
+    dxdt[2*j] = (dxdt_j[0] - tangent[0])*theta/TWOPI;
+    dxdt[2*j+1] = (dxdt_j[1] - tangent[1])*theta/TWOPI;
   }
   
   return;
@@ -703,14 +707,14 @@ double compute_area(double* x, int start, int stop, double* t, double* n,\
 }
 
 // Function to normalize the normal
-void normalize(double* n, double* norm, int N)
+void normalize(double* norm, int N)
 {
   double denom;
   for (int i = 0; i < N; i++)
   {
-    denom = sqrt(n[2*i]*n[2*i] + n[2*i + 1]*n[2*i + 1]);
-    norm[2*i] = n[2*i]/denom;
-    norm[2*i + 1] = n[2*i + 1]/denom; 
+    denom = sqrt(norm[2*i]*norm[2*i] + norm[2*i + 1]*norm[2*i + 1]);
+    norm[2*i] = norm[2*i]/denom;
+    norm[2*i + 1] = norm[2*i + 1]/denom; 
   } 
   
   return;

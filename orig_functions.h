@@ -35,4 +35,4 @@ void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
 double compute_area(double* x, int start, int stop, double* t, double* n,\
                     double* mu, double* beta, double* gamma);
 
-void normalize(double* n, double* norm, int N);
+void normalize(double* norm, int N);

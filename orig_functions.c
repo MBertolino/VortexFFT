@@ -482,8 +482,9 @@ void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
   
   double *x;
   x = *px;
-  int N, N_tilde, i_idx, j_idx;
-  N = *pN;
+  int N_tilde, i_idx, j_idx;
+  i_idx = 0;
+  j_idx = 0;
   double epsilon, L, a, v;
   epsilon = 1.e-6;
   L = 3.0;
@@ -494,8 +495,7 @@ void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
   M[1] = *pM1;
   M[2] = *pM2;
   N_tilde = 0;
-  double q, p, S;
-  int i_hat = 1;
+  double q, p;
   // Either calculate all d[j]'s here or use input
   // Same goes with kappa and h
   double *d, *kappa_bar, *kappai_breve, *kappai_tilde, *sigmai_prim;
@@ -615,16 +615,12 @@ void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
 	  // Relocation of points
     for (int j = 2; j <= N_tilde; j++)
     {
-
-
-    	S = 0.;
     	for (int i = 0; i < M[k]; i++)
     	{
     	  i_idx = i + M[k-1];
      		p = (j - 1 - sum[i])/sigmai_prim[i];
      		if (p > 0 && p < 1)
      		{
-    			i_hat = i;
     			x_patch[k-1][2*(j-1)] = x[2*i_idx] + (t[2*i_idx] + (mu[i_idx] + beta[i_idx]*p + gamma[i_idx]*p*p)*n[2*i_idx])*p;
         	x_patch[k-1][2*(j-1) + 1] = x[2*i_idx + 1] + (t[2*i_idx + 1] + (mu[i_idx] + beta[i_idx]*p + gamma[i_idx]*p*p)*n[2*i_idx + 1])*p;
           //printf("p = %e, i = %d, j = %d,   sum[%d] = %e\n", p, i, j, i, sum[i]);

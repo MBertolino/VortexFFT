@@ -174,10 +174,10 @@ double runge_kutta45(double* x, double* k1, double* k2, double* k3, double* k4, 
     // Predict next time step
     dt_new = 0.9*dt*sqrt(sqrt(tol_rk45_time/R));
     //dt_new = sqrt(sqrt((1.e-12*dt/(2.*R))))*dt;
-    printf("dt_new = %e\n", dt_new);
+
     if (dt_new > 2.5e-4)
       dt_new = 2.5e-4;
-    
+    printf("dt_new = %e\n", dt_new);    
     printf("dt = %e\n\n", dt);
   } while (R > tol_rk45_time);
   

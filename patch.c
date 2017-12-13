@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
   // Time parameters
   int T;
   double dt, time;
-  T = 20000;
+  T = 200000;
   dt = 1.e-3;
   time = 0.0;
   
@@ -55,7 +55,8 @@ int main(int argc, char **argv) {
     printf("k = %d\n", k);
     
     // Print to file
-    print_to_file(x, M, N, k);
+    //if (k % 100 == 0)
+      print_to_file(x, M, N, k);
     
     // Allocate
     allocate(&d, &kappa, &mu, &beta, &gamma, &t, &n, &norm, &k1, &k2, &k3, &k4, &k5, &k6, N);

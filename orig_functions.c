@@ -101,7 +101,7 @@ void autder(double* f, double* c_coeff, double alpha, int order)
 void vfield_orig(double* dxdt, double* x, double* mu, double* beta, double* gamma, double* t, double* n, int M, int N, double alpha, double h, double tol_rk45_space, double theta, double* norm)
 {
   // Setup parameters
-  double d_x, d_ni, d_ti, d_xi, Q, f, dxdt_norm;
+  double d_x, d_ni, d_ti, d_xi, Q, f, dxdt_tan;
   int order = 11;
   Q = 0.0001;
   f = 1./sqrt(Q);
@@ -243,12 +243,13 @@ void vfield_orig(double* dxdt, double* x, double* mu, double* beta, double* gamm
     //dxdt[2*j] = norm[2*j]*dxdt_norm;
     //dxdt[2*j+1] = norm[2*j+1]*dxdt_norm;
     
+    // Tangential projection
     tangent[0] = t[2*j] - mu[j]*n[2*j];
     tangent[1] = t[2*j+1] - mu[j]*n[2*j+1];
     normalize(tangent, 2);
-    
-    dxdt[2*j] = (dxdt_j[0] - tangent[0])*theta/TWOPI;
-    dxdt[2*j+1] = (dxdt_j[1] - tangent[1])*theta/TWOPI;
+    dxdt_tan = scalar_prod(dxdt_j[0], dxdt_j[1], tangent[0], tangent[1]);
+    dxdt[2*j] = dxdt_j[0]*(1 - dxdt_tan)*theta/TWOPI;
+    dxdt[2*j+1] = dxdt_j[1]*(1 - dxdt_tan)*theta/TWOPI;
   }
   
   return;

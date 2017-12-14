@@ -177,8 +177,7 @@ double runge_kutta45(double* x, double* k1, double* k2, double* k3, double* k4, 
 
     if (dt_new > 2.5e-3)
       dt_new = 2.5e-3;
-    printf("dt_new = %e\n", dt_new);    
-    printf("dt = %e\n\n", dt);
+    
   } while (R > tol_rk45_time);
   
   // Update position

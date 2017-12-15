@@ -10,7 +10,10 @@ void derivative_fft(double* x, double* dx, int start, int stop)
 { 
   int N = stop - start;
   int N_points = N/2;
-  double k[N];
+  double k[N], filter[N];
+  double a, m;
+  a = 36;
+  m = 19;
   
   // Setup FFT
   fftw_complex *in_x, *in_y, *out_x, *out_y;
@@ -29,6 +32,9 @@ void derivative_fft(double* x, double* dx, int start, int stop)
   {
     k[i] = (double)i;
     k[N_points+i] = (double)(i-N_points); 
+    filter[i] = exp(-a*pow((2.*k[i]/N), m));
+    filter[N_points+i] = exp(-a*pow((2.*k[i]/N), m));
+  
   }
   k[N_points] = 0;
   
@@ -40,12 +46,15 @@ void derivative_fft(double* x, double* dx, int start, int stop)
   }
   fftw_execute(plan_for_x); // Thread safe
   fftw_execute(plan_for_y);
+
+  if (creal(out_x[N_points]) > 1.e-10)
+    printf("STOP!\n");
   
   // Differentiate and transform back
   for (int i = 0; i < N; i++)
   {
-    in_x[i] = I*k[i]*out_x[i];
-    in_y[i] = I*k[i]*out_y[i];
+    in_x[i] = filter[i]*I*k[i]*out_x[i];
+    in_y[i] = filter[i]*I*k[i]*out_y[i];
   }
   fftw_execute(plan_back_x);
   fftw_execute(plan_back_y);

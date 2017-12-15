@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
   for (int k = 0; k <= T; k++)
   {
     
-    if (k % 100 == 0)
+    if (k % 1 == 0)
     {
       // Print to file
       print_to_file(x, M, N, k);
@@ -67,8 +67,8 @@ int main(int argc, char **argv) {
     allocate(&d, &kappa, &mu, &beta, &gamma, &t, &n, &norm, &k1, &k2, &k3, &k4, &k5, &k6, N);
     
     // Interpolate
-    interpolate(x, 0, M, t, n, d, kappa, mu, beta, gamma);
-    interpolate(x, M, N, t, n, d, kappa, mu, beta, gamma);
+    //interpolate(x, 0, M, t, n, d, kappa, mu, beta, gamma);
+    //interpolate(x, M, N, t, n, d, kappa, mu, beta, gamma);
      
     // Normalize normal
     //normalize(n, norm, N);
@@ -87,9 +87,9 @@ int main(int argc, char **argv) {
     //printf("area1 = %e, area2 = %e \n", area1, area2); 
     
     // Reallocate the points
-    interpolate(x, 0, M, t, n, d, kappa, mu, beta, gamma);
-    interpolate(x, M, N, t, n, d, kappa, mu, beta, gamma);
-    points_reloc(&x, t, n, &N, kappa, mu, beta, gamma, &M, &M2, 2);
+    //interpolate(x, 0, M, t, n, d, kappa, mu, beta, gamma);
+    //interpolate(x, M, N, t, n, d, kappa, mu, beta, gamma);
+    //points_reloc(&x, t, n, &N, kappa, mu, beta, gamma, &M, &M2, 2);
     
     // Free memory
     free_step(d, kappa, mu, beta, gamma, t, n, norm, k1, k2, k3, k4, k5, k6);

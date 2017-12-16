@@ -32,11 +32,15 @@ void derivative_fft(double* x, double* dx, int start, int stop)
   {
     k[i] = (double)i;
     k[N_points+i] = (double)(i-N_points); 
-    filter[i] = exp(-a*pow((2.*k[i]/N), m));
-    filter[N_points+i] = exp(-a*pow((2.*k[i]/N), m));
-  
   }
   k[N_points] = 0;
+
+  // Anti-aliasing filter
+  for (int i = 0; i < N_points; i++)
+    filter[i] = exp(-a*pow((fabs(k[i])/(double)N_points), m));
+  for (int i = 1; i < N_points; i++)
+    filter[i+N_points] = filter[N_points-i];  
+  filter[N_points] = 0;
   
   // Fourier transform x_i(p, t)
   for (int i = 0; i < N; i++)
@@ -46,9 +50,6 @@ void derivative_fft(double* x, double* dx, int start, int stop)
   }
   fftw_execute(plan_for_x); // Thread safe
   fftw_execute(plan_for_y);
-
-  if (creal(out_x[N_points]) > 1.e-10)
-    printf("STOP!\n");
   
   // Differentiate and transform back
   for (int i = 0; i < N; i++)

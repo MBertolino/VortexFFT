@@ -18,7 +18,7 @@ int main(int argc, char **argv) {
   M = atoi(argv[1]); // Number of points in each circle
   M2 = atoi(argv[1]);
   N = M + M2;
-  alpha = 0.7; // Interpolation between 2D Euler and Quasi-geostrophic
+  alpha = 0.5; // Interpolation between 2D Euler and Quasi-geostrophic
   theta = -1.0;
   
   // Runge-kutta parameters
@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
   // Time parameters
   int T;
   double dt, time;
-  T = 200000;
+  T = 20000;
   dt = 1.e-3;
   time = 0.0;
   
@@ -70,9 +70,9 @@ int main(int argc, char **argv) {
     //interpolate(x, 0, M, t, n, d, kappa, mu, beta, gamma);
     //interpolate(x, M, N, t, n, d, kappa, mu, beta, gamma);
      
-    // Normalize normal
-    //normalize(n, norm, N);
-    
+    // Compare algorithms
+    //compare_algo(x, mu, beta, gamma, t, n, M, N, h, tol_rk45_space, alpha, theta);
+     
     // Evolve patches
     dt = runge_kutta45(x, k1, k2, k3, k4, k5, k6,\
                        tol_rk45_time, dt, M, N,\

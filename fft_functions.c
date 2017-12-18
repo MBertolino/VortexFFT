@@ -13,7 +13,7 @@ void derivative_fft(double* x, double* dx, int start, int stop)
   double k[N], filter[N];
   double a, m;
   a = 36;
-  m = 19;
+  m = 36;
   
   // Setup FFT
   fftw_complex *in_x, *in_y, *out_x, *out_y;
@@ -37,11 +37,19 @@ void derivative_fft(double* x, double* dx, int start, int stop)
 
   // Anti-aliasing filter
   for (int i = 0; i < N_points; i++)
-    filter[i] = exp(-a*pow((fabs(k[i])/(double)N_points), m));
+    filter[i] = exp(-a*pow(k[i]/(double)N_points, m));
   for (int i = 1; i < N_points; i++)
     filter[i+N_points] = filter[N_points-i];  
-  filter[N_points] = 0;
-  
+  filter[N_points] = 0.;
+
+  /*
+  char str[80] = "../results/filter.txt";
+  FILE* f = fopen(str, "wb");
+  for (int i = 0; i < N; i++)
+    fprintf(f, "%lf\n", filter[i]);
+  fclose(f);
+  */
+
   // Fourier transform x_i(p, t)
   for (int i = 0; i < N; i++)
   {
@@ -51,6 +59,14 @@ void derivative_fft(double* x, double* dx, int start, int stop)
   fftw_execute(plan_for_x); // Thread safe
   fftw_execute(plan_for_y);
   
+  /*
+  char str[80] = "../results/filter.txt";
+  FILE* f = fopen(str, "wb");
+  for (int i = 0; i < N; i++)
+    fprintf(f, "%lf\n", creal(out_x[i]));
+  fclose(f);
+  */
+
   // Differentiate and transform back
   for (int i = 0; i < N; i++)
   {
@@ -90,11 +106,14 @@ void vfield_fft(double* dxdt, double* x, int M, int N, double alpha, double thet
   // Compute derivative in nominator
   derivative_fft(x, dx, 0, M);
   derivative_fft(x, dx, M, N);
-  aux_0 = 0.;
-  aux_1 = 0.;
+
   // Estimate integral using Riemann sum 
   for (int j = 0; j < M; j++)
   {
+  aux_0 = 0.;
+  aux_1 = 0.;
+  dxdt[2*j] = 0.;
+  dxdt[2*j+1] = 0.;
     for (int i = 0; i < M; i++)
     {
       if (i == j)
@@ -104,50 +123,50 @@ void vfield_fft(double* dxdt, double* x, int M, int N, double alpha, double thet
       alpha_d_x = pow(distance(x[2*i], x[2*i+1], x[2*j], x[2*j+1]), alpha);
       
       // Minus tangent
-      dxdt[2*j] += (dx[2*i] - dx[2*j])/alpha_d_x;
-      dxdt[2*j+1] += (dx[2*i+1] - dx[2*j+1])/alpha_d_x;
+      aux_0 += (dx[2*i] - dx[2*j])/alpha_d_x;
+      aux_1 += (dx[2*i+1] - dx[2*j+1])/alpha_d_x;
+      //aux_0 += dx[2*i]/alpha_d_x;
+      //aux_1 += dx[2*i+1]/alpha_d_x;
     }
     
     // Normalize FFT and Riemann sum
-    aux_0 = dxdt[2*j]*theta/((double)M);
-    aux_1 = dxdt[2*j+1]*theta/((double)M);
-    dxdt[2*j] = 0.;
-    dxdt[2*j+1] = 0.;
+    dxdt[2*j] = aux_0*theta/((double)M);
+    dxdt[2*j+1] = aux_1*theta/((double)M);
+    aux_0 = 0.;
+    aux_1 = 0.;
     for (int i = M; i < N; i++)
     {
-      
       // Denominator
       alpha_d_x = pow(distance(x[2*i], x[2*i+1], x[2*j], x[2*j+1]), alpha);
       
-      // Minus tangent
-      dxdt[2*j] += (dx[2*i])/alpha_d_x;
-      dxdt[2*j+1] += (dx[2*i+1])/alpha_d_x;
+      // Normally 
+      aux_0 += dx[2*i]/alpha_d_x;
+      aux_1 += dx[2*i+1]/alpha_d_x;
     }
-    dxdt[2*j] = aux_0 + dxdt[2*j]*theta/((double)(N-M));
-    dxdt[2*j+1] = aux_1 + dxdt[2*j+1]*theta/((double)(N-M));
-  
+    dxdt[2*j] += aux_0*theta/((double)(N-M));
+    dxdt[2*j+1] += aux_1*theta/((double)(N-M));
   }  
-  aux_0 = 0.;
-  aux_1 = 0.;
   
   // Estimate integral using Riemann sum 
   for (int j = M; j < N; j++)
   {
+  aux_0 = 0.;
+  aux_1 = 0.;
     for (int i = 0; i < M; i++)
     {
       // Denominator
       alpha_d_x = pow(distance(x[2*i], x[2*i+1], x[2*j], x[2*j+1]), alpha);
       
-      // Minus tangent
-      dxdt[2*j] += (dx[2*i])/alpha_d_x;
-      dxdt[2*j+1] += (dx[2*i+1])/alpha_d_x;
+      // Normally 
+      aux_0 += dx[2*i]/alpha_d_x;
+      aux_1 += dx[2*i+1]/alpha_d_x;
     }
     
     // Normalize FFT and Riemann sum
-    aux_0 = dxdt[2*j]*theta/((double)M);
-    aux_1 = dxdt[2*j+1]*theta/((double)M);
-    dxdt[2*j] = 0.;
-    dxdt[2*j+1] = 0.;
+    dxdt[2*j] += aux_0*theta/((double)M);
+    dxdt[2*j+1] += aux_1*theta/((double)M);
+    aux_0 = 0.;
+    aux_1 = 0.;
     for (int i = M; i < N; i++)
     {
       if (i == j)
@@ -157,11 +176,13 @@ void vfield_fft(double* dxdt, double* x, int M, int N, double alpha, double thet
       alpha_d_x = pow(distance(x[2*i], x[2*i+1], x[2*j], x[2*j+1]), alpha);
       
       // Minus tangent
-      dxdt[2*j] += (dx[2*i] - dx[2*j])/alpha_d_x;
-      dxdt[2*j+1] += (dx[2*i+1] - dx[2*j+1])/alpha_d_x;
+      aux_0 += (dx[2*i] - dx[2*j])/alpha_d_x;
+      aux_1 += (dx[2*i+1] - dx[2*j+1])/alpha_d_x;
+      //aux_0 += dx[2*i]/alpha_d_x;
+      //aux_1 += dx[2*i+1]/alpha_d_x;
     }
-    dxdt[2*j] = aux_0 + dxdt[2*j]*theta/((double)(N-M));
-    dxdt[2*j+1] = aux_1 + dxdt[2*j+1]*theta/((double)(N-M));
+    dxdt[2*j] += aux_0*theta/((double)(N-M));
+    dxdt[2*j+1] += aux_1*theta/((double)(N-M));
   }  
   
   free(dx);

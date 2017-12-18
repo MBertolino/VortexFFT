@@ -9,7 +9,7 @@
 
 void print_to_file(double* x, int M, int N, int k)
 {
-  //Print to file
+  // Print to file
   char str[80] = "../results/circle_";
   char str2[80] = "";
   sprintf(str2, "%d", k);
@@ -192,4 +192,41 @@ double runge_kutta45(double* x, double* k1, double* k2, double* k3, double* k4, 
   //printf("X dot dxdt = %e \n", x[0]*dxdt_RK5[0]+x[1]*dxdt_RK5[1]);
   
   return dt_new;
+}
+
+
+void compare_algo(double* x, double* mu, double* beta, double* gamma, double* t, double* n, int M, int N, double h, double tol_rk45_space, double alpha, double theta)
+{
+    // Allocate
+    double* dxdt_ama = (double*)malloc(2*N*sizeof(double));
+    double* dxdt_fft = (double*)malloc(2*N*sizeof(double));
+    
+    // Compare FFT and Mancho
+    vfield_orig(dxdt_ama, x, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, theta);
+    vfield_fft(dxdt_fft, x, M, N, alpha, theta);
+
+    // Print to file
+    char strdx_ama[80] = "../results/dx_ama.txt";
+    char strdx_fft[80] = "../results/dx_fft.txt";
+    FILE* f_ama = fopen(strdx_ama, "wb");
+    FILE* f_fft = fopen(strdx_fft, "wb");
+    for (int j = 0; j < 8; j++)
+    {
+      printf("ama_x[%d, %d] = %e, \t %e\n\n", 2*j, 2*j+1, dxdt_ama[2*j], dxdt_ama[2*j+1]);
+      printf("fft_x[%d, %d] = %e, \t %e\n", 2*j, 2*j+1, dxdt_fft[2*j], dxdt_fft[2*j+1]);
+    }
+    for (int j = 0; j < N; j++)
+    {
+      fprintf(f_ama, "%lf %lf\n", dxdt_ama[2*j], dxdt_ama[2*j+1]);
+      fprintf(f_fft, "%lf %lf\n", dxdt_fft[2*j], dxdt_fft[2*j+1]);
+    } 
+    printf("Done\n");
+    fclose(f_ama);
+    fclose(f_fft);
+
+    free(dxdt_ama);
+    free(dxdt_fft);
+
+    return;
+
 }

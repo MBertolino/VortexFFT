@@ -98,7 +98,7 @@ void autder(double* f, double* c_coeff, double alpha, int order)
 }
 
 
-void vfield_orig(double* dxdt, double* x, double* mu, double* beta, double* gamma, double* t, double* n, int M, int N, double alpha, double h, double tol_rk45_space, double theta, double* norm)
+void vfield_orig(double* dxdt, double* x, double* mu, double* beta, double* gamma, double* t, double* n, int M, int N, double alpha, double h, double tol_rk45_space, double theta)
 {
   // Setup parameters
   double d_x, d_ni, d_ti, d_xi, Q, f, dxdt_tan;
@@ -130,7 +130,7 @@ void vfield_orig(double* dxdt, double* x, double* mu, double* beta, double* gamm
       x_i[0] = x[2*i];
       x_i[1] = x[2*i+1];
       
-	    d_x = distance(x[2*i], x[2*j], x[2*i+1], x[2*j+1]);
+      d_x = distance(x[2*i], x[2*j], x[2*i+1], x[2*j+1]);
       d_ti = -scalar_prod(x[2*j] - x[2*i], x[2*j+1] - x[2*i+1], t[2*i], t[2*i+1]);
       d_ni = -scalar_prod(x[2*j] - x[2*i], x[2*j+1] - x[2*i+1], n[2*i], n[2*i+1]);
       d_ni = -scalar_prod(x[2*j] - x[2*i], x[2*j+1] - x[2*i+1], n[2*i], n[2*i+1]);
@@ -198,7 +198,7 @@ void vfield_orig(double* dxdt, double* x, double* mu, double* beta, double* gamm
         {
           // Case 2: Use formula (29) with shifted params
           
-		      // Update parameters
+	  // Update parameters
           mu_2 = mu[i] + 2.*beta[i] + 3.*gamma[i];
           beta_2 = -beta[i] - 3.*gamma[i];
           
@@ -243,13 +243,17 @@ void vfield_orig(double* dxdt, double* x, double* mu, double* beta, double* gamm
     //dxdt[2*j] = norm[2*j]*dxdt_norm;
     //dxdt[2*j+1] = norm[2*j+1]*dxdt_norm;
     
-    // Tangential projection
-    tangent[0] = t[2*j] - mu[j]*n[2*j];
-    tangent[1] = t[2*j+1] - mu[j]*n[2*j+1];
-    normalize(tangent, 2);
-    dxdt_tan = scalar_prod(dxdt_j[0], dxdt_j[1], tangent[0], tangent[1]);
-    dxdt[2*j] = dxdt_j[0]*(1 - dxdt_tan)*theta/TWOPI;
-    dxdt[2*j+1] = dxdt_j[1]*(1 - dxdt_tan)*theta/TWOPI;
+    // Removing tangential component
+    //tangent[0] = t[2*j] - mu[j]*n[2*j];
+    //tangent[1] = t[2*j+1] - mu[j]*n[2*j+1];
+    //normalize(tangent, 2);
+    //dxdt_tan = scalar_prod(dxdt_j[0], dxdt_j[1], tangent[0], tangent[1]);
+    //dxdt[2*j] = dxdt_j[0]*(1 - dxdt_tan)*theta/TWOPI;
+    //dxdt[2*j+1] = dxdt_j[1]*(1 - dxdt_tan)*theta/TWOPI;
+
+    // With tangential component
+    dxdt[2*j] = dxdt_j[0]*theta/TWOPI;
+    dxdt[2*j+1] = dxdt_j[1]*theta/TWOPI;
   }
   
   return;
@@ -722,29 +726,3 @@ void normalize(double* norm, int N)
 }
 
 
-    /*
-    // Compare FFT and Mancho
-     vfield_fft(dxdt_fft, x, N, alpha, theta);
-     for (int j = 0; j < N; j++)
-      vfield_orig(dxdt, x, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, j, theta, norm);
-
-    // Print to file
-    char strdx_fft[80] = "../results/dx_fft.txt";
-    char strdx_ama[80] = "../results/dx_ama.txt";
-    FILE* f_fft = fopen(strdx_fft, "wb");
-    FILE* f_ama = fopen(strdx_ama, "wb");
-    for (int j = 0; j < 8; j++)
-    {
-      printf("fft_x[%d, %d] = %e, \t %e\n", 2*j, 2*j+1, dxdt_fft[2*j], dxdt_fft[2*j+1]);
-      printf("ama_x[%d, %d] = %e, \t %e\n\n", 2*j, 2*j+1, dxdt[2*j], dxdt[2*j+1]);
-    }
-    for (int j = 0; j < N; j++)
-    {
-      fprintf(f_fft, "%lf %lf\n", dxdt_fft[2*j], dxdt_fft[2*j+1]);
-      fprintf(f_ama, "%lf %lf\n", dxdt[2*j], dxdt[2*j+1]);
-    } 
-    printf("Done\n");
-    fclose(f_fft);
-    fclose(f_ama);
-    sleep(50);
-    */

@@ -206,23 +206,17 @@ void compare_algo(double* x, double* mu, double* beta, double* gamma, double* t,
     vfield_fft(dxdt_fft, x, M, N, alpha, theta);
 
     // Print to file
-    char strdx_ama[80] = "../results/dx_ama.txt";
-    char strdx_fft[80] = "../results/dx_fft.txt";
-    FILE* f_ama = fopen(strdx_ama, "wb");
-    FILE* f_fft = fopen(strdx_fft, "wb");
-    for (int j = 0; j < 8; j++)
-    {
-      printf("ama_x[%d, %d] = %e, \t %e\n\n", 2*j, 2*j+1, dxdt_ama[2*j], dxdt_ama[2*j+1]);
-      printf("fft_x[%d, %d] = %e, \t %e\n", 2*j, 2*j+1, dxdt_fft[2*j], dxdt_fft[2*j+1]);
-    }
-    for (int j = 0; j < N; j++)
-    {
-      fprintf(f_ama, "%lf %lf\n", dxdt_ama[2*j], dxdt_ama[2*j+1]);
-      fprintf(f_fft, "%lf %lf\n", dxdt_fft[2*j], dxdt_fft[2*j+1]);
-    } 
-    printf("Done\n");
+    char strdx_ama[80] = "../results/dxnorm_ama.txt";
+    char strdx_fft[80] = "../results/dxnorm_fft.txt";
+    FILE* f_ama = fopen(strdx_ama, "a");
+    FILE* f_fft = fopen(strdx_fft, "a");
+    fprintf(f_ama, "%e %e %d %lf\n", dxdt_ama[0], dxdt_ama[1], M, alpha);
+    fprintf(f_fft, "%e %e %d %lf\n", 5*dxdt_fft[0], 5*dxdt_fft[1], M, alpha);
     fclose(f_ama);
     fclose(f_fft);
+
+    printf("ama_x[%d, %d] = %e, \t %e\n", 0, 1, dxdt_ama[0], dxdt_ama[1]);
+    printf("fft_x[%d, %d] = %e, \t %e\n\n", 0, 1, 5*dxdt_fft[0], 5*dxdt_fft[1]);
 
     free(dxdt_ama);
     free(dxdt_fft);

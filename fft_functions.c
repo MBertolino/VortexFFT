@@ -42,14 +42,6 @@ void derivative_fft(double* x, double* dx, int start, int stop)
     filter[i+N_points] = filter[N_points-i];  
   filter[N_points] = 0.;
 
-  /*
-  char str[80] = "../results/filter.txt";
-  FILE* f = fopen(str, "wb");
-  for (int i = 0; i < N; i++)
-    fprintf(f, "%lf\n", filter[i]);
-  fclose(f);
-  */
-
   // Fourier transform x_i(p, t)
   for (int i = 0; i < N; i++)
   {
@@ -59,14 +51,6 @@ void derivative_fft(double* x, double* dx, int start, int stop)
   fftw_execute(plan_for_x); // Thread safe
   fftw_execute(plan_for_y);
   
-  /*
-  char str[80] = "../results/filter.txt";
-  FILE* f = fopen(str, "wb");
-  for (int i = 0; i < N; i++)
-    fprintf(f, "%lf\n", creal(out_x[i]));
-  fclose(f);
-  */
-
   // Differentiate and transform back
   for (int i = 0; i < N; i++)
   {
@@ -100,20 +84,20 @@ void vfield_fft(double* dxdt, double* x, int M, int N, double alpha, double thet
 {
 
   double alpha_d_x, aux_0, aux_1;
-  
   double* dx = (double*)malloc(2*N*sizeof(double));
   
   // Compute derivative in nominator
   derivative_fft(x, dx, 0, M);
-  derivative_fft(x, dx, M, N);
+  //derivative_fft(x, dx, M, N);
 
-  // Estimate integral using Riemann sum 
+  // Estimate integral of first patch using Riemann sum 
   for (int j = 0; j < M; j++)
   {
-  aux_0 = 0.;
-  aux_1 = 0.;
-  dxdt[2*j] = 0.;
-  dxdt[2*j+1] = 0.;
+    aux_0 = 0.;
+    aux_1 = 0.;
+    dxdt[2*j] = 0.;
+    dxdt[2*j+1] = 0.;
+    // Contribution from first patch
     for (int i = 0; i < M; i++)
     {
       if (i == j)
@@ -134,6 +118,7 @@ void vfield_fft(double* dxdt, double* x, int M, int N, double alpha, double thet
     dxdt[2*j+1] = aux_1*theta/((double)M);
     aux_0 = 0.;
     aux_1 = 0.;
+    // Contribution from second patch
     for (int i = M; i < N; i++)
     {
       // Denominator
@@ -143,15 +128,16 @@ void vfield_fft(double* dxdt, double* x, int M, int N, double alpha, double thet
       aux_0 += dx[2*i]/alpha_d_x;
       aux_1 += dx[2*i+1]/alpha_d_x;
     }
-    dxdt[2*j] += aux_0*theta/((double)(N-M));
-    dxdt[2*j+1] += aux_1*theta/((double)(N-M));
+    //dxdt[2*j] += aux_0*theta/((double)(N-M));
+    //dxdt[2*j+1] += aux_1*theta/((double)(N-M));
   }  
   
   // Estimate integral using Riemann sum 
   for (int j = M; j < N; j++)
   {
-  aux_0 = 0.;
-  aux_1 = 0.;
+    aux_0 = 0.;
+    aux_1 = 0.;
+    // Contribution from first patch
     for (int i = 0; i < M; i++)
     {
       // Denominator
@@ -167,6 +153,7 @@ void vfield_fft(double* dxdt, double* x, int M, int N, double alpha, double thet
     dxdt[2*j+1] += aux_1*theta/((double)M);
     aux_0 = 0.;
     aux_1 = 0.;
+    // Contribution from second patch
     for (int i = M; i < N; i++)
     {
       if (i == j)

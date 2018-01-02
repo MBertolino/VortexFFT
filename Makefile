@@ -6,19 +6,19 @@ INCLUDES =
 RM = /bin/rm -f
 OBJS = orig_functions.o fft_functions.o misc.o
 PATCH = patch
-FFT = swap
+TEST = test
 
 all:
 	@echo "Usage: make patch"
 patch: $(PATCH)
-fft: $(FFT)
+test: $(TEST)
 
 
 $(PATCH): patch.o $(OBJS)
 	$(LD) -o $(PATCH) patch.o $(OBJS) $(LDFLAGS)
 
-$(FFT): swap.o $(OBJS)
-	$(LD) -o $(STATS) swap.o $(OBJS) $(LDFLAGS)
+$(TEST): patch_test.o $(OBJS)
+	$(LD) -o $(TEST) patch_test.o $(OBJS) $(LDFLAGS)
 
 orig_functions.o: orig_functions.c orig_functions.h
 	$(CC) $(CFLAGS) $(INCLUDES) -c orig_functions.c -std=c99
@@ -32,6 +32,8 @@ misc.o: misc.c misc.h
 patch.o: patch.c
 	$(CC) $(CFLAGS) $(INCLUDES) -c patch.c -std=c99
 
+patch_test.o: patch_test.c
+	$(CC) $(CFLAGS) $(INCLUDES) -c patch_test.c -std=c99
 
 cleanres:
 	$(RM) ../results/*.txt

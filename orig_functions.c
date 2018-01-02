@@ -244,16 +244,16 @@ void vfield_orig(double* dxdt, double* x, double* mu, double* beta, double* gamm
     //dxdt[2*j+1] = norm[2*j+1]*dxdt_norm;
     
     // Removing tangential component
-    //tangent[0] = t[2*j] - mu[j]*n[2*j];
-    //tangent[1] = t[2*j+1] - mu[j]*n[2*j+1];
-    //normalize(tangent, 2);
-    //dxdt_tan = scalar_prod(dxdt_j[0], dxdt_j[1], tangent[0], tangent[1]);
-    //dxdt[2*j] = dxdt_j[0]*(1 - dxdt_tan)*theta/TWOPI;
-    //dxdt[2*j+1] = dxdt_j[1]*(1 - dxdt_tan)*theta/TWOPI;
+    tangent[0] = t[2*j] - mu[j]*n[2*j];
+    tangent[1] = t[2*j+1] - mu[j]*n[2*j+1];
+    normalize(tangent, 2);
+    dxdt_tan = scalar_prod(dxdt_j[0], dxdt_j[1], tangent[0], tangent[1]);
+    dxdt[2*j] = dxdt_j[0]*(1 - dxdt_tan)*theta/TWOPI;
+    dxdt[2*j+1] = dxdt_j[1]*(1 - dxdt_tan)*theta/TWOPI;
 
     // With tangential component
-    dxdt[2*j] = dxdt_j[0]*theta/TWOPI;
-    dxdt[2*j+1] = dxdt_j[1]*theta/TWOPI;
+    //dxdt[2*j] = dxdt_j[0]*theta/TWOPI;
+    //dxdt[2*j+1] = dxdt_j[1]*theta/TWOPI;
   }
   
   return;

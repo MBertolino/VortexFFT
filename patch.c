@@ -18,7 +18,7 @@ int main(int argc, char **argv) {
   M = atoi(argv[1]); // Number of points in each circle
   M2 = atoi(argv[1]);
   N = M + M2;
-  alpha = 0.5; // Interpolation between 2D Euler and Quasi-geostrophic
+  alpha = 0.7; // Interpolation between 2D Euler and Quasi-geostrophic
   theta = -1.0;
   
   // Runge-kutta parameters
@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
   // Time parameters
   int T;
   double dt, time;
-  T = 20000;
+  T = 0;
   dt = 1.e-3;
   time = 0.0;
   
@@ -41,11 +41,11 @@ int main(int argc, char **argv) {
   // Generate patch
   double* x = (double*)malloc(2*N*sizeof(double));
   for (int j = 0; j < M; j++) {
-    x[2*j] = cos(TWOPI*j/(double)M) + 1.1; //cos(TWOPI*j/(double)M) + 0.45*sin(TWOPI*5*j/(double)M); // 
+    x[2*j] = cos(TWOPI*j/(double)M); //cos(TWOPI*j/(double)M) + 0.45*sin(TWOPI*5*j/(double)M); // 
     x[2*j+1] = sin(TWOPI*j/(double)M); //sin(TWOPI*j/(double)M) + 0.3*cos(TWOPI*3*j/(double)M);
     
-    x[2*j+2*M] =  cos(TWOPI*j/(double)M) - 1.1;
-    x[2*j+1+2*M] = sin(TWOPI*j/(double)M);
+    //x[2*j+2*M] =  cos(TWOPI*j/(double)M) - 1.1;
+    //x[2*j+1+2*M] = sin(TWOPI*j/(double)M);
   }
   
   // Evolve the patch
@@ -67,11 +67,11 @@ int main(int argc, char **argv) {
     allocate(&d, &kappa, &mu, &beta, &gamma, &t, &n, &norm, &k1, &k2, &k3, &k4, &k5, &k6, N);
     
     // Interpolate
-    //interpolate(x, 0, M, t, n, d, kappa, mu, beta, gamma);
+    interpolate(x, 0, M, t, n, d, kappa, mu, beta, gamma);
     //interpolate(x, M, N, t, n, d, kappa, mu, beta, gamma);
      
     // Compare algorithms
-    //compare_algo(x, mu, beta, gamma, t, n, M, N, h, tol_rk45_space, alpha, theta);
+    compare_algo(x, mu, beta, gamma, t, n, M, N, h, tol_rk45_space, alpha, theta);
      
     // Evolve patches
     dt = runge_kutta45(x, k1, k2, k3, k4, k5, k6,\

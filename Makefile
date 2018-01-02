@@ -39,5 +39,5 @@ cleanres:
 	$(RM) ../results/*.txt
 
 clean:
-	$(RM) $(PATCH) $(FFT) *.o
+	$(RM) $(PATCH) $(TEST) *.o
 

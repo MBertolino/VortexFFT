@@ -27,7 +27,7 @@ int main(int argc, char **argv) {
   double *d, *kappa, *mu, *beta, *gamma, *t, *n, *norm;
   double *x, *k1, *k2, *k3, *k4, *k5, *k6;
  
-  for (int i = 64; i < 400; i+=2)
+  for (int i = 2; i < 1024*4096; i *=2)
   {
     printf("i = %d\n", i);
     // Generate patch
@@ -44,8 +44,9 @@ int main(int argc, char **argv) {
     interpolate(x, 0, i, t, n, d, kappa, mu, beta, gamma);
     
     // Compare algorithms
-    compare_algo(x, mu, beta, gamma, t, n, i, i, h, tol_rk45_space, alpha, theta);
-       
+    //compare_algo(x, mu, beta, gamma, t, n, i, i, h, tol_rk45_space, alpha, theta);
+    compare_algo_time(x, mu, beta, gamma, t, n, i, i, h, tol_rk45_space, alpha, theta);
+   
     // Free memory
     free_step(d, kappa, mu, beta, gamma, t, n, norm, k1, k2, k3, k4, k5, k6);
     free(x);

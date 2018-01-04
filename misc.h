@@ -1,4 +1,4 @@
-
+double get_wall_seconds();
 
 void print_to_file(double* x, int M, int N, int k);
 
@@ -14,3 +14,4 @@ double runge_kutta45(double* x, double* k1, double* k2, double* k3, double* k4, 
 
 void compare_algo(double* x, double* mu, double* beta, double* gamma, double* t, double* n, int M, int N, double h, double tol_rk45_space, double alpha, double theta);
 
+void compare_algo_time(double* x, double* mu, double* beta, double* gamma, double* t, double* n, int M, int N, double h, double tol_rk45_space, double alpha, double theta);

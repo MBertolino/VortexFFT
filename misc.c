@@ -5,6 +5,18 @@
 #include "orig_functions.h"
 #include "fft_functions.h"
 #include <unistd.h>
+#include <sys/time.h>
+
+/* Here we define a routine called get_wall_seconds() the gets number
+   of seconds and microseconds since the Epoch (1970-01-01 00:00:00
+   +0000 (UTC)). The seconds and microseconds values are combined in a
+   double number giving the number of seconds since the Epoch. */
+double get_wall_seconds() {
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  double seconds = tv.tv_sec + (double)tv.tv_usec / 1000000;
+  return seconds;
+}
 
 
 void print_to_file(double* x, int M, int N, int k)
@@ -217,6 +229,44 @@ void compare_algo(double* x, double* mu, double* beta, double* gamma, double* t,
 
     printf("ama_x[%d, %d] = %e, \t %e\n", 0, 1, dxdt_ama[0], dxdt_ama[1]);
     printf("fft_x[%d, %d] = %e, \t %e\n\n", 0, 1, 5*dxdt_fft[0], 5*dxdt_fft[1]);
+
+    free(dxdt_ama);
+    free(dxdt_fft);
+
+    return;
+
+}
+
+void compare_algo_time(double* x, double* mu, double* beta, double* gamma, double* t, double* n, int M, int N, double h, double tol_rk45_space, double alpha, double theta)
+{
+    // Allocate
+    double* dxdt_ama = (double*)malloc(2*N*sizeof(double));
+    double* dxdt_fft = (double*)malloc(2*N*sizeof(double));
+    double t_drit, t_fft;
+    
+    // Compare FFT and Mancho
+    t_drit = get_wall_seconds();
+    vfield_orig(dxdt_ama, x, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, theta);
+    t_drit = get_wall_seconds() - t_drit;
+    
+    sleep(0.1);
+    
+    t_fft = get_wall_seconds();
+    vfield_fft(dxdt_fft, x, M, N, alpha, theta);
+    t_fft = get_wall_seconds() - t_fft;
+
+    // Print to file
+    char time_ama[80] = "../results/time_drit.txt";
+    char time_fft[80] = "../results/time_fft.txt";
+    FILE* f_ama = fopen(time_ama, "a");
+    FILE* f_fft = fopen(time_fft, "a");
+    fprintf(f_ama, "%e %d %lf\n", t_drit, M, alpha);
+    fprintf(f_fft, "%e %d %lf\n", t_fft, M, alpha);
+    fclose(f_ama);
+    fclose(f_fft);
+
+    printf("time_ama = %e \n", t_drit);
+    printf("time_fft = %e \n\n", t_fft);
 
     free(dxdt_ama);
     free(dxdt_fft);

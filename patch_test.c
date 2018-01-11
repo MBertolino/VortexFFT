@@ -27,16 +27,19 @@ int main(int argc, char **argv) {
   double *d, *kappa, *mu, *beta, *gamma, *t, *n, *norm;
   double *x, *k1, *k2, *k3, *k4, *k5, *k6;
  
-  for (int i = 2; i < 1024*4096; i *=2)
+  for (int i = 8; i < 32769; i*=2)
   {
     printf("i = %d\n", i);
     // Generate patch
     x = (double*)malloc(2*i*sizeof(double));
     for (int j = 0; j < i; j++)
     {
-      x[2*j] = cos(TWOPI*j/(double)i); //cos(TWOPI*j/(double)M) + 0.45*sin(TWOPI*5*j/(double)M); // 
-      x[2*j+1] = sin(TWOPI*j/(double)i); //sin(TWOPI*j/(double)M) + 0.3*cos(TWOPI*3*j/(double)M);
+      //x[2*j] = cos(TWOPI*j/(double)i);
+      //x[2*j+1] = sin(TWOPI*j/(double)i);
+      x[2*j] = cos(TWOPI*j/(double)i) + 0.45*sin(TWOPI*5*j/(double)i); // 
+      x[2*j+1] = sin(TWOPI*j/(double)i) + 0.3*cos(TWOPI*3*j/(double)i);
     }
+
     // Allocate
     allocate(&d, &kappa, &mu, &beta, &gamma, &t, &n, &norm, &k1, &k2, &k3, &k4, &k5, &k6, i);
     
@@ -44,8 +47,8 @@ int main(int argc, char **argv) {
     interpolate(x, 0, i, t, n, d, kappa, mu, beta, gamma);
     
     // Compare algorithms
-    //compare_algo(x, mu, beta, gamma, t, n, i, i, h, tol_rk45_space, alpha, theta);
-    compare_algo_time(x, mu, beta, gamma, t, n, i, i, h, tol_rk45_space, alpha, theta);
+    compare_algo(x, mu, beta, gamma, t, n, i, i, h, tol_rk45_space, alpha, theta);
+    //compare_algo_time(x, mu, beta, gamma, t, n, i, i, h, tol_rk45_space, alpha, theta);
    
     // Free memory
     free_step(d, kappa, mu, beta, gamma, t, n, norm, k1, k2, k3, k4, k5, k6);

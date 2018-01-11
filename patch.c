@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
   // Time parameters
   int T;
   double dt, time;
-  T = 0;
+  T = 1000;
   dt = 1.e-3;
   time = 0.0;
   
@@ -41,13 +41,13 @@ int main(int argc, char **argv) {
   // Generate patch
   double* x = (double*)malloc(2*N*sizeof(double));
   for (int j = 0; j < M; j++) {
-    x[2*j] = cos(TWOPI*j/(double)M); //cos(TWOPI*j/(double)M) + 0.45*sin(TWOPI*5*j/(double)M); // 
+    x[2*j] = cos(TWOPI*j/(double)M) + 1.1; //cos(TWOPI*j/(double)M) + 0.45*sin(TWOPI*5*j/(double)M); // 
     x[2*j+1] = sin(TWOPI*j/(double)M); //sin(TWOPI*j/(double)M) + 0.3*cos(TWOPI*3*j/(double)M);
     
-    //x[2*j+2*M] =  cos(TWOPI*j/(double)M) - 1.1;
-    //x[2*j+1+2*M] = sin(TWOPI*j/(double)M);
+    x[2*(j+M)] = cos(TWOPI*j/(double)M) - 1.1;
+    x[2*(j+M)+1] = sin(TWOPI*j/(double)M);
   }
-  
+
   // Evolve the patch
   for (int k = 0; k <= T; k++)
   {
@@ -69,9 +69,6 @@ int main(int argc, char **argv) {
     // Interpolate
     interpolate(x, 0, M, t, n, d, kappa, mu, beta, gamma);
     //interpolate(x, M, N, t, n, d, kappa, mu, beta, gamma);
-     
-    // Compare algorithms
-    compare_algo(x, mu, beta, gamma, t, n, M, N, h, tol_rk45_space, alpha, theta);
      
     // Evolve patches
     dt = runge_kutta45(x, k1, k2, k3, k4, k5, k6,\

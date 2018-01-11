@@ -121,50 +121,50 @@ double runge_kutta45(double* x, double* k1, double* k2, double* k3, double* k4, 
   memset(x_temp, 0, 2*N*sizeof(double));
   memset(x_RK4, 0, 2*N*sizeof(double));
   memset(x_RK5, 0, 2*N*sizeof(double));
-  
+   
   // Runge-Kutta 45
   do
   {
     // Step 1 in RK
     vfield_fft(k1, x, M, N, alpha, theta);
-    //vfield_orig(k1, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, theta, norm);
+    //vfield_orig(k1, x, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, theta, norm);
     for (int j = 0; j < 2*N; j++)
       x_temp[j] = x[j] + dt*0.25*k1[j];
     
     // Step 2 in RK
-    vfield_fft(k2, x, M, N, alpha, theta);
+    vfield_fft(k2, x_temp, M, N, alpha, theta);
     //vfield_orig(k2, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, theta, norm);
     for (int j = 0; j < 2*N; j++)
       x_temp[j] = x[j] + dt*(3.0*k1[j] + 9.0*k2[j])/32.0;
 
     // Step 3 in RK
-    vfield_fft(k3, x, M, N, alpha, theta);
+    vfield_fft(k3, x_temp, M, N, alpha, theta);
     //vfield_orig(k3, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, theta, norm);
     for (int j = 0; j < 2*N; j++)
       x_temp[j] = x[j] + dt*(1932.*k1[j] - 7200.*k2[j] + 7296.*k3[j])/2197.;
       
     // Step 4 in RK
-    vfield_fft(k4, x, M, N, alpha, theta);
+    vfield_fft(k4, x_temp, M, N, alpha, theta);
     //vfield_orig(k4, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, theta, norm);
     for (int j = 0; j < 2*N; j++)
       x_temp[j] = x[j] + dt*(439./216.*k1[j] - 8.*k2[j] + 3680./513.*k3[j] - 845./4104.*k4[j]);
     
     // Step 5 in RK
-    vfield_fft(k5, x, M, N, alpha, theta);
+    vfield_fft(k5, x_temp, M, N, alpha, theta);
     //vfield_orig(k5, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, theta, norm);
     for (int j = 0; j < 2*N; j++)
       x_temp[j] = x[j] + dt*(-8./27.*k1[j] + 2.*k2[j] - 3544./2565.*k3[j]\
                           + 1859./4104.*k4[j] - 11./40.*k5[j]);
       
     // Step 6 in RK
-    vfield_fft(k6, x, M, N, alpha, theta);
+    vfield_fft(k6, x_temp, M, N, alpha, theta);
     //vfield_orig(k6, x_temp, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, theta, norm);
     
     // RK4 and RK5 approx
     for (int j = 0; j < 2*N; j++)
     {
-    	x_RK4[j] = x[j] + dt*(25./216.*k1[j] + 1408./2565.*k3[j] + 2197./4104.*k4[j] - 0.2*k5[j]);
-	  	x_RK5[j] = x[j] + dt*(16./135.*k1[j] + 6656./12825.*k3[j] + 28561./56430.*k4[j] - 9./50.*k5[j]+2./55.*k6[j]);
+      x_RK4[j] = x[j] + dt*(25./216.*k1[j] + 1408./2565.*k3[j] + 2197./4104.*k4[j] - 0.2*k5[j]);
+      x_RK5[j] = x[j] + dt*(16./135.*k1[j] + 6656./12825.*k3[j] + 28561./56430.*k4[j] - 9./50.*k5[j]+2./55.*k6[j]);
     }
 
     // Compute error
@@ -218,17 +218,17 @@ void compare_algo(double* x, double* mu, double* beta, double* gamma, double* t,
     vfield_fft(dxdt_fft, x, M, N, alpha, theta);
 
     // Print to file
-    char strdx_ama[80] = "../results/dxnorm_ama.txt";
-    char strdx_fft[80] = "../results/dxnorm_fft.txt";
+    char strdx_ama[80] = "../results/dx_other_alpha07_normal_ama.txt";
+    char strdx_fft[80] = "../results/dx_other_alpha07_normal_fft.txt";
     FILE* f_ama = fopen(strdx_ama, "a");
     FILE* f_fft = fopen(strdx_fft, "a");
     fprintf(f_ama, "%e %e %d %lf\n", dxdt_ama[0], dxdt_ama[1], M, alpha);
-    fprintf(f_fft, "%e %e %d %lf\n", 5*dxdt_fft[0], 5*dxdt_fft[1], M, alpha);
+    fprintf(f_fft, "%e %e %d %lf\n", dxdt_fft[0], dxdt_fft[1], M, alpha);
     fclose(f_ama);
     fclose(f_fft);
 
     printf("ama_x[%d, %d] = %e, \t %e\n", 0, 1, dxdt_ama[0], dxdt_ama[1]);
-    printf("fft_x[%d, %d] = %e, \t %e\n\n", 0, 1, 5*dxdt_fft[0], 5*dxdt_fft[1]);
+    printf("fft_x[%d, %d] = %e, \t %e\n\n", 0, 1, dxdt_fft[0], dxdt_fft[1]);
 
     free(dxdt_ama);
     free(dxdt_fft);

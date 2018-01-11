@@ -20,7 +20,6 @@ void interpolate(double* x, int start, int N, double* t, double* n,\
   // Calculate t an n
   for (int j = start; j < N-1; j++) {
     t[2*j] = x[2*j+2] - x[2*j];
-   
     t[2*j+1] = x[2*j+3] - x[2*j+1];
     n[2*j] = -t[2*j+1];
     n[2*j+1] = t[2*j];
@@ -101,14 +100,14 @@ void autder(double* f, double* c_coeff, double alpha, int order)
 void vfield_orig(double* dxdt, double* x, double* mu, double* beta, double* gamma, double* t, double* n, int M, int N, double alpha, double h, double tol_rk45_space, double theta)
 {
   // Setup parameters
-  double d_x, d_ni, d_ti, d_xi, Q, f, dxdt_tan;
+  double d_x, d_ni, d_ti, d_xi, Q, f;
   int order = 11;
   Q = 0.0001;
   f = 1./sqrt(Q);
-  double dxdt_j[2], x_i[2], x_j[2], tangent[2];
+  double dxdt_j[2], x_i[2], x_j[2]; 
   
   // Generate coefficients
-  double n_i[2], t_i[2]; 
+  double t_i[2], n_i[2], t_j[2], n_j[2]; 
   double c[order], g[order];
   double poly_coeff_c[order], poly_coeff_g[order];
   double mu_2, beta_2;
@@ -119,7 +118,11 @@ void vfield_orig(double* dxdt, double* x, double* mu, double* beta, double* gamm
     dxdt_j[1] = 0.;
     x_j[0] = x[2*j];
     x_j[1] = x[2*j+1];
-  
+    t_j[0] = t[2*j]; 
+    t_j[1] = t[2*j+1]; 
+    n_j[0] = n[2*j];
+    n_j[1] = n[2*j+1];
+
     // Evolve the contour integrals
     for (int i = 0; i < N; i++)
     {
@@ -177,7 +180,7 @@ void vfield_orig(double* dxdt, double* x, double* mu, double* beta, double* gamm
         poly_coeff_c[4] = gamma[i]*gamma[i]/(1. + mu_2*mu_2);
         autder(c, poly_coeff_c, 0.5*alpha, order);
         
-        evaluate_integral(dxdt_j, mu_2, beta_2, gamma[i], t_i, n_i, c, alpha); 
+        evaluate_integral(dxdt_j, mu_2, beta_2, gamma[i], t_i, n_i, t_j, n_j, mu[j], c, alpha); 
       }
       else
       {
@@ -192,7 +195,7 @@ void vfield_orig(double* dxdt, double* x, double* mu, double* beta, double* gamm
           poly_coeff_c[4] = gamma[i]*gamma[i]/(1. + mu[i]*mu[i]);
           autder(c, poly_coeff_c, 0.5*alpha, order);
 
-          evaluate_integral(dxdt_j, mu[i], beta[i], gamma[i], t_i, n_i, c, alpha);
+          evaluate_integral(dxdt_j, mu[i], beta[i], gamma[i], t_i, n_i, t_j, n_j, mu[j], c, alpha);
         }
         else if ((i == j-1) && (i != M-1))
         {
@@ -209,9 +212,9 @@ void vfield_orig(double* dxdt, double* x, double* mu, double* beta, double* gamm
           poly_coeff_c[4] = gamma[i]*gamma[i]/(1. + mu_2*mu_2);
           autder(c, poly_coeff_c, 0.5*alpha, order);
           
-          evaluate_integral(dxdt_j, mu_2, beta_2, gamma[i], t_i, n_i, c, alpha); 
+          evaluate_integral(dxdt_j, mu_2, beta_2, gamma[i], t_i, n_i, t_j, n_j, mu[j], c, alpha); 
         }
-        else if (d_x > f*d_xi)
+        else if (d_x > f*d_xi && 1 == 0)
         {
           // Case 3: Use formula (31)
           
@@ -228,39 +231,26 @@ void vfield_orig(double* dxdt, double* x, double* mu, double* beta, double* gamm
           poly_coeff_g[6] = (gamma[i]*gamma[i]*(n[2*i]*n[2*i] + n[2*i+1]*n[2*i+1]))/(d_x*d_x);
           autder(g, poly_coeff_g, 0.5*alpha, order);
           
-          evaluate_integral_g(dxdt_j, mu[i], beta[i], gamma[i], d_x, d_ni, d_ti, t_i, n_i, g, alpha);
+          evaluate_integral_g(dxdt_j, mu[i], beta[i], gamma[i], d_x, d_ni, d_ti, t_i, n_i, t_j, n_j, mu[j], g, alpha);
         }
         else
         {
           // Case 4: Use Runge-Kutta 4-5       
-          evaluate_integral_RK(dxdt_j, x_i, x_j, mu[i], beta[i], gamma[i], tol_rk45_space, h, t_i, n_i, alpha);
+          evaluate_integral_RK(dxdt_j, x_i, x_j, mu[i], beta[i], gamma[i], tol_rk45_space, h, t_i, n_i, t_j, n_j, mu[j], alpha);
         }
       }
     }
   
     // Update globally
-    //dxdt_norm = scalar_prod(dxdt_j[0], dxdt_j[1], norm[2*j], norm[2*j+1])*theta/TWOPI;
-    //dxdt[2*j] = norm[2*j]*dxdt_norm;
-    //dxdt[2*j+1] = norm[2*j+1]*dxdt_norm;
-    
-    // Removing tangential component
-    tangent[0] = t[2*j] - mu[j]*n[2*j];
-    tangent[1] = t[2*j+1] - mu[j]*n[2*j+1];
-    normalize(tangent, 2);
-    dxdt_tan = scalar_prod(dxdt_j[0], dxdt_j[1], tangent[0], tangent[1]);
-    dxdt[2*j] = dxdt_j[0]*(1 - dxdt_tan)*theta/TWOPI;
-    dxdt[2*j+1] = dxdt_j[1]*(1 - dxdt_tan)*theta/TWOPI;
-
-    // With tangential component
-    //dxdt[2*j] = dxdt_j[0]*theta/TWOPI;
-    //dxdt[2*j+1] = dxdt_j[1]*theta/TWOPI;
+    dxdt[2*j] = dxdt_j[0]*theta/TWOPI;
+    dxdt[2*j+1] = dxdt_j[1]*theta/TWOPI;
   }
   
   return;
 }
 
 
-void evaluate_integral(double* dxdt, double mu_i, double beta_i, double gamma_i, double* t_i, double* n_i, double* c, double alpha)
+void evaluate_integral(double* dxdt, double mu_i, double beta_i, double gamma_i, double* t_i, double* n_i, double* t_j, double* n_j, double mu_j, double* c, double alpha)
 {
   
   // Compute the integrals
@@ -282,13 +272,15 @@ void evaluate_integral(double* dxdt, double mu_i, double beta_i, double gamma_i,
   second = second/(t_abs*alpha_mu);
   
   // Sum together
-  dxdt[0] += first*(t_i[0] + mu_i*n_i[0]) + second*n_i[0];
-  dxdt[1] += first*(t_i[1] + mu_i*n_i[1]) + second*n_i[1];
+  dxdt[0] += first*((t_i[0] + mu_i*n_i[0]) - (t_j[0] + mu_j*n_j[0])) + second*n_i[0];
+  dxdt[1] += first*((t_i[1] + mu_i*n_i[1]) - (t_j[1] + mu_j*n_j[1])) + second*n_i[1];
+  //dxdt[0] += first*(t_i[0] + mu_i*n_i[0]) + second*n_i[0];
+  //dxdt[1] += first*(t_i[1] + mu_i*n_i[1]) + second*n_i[1];
 
   return;
 }
 
-void evaluate_integral_g(double* dxdt, double mu_i, double beta_i, double gamma_i, double d_x, double d_ni, double d_ti, double* t_i, double* n_i, double* g, double alpha)
+void evaluate_integral_g(double* dxdt, double mu_i, double beta_i, double gamma_i, double d_x, double d_ni, double d_ti, double* t_i, double* n_i, double* t_j, double* n_j, double mu_j, double* g, double alpha)
 {
   // Compute the integrals
   double first = 0.;
@@ -307,21 +299,25 @@ void evaluate_integral_g(double* dxdt, double mu_i, double beta_i, double gamma_
   second = second/pow(d_x, alpha);
   
   // Sum together
-  dxdt[0] += first*(t_i[0] + mu_i*n_i[0]) + second*n_i[0];
-  dxdt[1] += first*(t_i[1] + mu_i*n_i[1]) + second*n_i[1];
+  dxdt[0] += first*((t_i[0] + mu_i*n_i[0]) - (t_j[0] + mu_j*n_j[0])) + second*n_i[0];
+  dxdt[1] += first*((t_i[1] + mu_i*n_i[1]) - (t_j[1] + mu_j*n_j[1])) + second*n_i[1];
+  //dxdt[0] += first*(t_i[0] + mu_i*n_i[0]) + second*n_i[0];
+  //dxdt[1] += first*(t_i[1] + mu_i*n_i[1]) + second*n_i[1];
   
   return;
 }
 
 
 void evaluate_integral_RK(double* dxdt, double* x_i, double* x_j, double mu_i, double beta_i, double gamma_i,\
-                          double tol_rk45_space, double h, double* t_i, double* n_i, double alpha)
+                          double tol_rk45_space, double h, double* t_i, double* n_i, double* t_j, double* n_j, double mu_j, double alpha)
 {
   double first = evaluate_integral1_RK(x_i, x_j, tol_rk45_space, h, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
   double second = evaluate_integral2_RK(x_i, x_j, tol_rk45_space, h, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
 
-  dxdt[0] += first*(t_i[0] + mu_i*n_i[0]) + second*n_i[0];
-  dxdt[1] += first*(t_i[1] + mu_i*n_i[1]) + second*n_i[1];
+  dxdt[0] += first*((t_i[0] + mu_i*n_i[0]) - (t_j[0] + mu_j*n_j[0])) + second*n_i[0];
+  dxdt[1] += first*((t_i[1] + mu_i*n_i[1]) - (t_j[1] + mu_j*n_j[1])) + second*n_i[1];
+  //dxdt[0] += first*(t_i[0] + mu_i*n_i[0]) + second*n_i[0];
+  //dxdt[1] += first*(t_i[1] + mu_i*n_i[1]) + second*n_i[1];
   
   return;
 }
@@ -330,10 +326,10 @@ void evaluate_integral_RK(double* dxdt, double* x_i, double* x_j, double mu_i, d
 double evaluate_integral1_RK(double* x_i, double* x_j, double tol_rk45_space, double h, double* t_i,\
 									double* n_i, double mu_i, double beta_i, double gamma_i, double alpha)
 {
-	double p = 0.;
-	double p_end = 1.; 
+  double p = 0.;
+  double p_end = 1.; 
   double k1, k3, k4, k5, k6;
-	double Y = 0., Y1, Y2, p_temp;
+  double Y = 0., Y1, Y2, p_temp;
   long double R;
 
   while (p < p_end)
@@ -342,25 +338,25 @@ double evaluate_integral1_RK(double* x_i, double* x_j, double tol_rk45_space, do
     {
       h = 1-p;
     }
-	  k1 = h*integrand1(x_i, x_j, p, t_i, n_i, mu_i, beta_i, gamma_i, alpha); 
-	  p_temp = p + 3.0*h/8.0; // p_temp from k2
+    k1 = h*integrand1(x_i, x_j, p, t_i, n_i, mu_i, beta_i, gamma_i, alpha); 
+    p_temp = p + 3.0*h/8.0; // p_temp from k2
   
-	  k3 = h*integrand1(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
-	  p_temp = p + 12.0*h/13.0;
+    k3 = h*integrand1(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
+    p_temp = p + 12.0*h/13.0;
   
-	  k4 = h*integrand1(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
-	  p_temp = p + h;
-	  
-	  k5 = h*integrand1(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
-	  p_temp = p + 0.5*h;
-
-	  k6 = h*integrand1(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
-
-	  // RK4 approx
-	  Y1 = Y + 25.0*k1/216.0 + 1408.0*k3/2565.0 + 2197.0*k4/4104.0 - 0.2*k5;
+    k4 = h*integrand1(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
+    p_temp = p + h;
+    
+    k5 = h*integrand1(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
+    p_temp = p + 0.5*h;
+  
+    k6 = h*integrand1(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
+  
+    // RK4 approx
+    Y1 = Y + 25.0*k1/216.0 + 1408.0*k3/2565.0 + 2197.0*k4/4104.0 - 0.2*k5;
 
     // RK5 approx
-	  Y2 = Y + 16.0*k1/135.0 + 6656.0*k3/12825.0 + 28561.0*k4/56430.0\
+    Y2 = Y + 16.0*k1/135.0 + 6656.0*k3/12825.0 + 28561.0*k4/56430.0\
 			  -9.0*k5/50.0 + 2.0*k6/55.0;
     
     // Compute error
@@ -410,11 +406,10 @@ double integrand1(double* x_i, double* x_j, double p, double* t_i, double* n_i, 
 double evaluate_integral2_RK(double* x_i, double* x_j, double tol_rk45_space, double h,\
             double* t_i, double* n_i, double mu_i, double beta_i, double gamma_i, double alpha) 
 {
-  //printf("Entering eval int 2 RK\n");
-	double p = 0.;
-	double p_end = 1.; 
+  double p = 0.;
+  double p_end = 1.; 
   double k1, k3, k4, k5, k6;
-	double Y = 0., Y1, Y2, R, p_temp;
+  double Y = 0., Y1, Y2, R, p_temp;
   
   while (p < p_end)
   {
@@ -422,25 +417,25 @@ double evaluate_integral2_RK(double* x_i, double* x_j, double tol_rk45_space, do
     {
       h = 1-p;
     } 
-	  k1 = h*integrand2(x_i, x_j, p, t_i, n_i, mu_i, beta_i, gamma_i, alpha); 
-	  p_temp = p + 3.0*h/8.0; // p_temp from k2
-	  
-	  k3 = h*integrand2(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
-	  p_temp = p + 12.0*h/13.0;
-	  
-	  k4 = h*integrand2(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
-	  p_temp = p + h;
-	  
-	  k5 = h*integrand2(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
-	  p_temp = p + 0.5*h;
-	  
-	  k6 = h*integrand2(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
+    k1 = h*integrand2(x_i, x_j, p, t_i, n_i, mu_i, beta_i, gamma_i, alpha); 
+    p_temp = p + 3.0*h/8.0; // p_temp from k2
     
-	  // RK4 approx
-	  Y1 = Y + 25.0*k1/216.0 + 1408.0*k3/2565.0 + 2197.0*k4/4104.0 - 0.2*k5;
-
+    k3 = h*integrand2(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
+    p_temp = p + 12.0*h/13.0;
+    
+    k4 = h*integrand2(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
+    p_temp = p + h;
+    
+    k5 = h*integrand2(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
+    p_temp = p + 0.5*h;
+    
+    k6 = h*integrand2(x_i, x_j, p_temp, t_i, n_i, mu_i, beta_i, gamma_i, alpha);
+     
+    // RK4 approx
+    Y1 = Y + 25.0*k1/216.0 + 1408.0*k3/2565.0 + 2197.0*k4/4104.0 - 0.2*k5;
+    
     // RK5 approx
-	  Y2 = Y + 16.0*k1/135.0 + 6656.0*k3/12825.0 + 28561.0*k4/56430.0\
+    Y2 = Y + 16.0*k1/135.0 + 6656.0*k3/12825.0 + 28561.0*k4/56430.0\
 			  -9.0*k5/50.0 + 2.0*k6/55.0;
     
     // Compute error
@@ -513,7 +508,6 @@ void points_reloc(double** px, double* t, double* n, int* pN, double* kappa,\
   
   for (int k = 1; k <= patches; k++)
   {
-    //printf(" \n \n k = %d\n \n", k);
     d = (double*)malloc(M[k]*sizeof(double));
     kappa_bar = (double*)malloc(M[k]*sizeof(double));
     kappai_breve = (double*)malloc(M[k]*sizeof(double));

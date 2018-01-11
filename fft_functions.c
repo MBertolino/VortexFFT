@@ -9,7 +9,7 @@
 void derivative_fft(double* x, double* dx, int start, int stop)
 { 
   int N = stop - start;
-  int N_points = N/2;
+  int N_points = 0.5*N;
   double k[N], filter[N];
   double a, m;
   a = 36;
@@ -85,7 +85,6 @@ void vfield_fft(double* dxdt, double* x, int M, int N, double alpha, double thet
 
   double alpha_d_x, aux_0, aux_1;
   double* dx = (double*)malloc(2*N*sizeof(double));
-  
   // Compute derivative in nominator
   derivative_fft(x, dx, 0, M);
   //derivative_fft(x, dx, M, N);

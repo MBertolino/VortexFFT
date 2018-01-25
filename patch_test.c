@@ -34,10 +34,12 @@ int main(int argc, char **argv) {
     x = (double*)malloc(2*i*sizeof(double));
     for (int j = 0; j < i; j++)
     {
-      //x[2*j] = cos(TWOPI*j/(double)i);
+      x[2*j] = cos(TWOPI*j/(double)i);
+      x[2*j+1] = sin(TWOPI*j/(double)i);
+      //x[2*j] = 2*cos(TWOPI*j/(double)i);
       //x[2*j+1] = sin(TWOPI*j/(double)i);
-      x[2*j] = cos(TWOPI*j/(double)i) + 0.45*sin(TWOPI*5*j/(double)i); // 
-      x[2*j+1] = sin(TWOPI*j/(double)i) + 0.3*cos(TWOPI*3*j/(double)i);
+      //x[2*j] = cos(TWOPI*j/(double)i) + 0.45*sin(TWOPI*5*j/(double)i); // 
+      //x[2*j+1] = sin(TWOPI*j/(double)i) + 0.3*cos(TWOPI*3*j/(double)i);
     }
 
     // Allocate

@@ -176,7 +176,6 @@ void vfield_fft(double* dxdt, double* x, int M, int N, double alpha, double thet
   return;
 }
 
-
 double area_fft(double* x, int start, int stop)
 {
   int N, N_points;

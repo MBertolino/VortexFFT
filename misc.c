@@ -4,6 +4,7 @@
 #include <string.h>
 #include "orig_functions.h"
 #include "fft_functions.h"
+#include "bh_functions.h"
 #include <unistd.h>
 #include <sys/time.h>
 
@@ -32,7 +33,7 @@ void print_to_file(double* x, int M, int N, int k)
   {
     if (i == M)
       fprintf(f, "\n");
-    fprintf(f, "%lf %lf\n", x[2*i], x[2*i+1]);
+    fprintf(f, "%.12f %.12f\n", x[2*i], x[2*i+1]);
   }
   fclose(f);
 }
@@ -212,64 +213,71 @@ void compare_algo(double* x, double* mu, double* beta, double* gamma, double* t,
     // Allocate
     double* dxdt_ama = (double*)malloc(2*N*sizeof(double));
     double* dxdt_fft = (double*)malloc(2*N*sizeof(double));
-    
-    // Compare FFT and Mancho
-    vfield_orig(dxdt_ama, x, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, theta);
-    vfield_fft(dxdt_fft, x, M, N, alpha, theta);
+    /*double* dxdt_bh = (double*)malloc(2*N*sizeof(double));
+    node_t *tree = NULL;
+    double* dx = (double*)malloc(2*N*sizeof(double));
+    derivative_fft(x, dx, 0, M);
+    */double t_drit, t_fft, t_bh;
 
-    // Print to file
-    char strdx_ama[80] = "../results/dx_other_alpha07_normal_ama.txt";
-    char strdx_fft[80] = "../results/dx_other_alpha07_normal_fft.txt";
-    FILE* f_ama = fopen(strdx_ama, "a");
-    FILE* f_fft = fopen(strdx_fft, "a");
-    fprintf(f_ama, "%e %e %d %lf\n", dxdt_ama[0], dxdt_ama[1], M, alpha);
-    fprintf(f_fft, "%e %e %d %lf\n", dxdt_fft[0], dxdt_fft[1], M, alpha);
-    fclose(f_ama);
-    fclose(f_fft);
-
-    printf("ama_x[%d, %d] = %e, \t %e\n", 0, 1, dxdt_ama[0], dxdt_ama[1]);
-    printf("fft_x[%d, %d] = %e, \t %e\n\n", 0, 1, dxdt_fft[0], dxdt_fft[1]);
-
-    free(dxdt_ama);
-    free(dxdt_fft);
-
-    return;
-
-}
-
-void compare_algo_time(double* x, double* mu, double* beta, double* gamma, double* t, double* n, int M, int N, double h, double tol_rk45_space, double alpha, double theta)
-{
-    // Allocate
-    double* dxdt_ama = (double*)malloc(2*N*sizeof(double));
-    double* dxdt_fft = (double*)malloc(2*N*sizeof(double));
-    double t_drit, t_fft;
-    
-    // Compare FFT and Mancho
+    // Compare vector field calculations
     t_drit = get_wall_seconds();
     vfield_orig(dxdt_ama, x, mu, beta, gamma, t, n, M, N, alpha, h, tol_rk45_space, theta);
     t_drit = get_wall_seconds() - t_drit;
-    
+
     sleep(0.1);
-    
+
     t_fft = get_wall_seconds();
     vfield_fft(dxdt_fft, x, M, N, alpha, theta);
     t_fft = get_wall_seconds() - t_fft;
 
-    // Print to file
+    sleep(0.1);
+
+    /*t_bh = get_wall_seconds();
+    for (int i = 0; i < N; i++)
+      insert(&tree, 0.5, 0.5, 100, dxdt_bh[2*i], dxdt_bh[2*i+1], x[2*i], x[2*i+1], dx[2*i], dx[2*i+1], i);
+    vfield_bh(tree, tree, theta, 0.001, N, alpha);
+    t_bh = get_wall_seconds() - t_bh;
+    write_tree(tree, &dxdt_bh);
+   */ 
+    // Print accuracy to file
+    char strdx_ama[80] = "../results/dx_circle_alpha07_ama.txt";
+    char strdx_fft[80] = "../results/dx_circle_alpha07_fft.txt";
+    //char strdx_bh[80] = "../results/dx_other_alpha07_normal_bh.txt";
+    FILE* fa_ama = fopen(strdx_ama, "a");
+    FILE* fa_fft = fopen(strdx_fft, "a");
+    //FILE* fa_bh = fopen(strdx_bh, "a");
+    fprintf(fa_ama, "%.12f %.12f %d %lf\n", dxdt_ama[0], dxdt_ama[1], M, alpha);
+    fprintf(fa_fft, "%.12f %.12f %d %lf\n", dxdt_fft[0], dxdt_fft[1], M, alpha);
+    //fprintf(fa_bh, "%e %e %d %lf\n", dxdt_bh[0], dxdt_bh[1], M, alpha);
+    fclose(fa_ama);
+    fclose(fa_fft);
+    //fclose(fa_bh);
+    
+    // Print time to file
     char time_ama[80] = "../results/time_drit.txt";
     char time_fft[80] = "../results/time_fft.txt";
-    FILE* f_ama = fopen(time_ama, "a");
-    FILE* f_fft = fopen(time_fft, "a");
-    fprintf(f_ama, "%e %d %lf\n", t_drit, M, alpha);
-    fprintf(f_fft, "%e %d %lf\n", t_fft, M, alpha);
-    fclose(f_ama);
-    fclose(f_fft);
+    //char time_bh[80] = "../results/time_bh.txt";
+    FILE* ft_ama = fopen(time_ama, "a");
+    FILE* ft_fft = fopen(time_fft, "a");
+    //FILE* ft_bh = fopen(time_bh, "a");
+    fprintf(ft_ama, "%e %d %lf\n", t_drit, M, alpha);
+    fprintf(ft_fft, "%e %d %lf\n", t_fft, M, alpha);
+    //fprintf(ft_bh, "%e %d %lf\n", t_bh, M, alpha);
+    fclose(ft_ama);
+    fclose(ft_fft);
+    //fclose(ft_bh);
 
     printf("time_ama = %e \n", t_drit);
-    printf("time_fft = %e \n\n", t_fft);
+    printf("time_fft = %e \n", t_fft);
+    //printf("time__bh = %e \n\n", t_bh);
+
+    printf("ama_x[%d, %d] = %e, \t %e\n", 0, 1, dxdt_ama[0], dxdt_ama[1]);
+    printf("fft_x[%d, %d] = %e, \t %e\n", 0, 1, dxdt_fft[0], dxdt_fft[1]);
+    //printf("bh__x[%d, %d] = %e, \t %e\n\n", 0, 1, dxdt_bh[0], dxdt_bh[1]);
 
     free(dxdt_ama);
     free(dxdt_fft);
+    //free(dxdt_bh);
 
     return;
 

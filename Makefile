@@ -4,7 +4,7 @@ CFLAGS = -Wall -O3 -march=native #-Werror
 LDFLAGS = -lfftw3 -lm 
 INCLUDES =
 RM = /bin/rm -f
-OBJS = orig_functions.o fft_functions.o misc.o
+OBJS = orig_functions.o fft_functions.o bh_functions.o misc.o
 PATCH = patch
 TEST = test
 
@@ -25,6 +25,9 @@ orig_functions.o: orig_functions.c orig_functions.h
 
 fft_functions.o: fft_functions.c fft_functions.h
 	$(CC) $(CFLAGS) $(INCLUDES) -c fft_functions.c -std=c99
+
+bh_functions.o: bh_functions.c bh_functions.h
+	$(CC) $(CFLAGS) $(INCLUDES) -c bh_functions.c -std=c99
 
 misc.o: misc.c misc.h
 	$(CC) $(CFLAGS) $(INCLUDES) -c misc.c -std=c99
